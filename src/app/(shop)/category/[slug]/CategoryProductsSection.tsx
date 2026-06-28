@@ -1,0 +1,210 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { SlidersHorizontal, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
+import ProductGrid from '@/components/product/ProductGrid'
+import type { Product } from '@/types/database.types'
+import type { SortOption } from '@/lib/data/category'
+
+const PAGE_SIZE = 12
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'price_asc', label: 'Price: Low–High' },
+  { value: 'price_desc', label: 'Price: High–Low' },
+  { value: 'newest', label: 'Newest' },
+]
+
+interface Props {
+  categoryId: string
+  initialProducts: Product[]
+  initialTotal: number
+}
+
+async function fetchProducts(
+  categoryId: string,
+  sort: SortOption,
+  inStockOnly: boolean,
+  page: number,
+): Promise<{ products: Product[]; total: number }> {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('products')
+    .select('*', { count: 'exact' })
+    .eq('category_id', categoryId)
+    .eq('is_active', true)
+
+  if (inStockOnly) query = query.gt('stock_quantity', 0)
+
+  switch (sort) {
+    case 'price_asc':
+      query = query.order('price', { ascending: true })
+      break
+    case 'price_desc':
+      query = query.order('price', { ascending: false })
+      break
+    case 'newest':
+      query = query.order('created_at', { ascending: false })
+      break
+    default:
+      query = query
+        .order('is_featured', { ascending: false })
+        .order('display_order', { ascending: true })
+  }
+
+  const from = (page - 1) * PAGE_SIZE
+  const { data, count } = await query.range(from, from + PAGE_SIZE - 1)
+  return { products: data ?? [], total: count ?? 0 }
+}
+
+export default function CategoryProductsSection({ categoryId, initialProducts, initialTotal }: Props) {
+  const [sort, setSort] = useState<SortOption>('featured')
+  const [inStockOnly, setInStockOnly] = useState(false)
+  const [page, setPage] = useState(1)
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [total, setTotal] = useState(initialTotal)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const hasMore = products.length < total
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSort(newSort)
+    startTransition(async () => {
+      const result = await fetchProducts(categoryId, newSort, inStockOnly, 1)
+      setProducts(result.products)
+      setTotal(result.total)
+      setPage(1)
+    })
+  }
+
+  const handleInStockChange = (checked: boolean) => {
+    setInStockOnly(checked)
+    startTransition(async () => {
+      const result = await fetchProducts(categoryId, sort, checked, 1)
+      setProducts(result.products)
+      setTotal(result.total)
+      setPage(1)
+    })
+  }
+
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true)
+    const nextPage = page + 1
+    const result = await fetchProducts(categoryId, sort, inStockOnly, nextPage)
+    setProducts((prev) => [...prev, ...result.products])
+    setPage(nextPage)
+    setIsLoadingMore(false)
+  }
+
+  return (
+    <div>
+      {/* ── Sort & Filter bar ── */}
+      <div className="bg-surface-container-low border-b border-outline-variant py-3">
+        <div className="max-w-7xl mx-auto px-4 lg:px-0">
+          <div className="flex items-center justify-between gap-3">
+            {/* Sort pills */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
+              <span className="flex-shrink-0 flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
+                <SlidersHorizontal size={13} />
+                Sort
+              </span>
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSortChange(opt.value)}
+                  className={cn(
+                    'flex-shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-colors',
+                    sort === opt.value
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* In-Stock toggle */}
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <span className="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap hidden sm:inline">
+                In Stock
+              </span>
+              <button
+                role="switch"
+                aria-checked={inStockOnly}
+                onClick={() => handleInStockChange(!inStockOnly)}
+                className={cn(
+                  'relative w-9 h-5 rounded-full transition-colors duration-200',
+                  inStockOnly ? 'bg-primary' : 'bg-outline-variant',
+                )}
+              >
+                <span
+                  className={cn(
+                    'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+                    inStockOnly ? 'translate-x-[18px]' : 'translate-x-0.5',
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Result count */}
+          <p className="font-label-sm text-label-sm text-on-surface-variant mt-2">
+            {total} {total === 1 ? 'product' : 'products'} found
+            {inStockOnly && ' · In stock only'}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Product grid ── */}
+      <div className="max-w-7xl mx-auto px-4 lg:px-0 py-6">
+        {isPending ? (
+          <div className="flex justify-center py-24">
+            <Loader2 size={32} className="animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <ProductGrid
+              products={products}
+              emptyMessage={
+                inStockOnly
+                  ? 'No in-stock products found. Try removing the In Stock filter.'
+                  : 'No products found in this category.'
+              }
+            />
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="flex items-center gap-2 px-8 py-3 rounded-full border-[1.5px] border-primary text-primary hover:bg-surface-container font-label-sm text-label-sm uppercase tracking-wider transition-colors disabled:opacity-60"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    `Load More (${total - products.length} remaining)`
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!hasMore && products.length > 0 && (
+              <p className="text-center font-label-sm text-label-sm text-on-surface-variant mt-8">
+                All {total} products loaded
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand color palette */
+  --color-background: #fdf9f1;
+  --color-surface: #fdf9f1;
+  --color-surface-bright: #fdf9f1;
+  --color-surface-dim: #dddad2;
+  --color-surface-variant: #e6e2da;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f7f3eb;
+  --color-surface-container: #f1ede5;
+  --color-surface-container-high: #ece8e0;
+  --color-surface-container-highest: #e6e2da;
+  --color-surface-tint: #705a4c;
+
+  --color-primary: #26170c;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #3d2b1f;
+  --color-on-primary-container: #ac9181;
+  --color-primary-fixed: #fbddca;
+  --color-primary-fixed-dim: #dec1af;
+  --color-on-primary-fixed: #28180d;
+  --color-on-primary-fixed-variant: #574335;
+  --color-inverse-primary: #dec1af;
+
+  --color-secondary: #715a3e;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fdddb9;
+  --color-on-secondary-container: #786044;
+  --color-secondary-fixed: #fdddb9;
+  --color-secondary-fixed-dim: #e0c29f;
+  --color-on-secondary-fixed: #281803;
+  --color-on-secondary-fixed-variant: #584329;
+
+  --color-tertiary: #2a1500;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #472803;
+  --color-on-tertiary-container: #bc8d5f;
+  --color-tertiary-fixed: #ffdcbd;
+  --color-tertiary-fixed-dim: #f0bd8b;
+  --color-on-tertiary-fixed: #2c1600;
+  --color-on-tertiary-fixed-variant: #623f18;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-outline: #81756e;
+  --color-outline-variant: #d2c4bc;
+
+  --color-on-background: #1c1c17;
+  --color-on-surface: #1c1c17;
+  --color-on-surface-variant: #4f453f;
+
+  --color-inverse-surface: #31302b;
+  --color-inverse-on-surface: #f4f0e8;
+
+  /* Extra surface / border tokens */
+  --color-surface-card:    #ffffff;
+  --color-table-border:    #e5e1d9;
+
+  /* Status colours */
+  --color-status-placed:     #6B7280;
+  --color-status-confirmed:  #3B82F6;
+  --color-status-packed:     #F59E0B;
+  --color-status-shipping:   #8B5CF6;
+  --color-status-delivered:  #0C831F;
+
+  /* Font families */
+  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
+  --font-body-lg: var(--font-manrope), 'Manrope', sans-serif;
+  --font-body-md: var(--font-manrope), 'Manrope', sans-serif;
+  --font-headline-lg: var(--font-manrope), 'Manrope', sans-serif;
+  --font-headline-md: var(--font-manrope), 'Manrope', sans-serif;
+  --font-headline-lg-mobile: var(--font-manrope), 'Manrope', sans-serif;
+  --font-label-sm: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+
+  /* Font sizes */
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-headline-lg: 40px;
+  --text-headline-lg--line-height: 48px;
+  --text-headline-lg-mobile: 30px;
+  --text-headline-lg-mobile--line-height: 36px;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+
+  /* Spacing */
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 64px;
+  --spacing-gutter: 24px;
+  --spacing-base: 8px;
+  --spacing-max-width: 1280px;
+
+  /* Border radius */
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-btn: 0.5rem;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.12);
+
+  /* Success / Add-to-cart green */
+  --color-success: #16a34a;
+  --color-success-subtle: #dcfce7;
+  --color-on-success: #ffffff;
+}
+
+/* Remove default disclosure triangle from <details> */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+
+/* Admin dashboard chart animation */
+@keyframes chart-draw {
+  to { stroke-dashoffset: 0; }
+}
+@utility animate-chart {
+  stroke-dasharray: 1500;
+  stroke-dashoffset: 1500;
+  animation: chart-draw 2.4s ease-in-out forwards;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@utility animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@utility font-odia {
+  font-family: 'Noto Sans Odia', sans-serif;
+}
+
+body {
+  background-color: #fdf9f1;
+  color: #1c1c17;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media print {
+  /* Hide all site chrome — only the order detail content prints */
+  header, nav, footer,
+  [data-print-hide],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  /* Expand the order detail to fill the page */
+  main, .max-w-4xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure cards print with visible borders */
+  .border, [class*="border-"] {
+    border-color: #ccc !important;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+}

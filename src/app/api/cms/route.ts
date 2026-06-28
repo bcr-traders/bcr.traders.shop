@@ -1,0 +1,37 @@
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import type { ClerkPublicMetadata } from '@/types'
+
+export async function GET(request: NextRequest) {
+  const key = request.nextUrl.searchParams.get('key')
+  const supabase = await createClient()
+
+  let query = supabase.from('cms_content').select('*')
+  if (key) query = query.eq('key', key)
+
+  const { data, error } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(key ? (data?.[0] ?? null) : data)
+}
+
+export async function POST(req: NextRequest) {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { key, value } = await req.json() as { key: string; value: unknown }
+  if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 })
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('cms_content')
+    .upsert({ key, value, is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
