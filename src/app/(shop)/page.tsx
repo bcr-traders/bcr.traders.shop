@@ -7,6 +7,9 @@ import CategoryGrid from '@/components/home/CategoryGrid'
 import ProductSection from '@/components/home/ProductSection'
 import OfferBanner from '@/components/home/OfferBanner'
 import CouponCards from '@/components/home/CouponCards'
+import CouponMarquee from '@/components/home/CouponMarquee'
+import AnimatedStats from '@/components/home/AnimatedStats'
+import WhatsAppFAB from '@/components/home/WhatsAppFAB'
 import LocationStrip from '@/components/home/LocationStrip'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.in'
@@ -103,16 +106,22 @@ export default async function HomePage() {
         {/* 2. Hero banner carousel */}
         <HeroBanner banners={banners} />
 
-        {/* 3. Trust badges */}
+        {/* 3. Coupon marquee ticker */}
+        {coupons.length > 0 && <CouponMarquee coupons={coupons} />}
+
+        {/* 4. Trust badges (animated, scrollable) */}
         <TrustBadges />
 
-        {/* 4. Category bento grid */}
+        {/* 5. Business stats with counting animation */}
+        <AnimatedStats />
+
+        {/* 6. Category bento grid (staggered entry) */}
         <CategoryGrid categories={categories} />
 
-        {/* 5. Active coupon offers */}
+        {/* 7. Active coupon offers (premium coupon design) */}
         <CouponCards coupons={coupons} />
 
-        {/* 6. Best Sellers */}
+        {/* 8. Best Sellers */}
         <ProductSection
           title="Best Sellers"
           titleOr="ସବୁଠୁ ଅଧିକ ବିକ୍ରି"
@@ -120,7 +129,7 @@ export default async function HomePage() {
           viewAllHref="/search?featured=true"
         />
 
-        {/* 7. Per-Category sections */}
+        {/* 9. Per-Category sections */}
         {categories.map((cat) => {
           const products = categoryProducts[cat.id] ?? []
           if (products.length === 0) return null
@@ -135,9 +144,12 @@ export default async function HomePage() {
           )
         })}
 
-        {/* 8. Mid-page offer banner */}
+        {/* 10. Mid-page offer banner */}
         {offerBanner && <OfferBanner data={offerBanner} />}
       </div>
+
+      {/* Floating WhatsApp order button */}
+      <WhatsAppFAB />
     </>
   )
 }
