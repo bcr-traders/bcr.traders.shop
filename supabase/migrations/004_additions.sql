@@ -3,18 +3,8 @@ ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS whatsapp_opt_in boolean NOT NULL DEFAULT false;
 
 -- ── 17.5  Return / Refund ────────────────────────────────────────────────────
--- Add 'returned' to the order_status enum (idempotent)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_type t
-    JOIN pg_enum e ON e.enumtypid = t.oid
-    WHERE t.typname = 'order_status' AND e.enumlabel = 'returned'
-  ) THEN
-    ALTER TYPE order_status ADD VALUE 'returned';
-  END IF;
-END
-$$;
+-- Note: 'returned' is already included in the orders.status CHECK constraint
+-- in 001_schema.sql — no enum type exists, nothing to alter.
 
 -- Track when an order was returned
 ALTER TABLE orders

@@ -768,7 +768,11 @@ CREATE POLICY "user_read_order_timeline"
 -- After creating the buckets, add these storage policies in the SQL editor:
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Allow public read on public image buckets
+-- Allow public read on public image buckets (drop first to make re-runs safe)
+DROP POLICY IF EXISTS "public_read_product_images"  ON storage.objects;
+DROP POLICY IF EXISTS "public_read_category_images" ON storage.objects;
+DROP POLICY IF EXISTS "public_read_banner_images"   ON storage.objects;
+
 CREATE POLICY "public_read_product_images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'product-images');
