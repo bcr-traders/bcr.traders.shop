@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Loader2, Package, MapPin, Truck, Wallet, Plus } from 'lucide-react'
+import {
+  ArrowLeft, Loader2, Package, MapPin,
+  Truck, Wallet, Plus, ShieldCheck,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
@@ -12,9 +15,7 @@ import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
 import type { Address } from '@/types/database.types'
 
-interface Props {
-  profileId: string
-}
+interface Props { profileId: string }
 
 interface PincodeResult {
   serviceable: boolean
@@ -25,7 +26,7 @@ interface PincodeResult {
 
 export default function CheckoutClient({ profileId }: Props) {
   const router = useRouter()
-  const items = useCartStore((s) => s.items)
+  const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
   const totalItems = useCartStore((s) => s.totalItems)
   const totalPrice = useCartStore((s) => s.totalPrice)
@@ -42,12 +43,9 @@ export default function CheckoutClient({ profileId }: Props) {
 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
-  const canPlace =
-    !!selectedId &&
-    (pincodeResult?.serviceable === true || isBulk)
+  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk)
 
-  // ── Load addresses ──────────────────────────────────────────────────────
-
+  // Load addresses
   useEffect(() => {
     if (items.length === 0) { router.replace('/'); return }
     const supabase = createClient()
@@ -69,13 +67,10 @@ export default function CheckoutClient({ profileId }: Props) {
     })()
   }, [profileId, items.length, router])
 
-  // Reset pincode state when address changes
   useEffect(() => {
     setPincodeResult(null)
     setIsBulk(false)
   }, [selectedId])
-
-  // ── Place order ──────────────────────────────────────────────────────────
 
   const placeOrder = async () => {
     if (!canPlace) return
@@ -102,12 +97,15 @@ export default function CheckoutClient({ profileId }: Props) {
     }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
-
   if (loadingAddresses) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={28} className="animate-spin text-primary" />
+          <p className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/40">
+            Loading…
+          </p>
+        </div>
       </div>
     )
   }
@@ -115,52 +113,69 @@ export default function CheckoutClient({ profileId }: Props) {
   return (
     <>
       {/* ── Fixed header ── */}
-      <header className="fixed top-0 left-0 w-full z-50 flex items-center px-4 h-12 lg:h-16 bg-surface shadow-sm">
+      <header className="fixed top-0 left-0 w-full z-50 flex items-center px-4 h-14 lg:h-16 bg-primary border-b-2 border-primary shadow-sm">
+        {/* Dot texture */}
+        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
         <button
           onClick={() => router.back()}
-          className="p-2 -ml-2 text-primary hover:bg-surface-container-low rounded-full transition-colors"
+          className="relative z-10 p-2 -ml-1 text-white/70 hover:text-white transition-colors rounded-xl hover:bg-white/10"
           aria-label="Go back"
         >
-          <ArrowLeft size={22} />
+          <ArrowLeft size={20} />
         </button>
-        <h1 className="font-headline-md text-headline-md text-primary font-bold absolute left-1/2 -translate-x-1/2">
-          BCR Traders
-        </h1>
+        <div className="relative z-10 absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <Link href="/" className="text-lg font-black tracking-tighter text-white lowercase">
+            bcr traders.
+          </Link>
+        </div>
+        <div className="relative z-10 ml-auto flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-white/35">
+          <ShieldCheck size={12} strokeWidth={2.5} /> Secure
+        </div>
       </header>
 
-      {/* ── Main ── */}
-      <main className="pt-16 max-w-[1280px] mx-auto px-4 md:px-6 lg:grid lg:grid-cols-12 lg:gap-6 items-start">
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6 mt-4">
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-background">
-            Checkout
-          </h1>
+      {/* ── Main content ── */}
+      <main className="pt-14 lg:pt-16 max-w-[1200px] mx-auto px-4 md:px-6 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
+
+        {/* LEFT — Checkout steps */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-5 mt-6">
+
+          {/* Page title */}
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">
+              Step 1 of 1
+            </p>
+            <h1 className="text-2xl font-black text-primary tracking-tight uppercase">
+              Checkout
+            </h1>
+          </div>
 
           {/* ── Delivery Address ── */}
-          <section className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 md:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                <MapPin size={20} className="text-primary fill-primary" />
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-black text-sm uppercase tracking-widest text-primary flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                  <MapPin size={14} className="text-white" />
+                </div>
                 Delivery Address
               </h2>
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center gap-1 text-primary font-label-sm text-label-sm hover:underline"
+                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-on-surface-variant border-2 border-table-border rounded-xl px-3 py-1.5 hover:border-primary/40 hover:text-primary transition-all duration-200"
               >
-                <Plus size={14} />
-                Add New
+                <Plus size={12} strokeWidth={2.5} /> Add New
               </button>
             </div>
 
             {addresses.length === 0 ? (
               <button
                 onClick={() => setShowForm(true)}
-                className="w-full py-10 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center gap-2 text-on-surface-variant hover:bg-surface-container transition-colors"
+                className="w-full py-10 border-2 border-dashed border-table-border rounded-2xl flex flex-col items-center gap-3 text-on-surface-variant/40 hover:border-primary/40 hover:text-primary transition-all duration-200"
               >
-                <MapPin size={28} />
-                <span className="font-body-md text-body-md">Add a delivery address</span>
+                <MapPin size={28} strokeWidth={1.5} />
+                <span className="text-[11px] font-black uppercase tracking-wider">Add a delivery address</span>
               </button>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {addresses.map((addr) => {
                   const isSelected = addr.id === selectedId
                   return (
@@ -168,39 +183,34 @@ export default function CheckoutClient({ profileId }: Props) {
                       key={addr.id}
                       onClick={() => setSelectedId(addr.id)}
                       className={cn(
-                        'relative rounded-xl border-2 p-4 text-left cursor-pointer transition-colors',
+                        'relative rounded-2xl border-2 p-4 text-left transition-all duration-200',
                         isSelected
-                          ? 'border-primary bg-primary-container/5'
-                          : 'border-outline-variant hover:bg-surface-container-low',
+                          ? 'border-primary bg-primary/3 shadow-[0_0_0_4px_rgba(0,0,0,0.04)]'
+                          : 'border-table-border hover:border-primary/30',
                       )}
                     >
+                      {/* Selected tick */}
                       {isSelected && (
-                        <span
-                          className="material-symbols-outlined text-primary absolute top-3 right-3 text-[20px]"
-                          style={{ fontVariationSettings: "'FILL' 1" }}
-                        >
-                          check_circle
-                        </span>
+                        <div className="absolute top-3 right-3 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-white text-[10px]">✓</span>
+                        </div>
                       )}
+
                       {addr.label && (
-                        <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide mb-1">
+                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-on-surface-variant/40 mb-1">
                           {addr.label}
                         </p>
                       )}
-                      <p className="font-body-lg text-body-lg text-on-surface font-semibold mb-1">
-                        {addr.name}
-                      </p>
-                      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                      <p className="font-black text-sm text-primary mb-1">{addr.name}</p>
+                      <p className="text-xs font-medium text-on-surface-variant/70 leading-relaxed">
                         {addr.line1}
                         {addr.line2 && `, ${addr.line2}`}
                         <br />
                         {addr.city}, {addr.state} — {addr.pincode}
                       </p>
-                      <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                        {addr.phone}
-                      </p>
+                      <p className="text-xs font-medium text-on-surface-variant/50 mt-1.5">{addr.phone}</p>
 
-                      {/* Pincode check for selected address */}
+                      {/* Pincode checker */}
                       {isSelected && (
                         <div className="mt-3" onClick={(e) => e.stopPropagation()}>
                           <PincodeChecker
@@ -219,28 +229,27 @@ export default function CheckoutClient({ profileId }: Props) {
           </section>
 
           {/* ── Delivery Method ── */}
-          <section className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 md:p-6">
-            <h2 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-4">
-              <Truck size={20} className="text-primary" />
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <h2 className="font-black text-sm uppercase tracking-widest text-primary flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                <Truck size={14} className="text-white" />
+              </div>
               Delivery Method
             </h2>
-            <div className="rounded-xl border border-primary bg-primary-container/5 p-4 flex items-start gap-4">
-              <span
-                className="material-symbols-outlined text-primary mt-0.5 flex-shrink-0"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                check_circle
-              </span>
+            <div className="rounded-2xl border-2 border-primary bg-primary/3 p-4 flex items-start gap-4">
+              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white text-[10px] font-black">✓</span>
+              </div>
               <div>
-                <p className="font-body-lg text-body-lg text-on-surface font-semibold">
-                  Manual Delivery by BCR Traders
+                <p className="font-black text-sm text-primary uppercase tracking-wide">
+                  BCR Traders Direct Delivery
                 </p>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+                <p className="text-xs font-medium text-on-surface-variant/60 mt-1 leading-relaxed">
                   Our dedicated fleet delivers your order directly to your premises.
                 </p>
                 {isBulk && (
-                  <p className="font-label-sm text-label-sm text-secondary mt-2">
-                    ★ Bulk order — our team will call you to confirm delivery logistics.
+                  <p className="text-[11px] font-black text-primary/70 mt-2 uppercase tracking-wider">
+                    ★ Bulk order — our team will call you to confirm delivery.
                   </p>
                 )}
               </div>
@@ -248,36 +257,38 @@ export default function CheckoutClient({ profileId }: Props) {
           </section>
 
           {/* ── Payment Method ── */}
-          <section className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 md:p-6">
-            <h2 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-4">
-              <Wallet size={20} className="text-primary" />
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <h2 className="font-black text-sm uppercase tracking-widest text-primary flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                <Wallet size={14} className="text-white" />
+              </div>
               Payment Method
             </h2>
-            <div className="rounded-xl border border-primary bg-primary-container/5 p-4 flex items-start gap-4">
-              <span
-                className="material-symbols-outlined text-primary mt-0.5 flex-shrink-0"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                radio_button_checked
-              </span>
+            <div className="rounded-2xl border-2 border-primary bg-primary/3 p-4 flex items-start gap-4">
+              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white text-[10px] font-black">✓</span>
+              </div>
               <div>
-                <p className="font-body-lg text-body-lg text-on-surface font-semibold">
+                <p className="font-black text-sm text-primary uppercase tracking-wide">
                   Cash on Delivery (COD)
                 </p>
-                <p className="font-body-md text-body-md text-secondary font-medium mt-1">
+                <p className="text-xs font-medium text-on-surface-variant/60 mt-1">
                   Pay when your order is delivered.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* ── Order Notes ── */}
-          <section className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 md:p-6 lg:hidden">
+          {/* ── Order Notes (mobile) ── */}
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 lg:hidden">
             <label
               htmlFor="checkout-notes"
-              className="font-headline-md text-headline-md text-on-surface block mb-3"
+              className="block font-black text-sm uppercase tracking-widest text-primary mb-3"
             >
-              Order Notes <span className="font-body-md text-body-md text-on-surface-variant">(optional)</span>
+              Order Notes{' '}
+              <span className="text-[10px] normal-case tracking-normal text-on-surface-variant/50 font-medium">
+                (optional)
+              </span>
             </label>
             <textarea
               id="checkout-notes"
@@ -286,127 +297,130 @@ export default function CheckoutClient({ profileId }: Props) {
               rows={3}
               maxLength={500}
               placeholder="Special instructions, preferred delivery time…"
-              className="w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-background font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none"
+              className="w-full px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors resize-none"
             />
           </section>
         </div>
 
-        {/* ── Order Summary (right column) ── */}
-        <div className="lg:col-span-5 xl:col-span-4 mt-6 lg:mt-4 lg:sticky lg:top-24 pb-28 lg:pb-0">
-          <section className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 md:p-6">
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-4 pb-2 border-b border-outline-variant/30">
-              Order Summary
-            </h2>
+        {/* ── RIGHT — Order Summary ── */}
+        <div className="lg:col-span-5 xl:col-span-4 mt-5 lg:mt-6 lg:sticky lg:top-24 pb-28 lg:pb-0">
+          <section className="relative bg-primary rounded-2xl overflow-hidden p-5">
+            {/* Dot texture */}
+            <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
 
-            {/* Item list */}
-            <div className="space-y-3 mb-4 pb-4 border-b border-outline-variant/30">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          width={48}
-                          height={48}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <Package size={20} className="text-outline" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-body-md text-body-md text-on-surface line-clamp-1">
-                        {item.name}
-                      </p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">
-                        {item.unit} × {item.quantity}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-body-md text-body-md text-on-surface font-semibold flex-shrink-0">
-                    ₹{(item.price * item.quantity).toFixed(0)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Price breakdown */}
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between font-body-md text-body-md text-on-surface-variant">
-                <span>Subtotal ({totalItems()} items)</span>
-                <span>₹{subtotal.toFixed(0)}</span>
-              </div>
-              <div className="flex justify-between font-body-md text-body-md text-on-surface-variant">
-                <span>Delivery Fee</span>
-                <span className="text-primary font-medium">Free</span>
-              </div>
-            </div>
-
-            <div className="flex items-end justify-between border-t border-outline-variant/30 pt-4 mb-6">
-              <span className="font-body-lg text-body-lg text-on-surface font-semibold">Total</span>
-              <span className="font-headline-md text-headline-md text-primary">₹{subtotal.toFixed(0)}</span>
-            </div>
-
-            {/* Notes (desktop) */}
-            <div className="hidden lg:block mb-6">
-              <label
-                htmlFor="checkout-notes-desktop"
-                className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block mb-2"
-              >
-                Order Notes (optional)
-              </label>
-              <textarea
-                id="checkout-notes-desktop"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                maxLength={500}
-                placeholder="Special instructions…"
-                className="w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-background font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none"
-              />
-            </div>
-
-            {error && (
-              <p className="font-label-sm text-label-sm text-error mb-3">{error}</p>
-            )}
-
-            {/* Desktop place order button */}
-            <button
-              onClick={placeOrder}
-              disabled={!canPlace || isPlacing}
-              className="hidden md:flex w-full items-center justify-center gap-2 bg-primary text-on-primary font-body-lg text-body-lg font-bold py-3 px-4 rounded-full hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPlacing && <Loader2 size={18} className="animate-spin" />}
-              {isPlacing ? 'Placing Order…' : 'Place Order'}
-            </button>
-
-            {!canPlace && selectedId && pincodeResult?.serviceable === false && !isBulk && (
-              <p className="font-label-sm text-label-sm text-on-surface-variant text-center mt-2">
-                Select bulk order above to proceed with this address
+            <div className="relative z-10">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-4">
+                Order Summary
               </p>
-            )}
+
+              {/* Item list */}
+              <div className="space-y-3 mb-4 pb-4 border-b border-white/15">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={40}
+                            height={40}
+                            className="object-cover w-full h-full mix-blend-luminosity opacity-70"
+                          />
+                        ) : (
+                          <Package size={16} className="text-white/50" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-white line-clamp-1">{item.name}</p>
+                        <p className="text-[10px] text-white/40 font-medium">{item.unit} × {item.quantity}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-black text-white flex-shrink-0">
+                      ₹{(item.price * item.quantity).toFixed(0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price breakdown */}
+              <div className="space-y-2.5 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50 font-medium">Subtotal ({totalItems()} items)</span>
+                  <span className="text-white font-black">₹{subtotal.toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between text-sm pb-3 border-b border-white/15">
+                  <span className="text-white/50 font-medium">Delivery</span>
+                  <span className="text-white font-black text-xs uppercase tracking-wider">Free</span>
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between mb-5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Total</span>
+                <span className="text-2xl font-black text-white">₹{subtotal.toFixed(0)}</span>
+              </div>
+
+              {/* Notes — desktop */}
+              <div className="hidden lg:block mb-5">
+                <label
+                  htmlFor="checkout-notes-desktop"
+                  className="block text-[10px] font-black uppercase tracking-widest text-white/35 mb-2"
+                >
+                  Order Notes (optional)
+                </label>
+                <textarea
+                  id="checkout-notes-desktop"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Special instructions…"
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-white/15 bg-white/8 text-sm font-medium text-white placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors resize-none"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs font-bold text-error bg-white/10 rounded-xl px-3 py-2 mb-3">
+                  {error}
+                </p>
+              )}
+
+              {/* Desktop CTA */}
+              <button
+                onClick={placeOrder}
+                disabled={!canPlace || isPlacing}
+                className="hidden md:flex w-full items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-4 px-4 rounded-xl hover:bg-white/90 transition-all duration-200 active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPlacing && <Loader2 size={16} className="animate-spin" />}
+                {isPlacing ? 'Placing Order…' : 'Place Order'}
+              </button>
+
+              {!canPlace && selectedId && pincodeResult?.serviceable === false && !isBulk && (
+                <p className="text-[11px] font-medium text-white/40 text-center mt-3">
+                  Select bulk order above to proceed with this address
+                </p>
+              )}
+            </div>
           </section>
         </div>
       </main>
 
       {/* ── Mobile sticky bottom bar ── */}
       <div
-        className="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant/30 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40"
+        className="md:hidden fixed bottom-0 left-0 w-full bg-primary border-t-2 border-primary/50 px-4 py-3 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.3)] z-40"
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-body-lg text-body-lg text-on-surface font-semibold">Total</span>
-          <span className="font-headline-md text-headline-md text-primary">₹{subtotal.toFixed(0)}</span>
+        <div className="flex justify-between items-center mb-2.5">
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/35">Total</span>
+          <span className="text-xl font-black text-white">₹{subtotal.toFixed(0)}</span>
         </div>
-        {error && <p className="font-label-sm text-label-sm text-error mb-2">{error}</p>}
+        {error && <p className="text-xs font-bold text-error mb-2">{error}</p>}
         <button
           onClick={placeOrder}
           disabled={!canPlace || isPlacing}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary font-body-lg text-body-lg font-bold py-3 px-4 rounded-full active:scale-95 transition-transform shadow-sm disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-3.5 px-4 rounded-xl active:scale-95 transition-all duration-200 disabled:opacity-40"
         >
-          {isPlacing && <Loader2 size={18} className="animate-spin" />}
+          {isPlacing && <Loader2 size={16} className="animate-spin" />}
           {isPlacing ? 'Placing Order…' : 'Place Order'}
         </button>
       </div>

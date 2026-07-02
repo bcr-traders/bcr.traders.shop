@@ -9,9 +9,10 @@ interface Props {
   categories: Category[]
   initialQ: string
   initialCategory: string
+  hideCategoriesOnDesktop?: boolean
 }
 
-export default function SearchControls({ categories, initialQ, initialCategory }: Props) {
+export default function SearchControls({ categories, initialQ, initialCategory, hideCategoriesOnDesktop }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -83,9 +84,9 @@ export default function SearchControls({ categories, initialQ, initialCategory }
         )}
       </div>
 
-      {/* ── Category filter chips ── */}
+      {/* ── Category filter chips — hidden on desktop when sidebar handles filtering ── */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+        <div className={`flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 ${hideCategoriesOnDesktop ? 'lg:hidden' : ''}`}>
           {/* All chip */}
           <button
             onClick={() => selectCat('')}

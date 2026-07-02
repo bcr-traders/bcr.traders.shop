@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/product/ProductCard'
 import SearchControls from '@/components/search/SearchControls'
 import type { Product, Category } from '@/types/database.types'
-import { PackageSearch, Sparkles, TrendingUp } from 'lucide-react'
+import { PackageSearch, Sparkles, TrendingUp, LayoutGrid } from 'lucide-react'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,110 +72,204 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
   const heading = q
     ? `Results for "${q}"`
-    : activeCategoryName
-    ? activeCategoryName
-    : isFeatured
-    ? 'Best Sellers'
-    : 'All Products'
+    : activeCategoryName ?? (isFeatured ? 'Best Sellers' : 'All Products')
 
   const isFiltered = !!q || !!category || isFeatured
 
   return (
-    <div className="min-h-screen">
-      {/* ── Page hero strip ── */}
-      <div className="relative overflow-hidden bg-primary border-b-2 border-primary mb-6">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+
+      {/* ══════════════════════════════════════════
+          LEFT SIDEBAR — Black branded panel
+      ══════════════════════════════════════════ */}
+      <aside className="lg:w-64 xl:w-72 flex-shrink-0 bg-primary relative overflow-hidden">
         {/* Dot texture */}
-        <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
-        <div className="relative z-10 px-4 max-w-7xl mx-auto py-8 md:py-10 flex flex-col gap-1">
-          <div className="flex items-center gap-2 mb-1">
-            {isFeatured ? (
-              <TrendingUp size={14} className="text-white/50" strokeWidth={2.5} />
-            ) : (
-              <Sparkles size={14} className="text-white/50" strokeWidth={2.5} />
-            )}
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
-              {isFeatured ? 'Curated Selection' : isFiltered ? 'Filtered Results' : 'Full Catalog'}
-            </span>
-          </div>
-          <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight">
-            {heading}
-          </h1>
-          <p className="text-sm text-white/50 font-medium mt-0.5">
-            {products.length} {products.length === 1 ? 'product' : 'products'} available
-          </p>
-        </div>
-      </div>
+        <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
+        {/* Ambient orb */}
+        <div className="absolute -bottom-24 -left-12 w-64 h-64 bg-white/5 rounded-full blur-[60px] pointer-events-none" />
 
-      {/* ── Search + Filters ── */}
-      <div className="px-4 max-w-7xl mx-auto mb-6">
-        <Suspense>
-          <SearchControls
-            categories={categories}
-            initialQ={q}
-            initialCategory={category}
-          />
-        </Suspense>
-      </div>
+        <div className="relative z-10 p-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-hide flex flex-col">
 
-      {/* ── Results ── */}
-      <div className="px-4 max-w-7xl mx-auto pb-10">
-        {products.length > 0 ? (
-          <>
-            {/* Count bar */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-px flex-1 bg-table-border" />
-              <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50">
-                {products.length} {products.length === 1 ? 'Product' : 'Products'}
+          {/* Brand */}
+          <div className="mb-8 hidden lg:block">
+            <Link href="/" className="inline-block group">
+              <span className="text-2xl font-black tracking-tighter text-white lowercase group-hover:opacity-75 transition-opacity duration-300">
+                bcr traders.
               </span>
-              <div className="h-px flex-1 bg-table-border" />
-            </div>
+            </Link>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35 mt-1">
+              Wholesale Platform
+            </p>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} className="w-full" />
+          {/* Page title — desktop */}
+          <div className="mb-6 hidden lg:block border-b border-white/10 pb-6">
+            <div className="flex items-center gap-2 mb-2">
+              {isFeatured
+                ? <TrendingUp size={12} className="text-white/40" strokeWidth={2.5} />
+                : <Sparkles size={12} className="text-white/40" strokeWidth={2.5} />
+              }
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">
+                {isFeatured ? 'Curated' : isFiltered ? 'Filtered' : 'Full Catalog'}
+              </span>
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tight leading-tight">
+              {heading}
+            </h1>
+            <p className="text-xs text-white/40 font-medium mt-1">
+              {products.length} {products.length === 1 ? 'product' : 'products'}
+            </p>
+          </div>
+
+          {/* Category nav — desktop sidebar */}
+          {categories.length > 0 && (
+            <div className="hidden lg:flex flex-col gap-1 flex-1">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-2 px-1">
+                Categories
+              </p>
+
+              {/* All link */}
+              <Link
+                href="/search"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-200 ${
+                  !category && !isFeatured
+                    ? 'bg-white text-primary'
+                    : 'text-white/60 hover:text-white hover:bg-white/8'
+                }`}
+              >
+                <LayoutGrid size={14} strokeWidth={2.5} className="flex-shrink-0" />
+                All Products
+              </Link>
+
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/search?category=${cat.slug}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-200 truncate ${
+                    category === cat.slug
+                      ? 'bg-white text-primary'
+                      : 'text-white/60 hover:text-white hover:bg-white/8'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0 opacity-60" />
+                  <span className="truncate">{cat.name}</span>
+                </Link>
               ))}
             </div>
-          </>
-        ) : (
-          /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
-            {/* Icon in a styled container */}
-            <div className="relative">
-              <div className="w-20 h-20 border-2 border-table-border bg-surface-card flex items-center justify-center rounded-3xl shadow-sm">
-                <PackageSearch size={32} className="text-on-surface-variant/40" />
-              </div>
-              <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white text-[10px] font-black">0</span>
-              </div>
-            </div>
+          )}
 
-            <div className="max-w-xs">
-              <p className="font-black text-primary text-lg uppercase tracking-tight">
-                No products found
-              </p>
-              <p className="text-sm text-on-surface-variant/70 font-medium mt-1.5 leading-relaxed">
-                {q
-                  ? `No results for "${q}". Try a different term or browse all categories.`
-                  : 'No products available in this category yet.'}
-              </p>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 w-full max-w-xs mt-2">
-              <div className="h-px flex-1 bg-table-border" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">or</span>
-              <div className="h-px flex-1 bg-table-border" />
-            </div>
-
-            {/* Browse all CTA */}
-            <a
-              href="/search"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-sm"
-            >
-              Browse All Products
-            </a>
+          {/* Bottom copyright */}
+          <div className="mt-auto pt-6 hidden lg:block">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">
+              © 2025 BCR Traders
+            </p>
           </div>
-        )}
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════════════
+          RIGHT — Search + Results
+      ══════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col">
+
+        {/* Mobile hero strip */}
+        <div className="lg:hidden relative overflow-hidden bg-primary px-4 py-7">
+          <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-1">
+              {isFeatured
+                ? <TrendingUp size={12} className="text-white/50" strokeWidth={2.5} />
+                : <Sparkles size={12} className="text-white/50" strokeWidth={2.5} />
+              }
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">
+                {isFeatured ? 'Curated Selection' : isFiltered ? 'Filtered Results' : 'Full Catalog'}
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight">{heading}</h1>
+            <p className="text-xs text-white/45 font-medium mt-0.5">
+              {products.length} {products.length === 1 ? 'product' : 'products'} available
+            </p>
+          </div>
+        </div>
+
+        {/* Search bar + mobile category chips */}
+        <div className="px-4 pt-5 pb-3 border-b border-table-border bg-surface-container-low/40">
+          <Suspense>
+            <SearchControls
+              categories={categories}
+              initialQ={q}
+              initialCategory={category}
+              hideCategoriesOnDesktop
+            />
+          </Suspense>
+        </div>
+
+        {/* Results area */}
+        <div className="flex-1 px-4 py-5">
+          {products.length > 0 ? (
+            <>
+              {/* Desktop count + heading */}
+              <div className="hidden lg:flex items-center gap-3 mb-5">
+                <h1 className="text-lg font-black text-primary tracking-tight">{heading}</h1>
+                <div className="h-px flex-1 bg-table-border" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50">
+                  {products.length} {products.length === 1 ? 'Product' : 'Products'}
+                </span>
+              </div>
+
+              {/* Mobile count bar */}
+              <div className="flex lg:hidden items-center gap-3 mb-4">
+                <div className="h-px flex-1 bg-table-border" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50">
+                  {products.length} {products.length === 1 ? 'Product' : 'Products'}
+                </span>
+                <div className="h-px flex-1 bg-table-border" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} className="w-full" />
+                ))}
+              </div>
+            </>
+          ) : (
+            /* ── Empty state ── */
+            <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
+              <div className="relative">
+                <div className="w-20 h-20 border-2 border-table-border bg-surface-card flex items-center justify-center rounded-3xl shadow-sm">
+                  <PackageSearch size={32} className="text-on-surface-variant/40" />
+                </div>
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white text-[10px] font-black">0</span>
+                </div>
+              </div>
+
+              <div className="max-w-xs">
+                <p className="font-black text-primary text-lg uppercase tracking-tight">
+                  No products found
+                </p>
+                <p className="text-sm text-on-surface-variant/70 font-medium mt-1.5 leading-relaxed">
+                  {q
+                    ? `No results for "${q}". Try a different term or browse all categories.`
+                    : 'No products available in this category yet.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 w-full max-w-xs">
+                <div className="h-px flex-1 bg-table-border" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">or</span>
+                <div className="h-px flex-1 bg-table-border" />
+              </div>
+
+              <Link
+                href="/search"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-sm"
+              >
+                Browse All Products
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

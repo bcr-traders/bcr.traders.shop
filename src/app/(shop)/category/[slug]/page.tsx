@@ -99,8 +99,16 @@ export default async function CategoryPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      {/* ── Category Banner ─────────────────────────────────────────────────── */}
-      <section className="relative w-full h-[180px] md:h-[300px] bg-primary-container overflow-hidden">
+      {/* ── Category Banner ── */}
+      <section className="relative w-full h-[200px] md:h-[280px] bg-primary overflow-hidden">
+        {/* Dot texture */}
+        <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none z-10" />
+
+        {/* Ambient orb */}
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-white/5 rounded-full blur-[70px] pointer-events-none z-10" />
+        <div className="absolute -bottom-24 -left-16 w-64 h-64 bg-white/4 rounded-full blur-[60px] pointer-events-none z-10" />
+
+        {/* Background image */}
         {category.image_url ? (
           <Image
             src={category.image_url}
@@ -108,31 +116,29 @@ export default async function CategoryPage({ params }: PageProps) {
             fill
             priority
             sizes="100vw"
-            className="object-cover"
+            className="object-cover opacity-20 mix-blend-luminosity"
           />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-container via-primary to-tertiary-container" />
-        )}
+        ) : null}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* Rich gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/60 z-10" />
 
-        {/* Category name */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 lg:px-16 pb-5 md:pb-8">
-          <p className="font-label-sm text-label-sm text-primary-fixed-dim mb-1 uppercase tracking-widest">
+        {/* Content */}
+        <div className="absolute inset-0 z-20 flex flex-col justify-end px-5 md:px-10 lg:px-16 pb-7 md:pb-10 max-w-7xl mx-auto">
+          <span className="inline-block text-[9px] font-black uppercase tracking-[0.22em] text-white/40 border border-white/15 px-3 py-1.5 rounded-full w-max mb-3">
             Category
-          </p>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-white leading-tight">
+          </span>
+          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.08]">
             {category.name}
           </h1>
           {category.name_or && (
-            <p className="font-odia text-base text-white/70 mt-0.5">{category.name_or}</p>
+            <p className="font-odia text-base text-white/50 mt-1.5">{category.name_or}</p>
           )}
         </div>
       </section>
 
-      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto mt-4">
+      {/* ── Breadcrumb ── */}
+      <div className="max-w-7xl mx-auto mt-4 px-4 lg:px-0">
         <ProductBreadcrumb
           items={[
             { label: 'Home', href: '/' },
@@ -141,21 +147,28 @@ export default async function CategoryPage({ params }: PageProps) {
         />
       </div>
 
-      {/* ── Sort / Filter / Grid (Client) ───────────────────────────────────── */}
+      {/* ── Sort / Filter / Grid (Client) ── */}
       <CategoryProductsSection
         categoryId={category.id}
         initialProducts={products}
         initialTotal={total}
       />
 
-      {/* ── SEO description ─────────────────────────────────────────────────── */}
-      <section className="bg-surface-container-low border-t border-outline-variant mt-4">
-        <div className="max-w-7xl mx-auto px-4 lg:px-0 py-10">
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
-            About {category.name}
+      {/* ── SEO description ── */}
+      <section className="mt-8 border-t-2 border-table-border bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-5 lg:px-0 py-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-table-border" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">
+              About
+            </span>
+            <div className="h-px flex-1 bg-table-border" />
+          </div>
+          <h2 className="text-xl font-black text-primary tracking-tight uppercase mb-3">
+            {category.name}
           </h2>
-          <p className="font-body-lg text-body-lg text-on-surface-variant max-w-3xl leading-relaxed">
-            Discover our curated selection of <strong>{category.name}</strong> products at BCR
+          <p className="text-sm font-medium text-on-surface-variant/80 max-w-3xl leading-relaxed">
+            Discover our curated selection of <strong className="text-primary font-black">{category.name}</strong> products at BCR
             Traders. We source only the finest quality {category.name.toLowerCase()} items directly
             from trusted suppliers, ensuring freshness and value with every order. Whether you&apos;re
             stocking your pantry or shopping for your business, our {category.name.toLowerCase()}{' '}

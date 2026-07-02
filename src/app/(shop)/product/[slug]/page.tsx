@@ -197,146 +197,161 @@ export default async function ProductPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <div className="max-w-7xl mx-auto md:px-4 lg:px-0 mt-4 lg:mt-6 pb-32 lg:pb-16">
-        {/* ── Breadcrumb ── */}
-        <ProductBreadcrumb
-          items={[
-            { label: 'Home', href: '/' },
-            ...(category
-              ? [{ label: category.name, labelOr: category.name_or, href: `/category/${category.slug}` }]
-              : []),
-            { label: product.name, labelOr: product.name_or },
-          ]}
-        />
+      {/* ── Top strip (breadcrumb + back) ── */}
+      <div className="border-b-2 border-table-border bg-surface-container-low/60">
+        <div className="max-w-7xl mx-auto px-4 lg:px-0 py-2">
+          <ProductBreadcrumb
+            items={[
+              { label: 'Home', href: '/' },
+              ...(category
+                ? [{ label: category.name, labelOr: category.name_or, href: `/category/${category.slug}` }]
+                : []),
+              { label: product.name, labelOr: product.name_or },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 lg:px-0 mt-6 pb-32 lg:pb-16">
 
         {/* ── Two-column layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
-          {/* Left: Image gallery */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+
+          {/* ── Left: Image gallery ── */}
           <ProductImageGallery images={product.images ?? []} productName={product.name} />
 
-          {/* Right: Details */}
-          <div className="flex flex-col px-4 lg:px-0">
-            {/* Brand / Category badge */}
+          {/* ── Right: Details ── */}
+          <div className="flex flex-col px-0">
+
+            {/* Category badge */}
             {category && (
               <Link
                 href={`/category/${category.slug}`}
-                className="inline-block self-start px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full font-label-sm text-label-sm mb-3 hover:bg-surface-container-highest transition-colors"
+                className="inline-block self-start px-3 py-1.5 bg-primary text-white rounded-full font-black text-[10px] uppercase tracking-[0.15em] mb-4 hover:bg-primary/85 transition-colors active:scale-95"
               >
                 {category.name}
               </Link>
             )}
 
             {/* Product name */}
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile lg:font-headline-lg lg:text-headline-lg text-on-surface leading-tight mb-2">
+            <h1 className="text-2xl lg:text-3xl font-black text-primary leading-tight tracking-tight mb-2">
               {product.name}
             </h1>
+            {product.name_or && (
+              <p className="font-odia text-base text-on-surface-variant/70 mb-2">{product.name_or}</p>
+            )}
 
             {/* SKU */}
             {product.sku && (
-              <p className="font-label-sm text-label-sm text-on-surface-variant mb-3">
+              <p className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-3">
                 SKU: {product.sku}
               </p>
             )}
 
             {/* Rating */}
             {stats.count > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className="material-symbols-outlined text-secondary text-[18px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  star
-                </span>
-                <span className="font-label-sm text-label-sm text-on-surface">{stats.avg}</span>
-                <span className="font-body-md text-body-md text-on-surface-variant">
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b-2 border-table-border">
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`text-sm ${i < Math.round(stats.avg) ? 'text-primary' : 'text-on-surface-variant/20'}`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-sm font-black text-primary">{stats.avg}</span>
+                <span className="text-xs font-medium text-on-surface-variant/60">
                   ({stats.count} {stats.count === 1 ? 'review' : 'reviews'})
                 </span>
               </div>
             )}
 
-            {/* Pricing box */}
-            <div className="bg-surface-container-low border border-outline-variant rounded-lg p-4 mb-6 shadow-sm">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <span className="font-body-md text-body-md text-on-surface-variant block mb-0.5">
-                    Price per {product.unit}
-                  </span>
+            {/* ── Pricing box ── */}
+            <div className="border-2 border-primary rounded-2xl p-5 mb-5 relative overflow-hidden">
+              {/* Subtle dot texture */}
+              <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle,#000_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
+
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50 mb-2">
+                  Price per {product.unit}
+                </p>
+                <div className="flex items-end justify-between">
                   <div className="flex items-baseline gap-3">
-                    <span className="font-headline-md text-headline-md text-primary">
+                    <span className="text-4xl font-black text-primary tracking-tight">
                       ₹{product.price}
                     </span>
                     {product.mrp && product.mrp > product.price && (
-                      <span className="font-body-md text-body-md text-on-surface-variant line-through">
-                        MRP ₹{product.mrp}
+                      <span className="text-base font-medium text-on-surface-variant/40 line-through">
+                        ₹{product.mrp}
                       </span>
                     )}
                   </div>
-                </div>
-                {discount && (
-                  <div className="bg-secondary text-on-secondary font-label-sm text-label-sm px-3 py-1 rounded-full flex-shrink-0">
-                    Save {discount}%
-                  </div>
-                )}
-              </div>
-
-              {/* Stock status */}
-              {product.stock_quantity === 0 ? (
-                <p className="font-label-sm text-label-sm text-error flex items-center gap-1 mt-2 pt-2 border-t border-outline-variant/50">
-                  <span className="material-symbols-outlined text-[14px]">
-                    do_not_disturb_on
-                  </span>
-                  Out of Stock
-                </p>
-              ) : (
-                <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-1 mt-2 pt-2 border-t border-outline-variant/50">
-                  <span className="material-symbols-outlined text-primary text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    check_circle
-                  </span>
-                  In Stock
-                  {product.stock_quantity <= 10 && (
-                    <span className="text-error ml-1">— only {product.stock_quantity} left</span>
+                  {discount && (
+                    <div className="bg-primary text-white font-black text-sm px-3 py-1.5 rounded-xl flex-shrink-0">
+                      Save {discount}%
+                    </div>
                   )}
-                </p>
-              )}
+                </div>
+
+                {/* Stock status */}
+                <div className="mt-3 pt-3 border-t border-table-border">
+                  {product.stock_quantity === 0 ? (
+                    <p className="text-[11px] font-black uppercase tracking-widest text-error flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-error" />
+                      Out of Stock
+                    </p>
+                  ) : (
+                    <p className="text-[11px] font-black uppercase tracking-widest text-success flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-success" />
+                      In Stock
+                      {product.stock_quantity <= 10 && (
+                        <span className="text-error font-black ml-1">— only {product.stock_quantity} left</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Unit badge */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="px-3 py-1 bg-surface-container border border-outline-variant rounded-full font-label-sm text-label-sm text-on-surface-variant">
+            {/* Unit + Featured badges */}
+            <div className="flex items-center gap-2 mb-5">
+              <span className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
                 {product.unit}
                 {product.unit_or && ` / ${product.unit_or}`}
               </span>
               {product.is_featured && (
-                <span className="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-label-sm text-label-sm">
+                <span className="px-3 py-1.5 bg-primary text-white border-2 border-primary rounded-xl font-black text-[11px] uppercase tracking-wider">
                   Featured
                 </span>
               )}
             </div>
 
-            {/* Desktop actions (Add to Cart + Buy Now) */}
+            {/* Desktop actions */}
             <ProductActions product={product} />
 
-            {/* Collapsible sections */}
-            <div className="mt-6 border-t border-outline-variant hidden lg:block">
+            {/* Collapsible description + tags — desktop */}
+            <div className="mt-6 border-t-2 border-table-border hidden lg:block">
               {product.description && (
-                <details className="group border-b border-outline-variant" open>
-                  <summary className="flex items-center justify-between cursor-pointer py-4 font-headline-md text-headline-md text-on-surface hover:text-primary transition-colors select-none">
+                <details className="group border-b-2 border-table-border" open>
+                  <summary className="flex items-center justify-between cursor-pointer py-4 font-black text-sm uppercase tracking-widest text-primary hover:text-primary/70 transition-colors select-none">
                     Product Description
-                    <span className="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">
+                    <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
                       expand_more
                     </span>
                   </summary>
-                  <div className="pb-4 font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                  <div className="pb-5 text-sm font-medium text-on-surface-variant/80 leading-relaxed">
                     {product.description}
                   </div>
                 </details>
               )}
 
               {product.tags && product.tags.length > 0 && (
-                <details className="group border-b border-outline-variant">
-                  <summary className="flex items-center justify-between cursor-pointer py-4 font-headline-md text-headline-md text-on-surface hover:text-primary transition-colors select-none">
+                <details className="group border-b-2 border-table-border">
+                  <summary className="flex items-center justify-between cursor-pointer py-4 font-black text-sm uppercase tracking-widest text-primary hover:text-primary/70 transition-colors select-none">
                     Tags
-                    <span className="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">
+                    <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
                       expand_more
                     </span>
                   </summary>
@@ -344,7 +359,7 @@ export default async function ProductPage({ params }: PageProps) {
                     {product.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-surface-container border border-outline-variant rounded-full font-label-sm text-label-sm text-on-surface-variant"
+                        className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant hover:border-primary hover:text-primary transition-colors duration-200 cursor-default"
                       >
                         {tag}
                       </span>
@@ -356,17 +371,17 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* ── Mobile description (below grid) ── */}
+        {/* ── Mobile description ── */}
         {product.description && (
-          <div className="px-4 mt-6 lg:hidden">
-            <details className="group border border-outline-variant rounded-xl overflow-hidden" open>
-              <summary className="flex items-center justify-between cursor-pointer p-4 font-headline-md text-headline-md text-on-surface bg-surface-container-low select-none">
+          <div className="mt-6 lg:hidden">
+            <details className="group border-2 border-table-border rounded-2xl overflow-hidden" open>
+              <summary className="flex items-center justify-between cursor-pointer p-4 font-black text-sm uppercase tracking-widest text-primary bg-surface-container-low select-none">
                 Product Description
-                <span className="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">
+                <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
                   expand_more
                 </span>
               </summary>
-              <div className="p-4 font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+              <div className="p-4 text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t-2 border-table-border">
                 {product.description}
               </div>
             </details>
@@ -375,25 +390,41 @@ export default async function ProductPage({ params }: PageProps) {
 
         {/* ── FAQs ── */}
         {faqs.length > 0 && (
-          <div className="border-t border-outline-variant mt-8">
+          <div className="mt-10">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-px flex-1 bg-table-border" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">FAQs</span>
+              <div className="h-px flex-1 bg-table-border" />
+            </div>
             <ProductFAQ faqs={faqs} />
           </div>
         )}
 
         {/* ── Reviews ── */}
-        <ProductReviews
-          productId={product.id}
-          productName={product.name}
-          reviews={reviews}
-          stats={stats}
-        />
+        <div className="mt-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px flex-1 bg-table-border" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Reviews</span>
+            <div className="h-px flex-1 bg-table-border" />
+          </div>
+          <ProductReviews
+            productId={product.id}
+            productName={product.name}
+            reviews={reviews}
+            stats={stats}
+          />
+        </div>
 
         {/* ── You May Also Like ── */}
         {related.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 lg:px-0 py-8 border-t border-outline-variant">
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-4">
-              You May Also Like
-            </h2>
+          <section className="mt-10">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-px flex-1 bg-table-border" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">
+                You May Also Like
+              </span>
+              <div className="h-px flex-1 bg-table-border" />
+            </div>
             <ProductGrid products={related} />
           </section>
         )}

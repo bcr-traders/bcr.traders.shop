@@ -67,42 +67,27 @@ function statusLabel(s: Order['status']) {
 // ── Order item row ────────────────────────────────────────────────────────────
 function OrderItemRow({ item }: { item: OrderItem }) {
   return (
-    <div className="bg-surface-card rounded-xl border border-table-border shadow-sm p-4 flex gap-4 items-center hover:shadow-md transition-shadow">
-      <div className="w-20 h-20 bg-surface-container-low rounded-xl overflow-hidden flex-shrink-0 relative border border-table-border">
+    <div className="bg-surface-card rounded-2xl border-2 border-table-border p-4 flex gap-4 items-center hover:border-primary/30 transition-colors duration-200">
+      <div className="w-20 h-20 bg-surface-container-low rounded-xl overflow-hidden flex-shrink-0 relative border-2 border-table-border">
         {item.image ? (
-          <Image
-            src={item.image}
-            alt={item.name}
-            fill
-            sizes="80px"
-            className="object-cover mix-blend-multiply"
-          />
+          <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover mix-blend-multiply" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Package size={28} className="text-outline" />
+            <Package size={24} className="text-on-surface-variant/30" />
           </div>
         )}
       </div>
-
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h4 className="font-bold text-on-surface text-sm leading-snug truncate">{item.name}</h4>
-          <p className="font-bold text-primary text-base whitespace-nowrap flex-shrink-0">
-            {fmt(item.price)}
-          </p>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <h4 className="font-black text-primary text-sm leading-snug truncate">{item.name}</h4>
+          <p className="font-black text-primary text-base whitespace-nowrap flex-shrink-0">{fmt(item.price)}</p>
         </div>
-        <div className="flex flex-wrap gap-2 mb-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
-            {item.unit}
-          </span>
-        </div>
+        <span className="inline-block border border-table-border rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-on-surface-variant/50 mb-2">
+          {item.unit}
+        </span>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-on-surface-variant">
-            Qty: <span className="font-semibold text-on-surface">{item.quantity}</span>
-          </span>
-          <span className="text-sm font-bold text-on-surface">
-            Total: {fmt(item.price * item.quantity)}
-          </span>
+          <span className="text-xs font-medium text-on-surface-variant/60">Qty: <span className="font-black text-primary">{item.quantity}</span></span>
+          <span className="text-sm font-black text-primary">Total: {fmt(item.price * item.quantity)}</span>
         </div>
       </div>
     </div>
@@ -328,201 +313,159 @@ export default function OrderDetailClient({
 
   return (
     <>
-      {/* ── Success overlay ── */}
       <AnimatePresence>
-        {showSuccess && (
-          <SuccessOverlay order={order} onDismiss={handleDismissSuccess} />
-        )}
+        {showSuccess && <SuccessOverlay order={order} onDismiss={handleDismissSuccess} />}
       </AnimatePresence>
 
-      {/* ── Review popup ── */}
       {showReview && currentReviewItem && (
-        <ReviewPopup
-          productId={currentReviewItem.product_id}
-          productName={currentReviewItem.name}
-          onClose={handleNextReview}
-        />
+        <ReviewPopup productId={currentReviewItem.product_id} productName={currentReviewItem.name} onClose={handleNextReview} />
       )}
 
-      {/* ── Order detail page ── */}
-      <div className="max-w-4xl mx-auto px-4 py-4 pb-24 md:pb-8">
-        {/* Page header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => router.push('/orders')}
-            className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant flex items-center justify-center active:scale-95"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-xl text-on-surface">Order Details</h1>
-            <p className="text-sm text-on-surface-variant font-mono">#{orderId}</p>
+      <div className="min-h-screen">
+        {/* ── Hero strip ── */}
+        <div className="relative overflow-hidden bg-primary border-b-2 border-primary mb-6">
+          <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
+          <div className="relative z-10 px-4 max-w-4xl mx-auto py-7 md:py-9 flex items-end justify-between gap-4">
+            <div>
+              <button onClick={() => router.push('/orders')} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white/70 transition-colors mb-2">
+                <ArrowLeft size={12} strokeWidth={2.5} /> Orders
+              </button>
+              <h1 className="text-2xl font-black text-white tracking-tight">Order Details</h1>
+              <p className="text-xs text-white/45 font-black mt-0.5 uppercase tracking-wider">#{orderId}</p>
+            </div>
+            <span className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border-2 flex-shrink-0 ${
+              order.status === 'delivered' ? 'border-success/50 text-success bg-success/10'
+              : order.status === 'cancelled' || order.status === 'returned' ? 'border-error/50 text-error bg-error/10'
+              : 'border-white/30 text-white bg-white/10'
+            }`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {statusLabel(order.status)}
+            </span>
           </div>
-          <span
-            className={[
-              'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider',
-              order.status === 'delivered'
-                ? 'bg-green-100 text-green-800'
-                : order.status === 'cancelled'
-                ? 'bg-error-container text-on-error-container'
-                : 'bg-secondary-container text-on-secondary-container',
-            ].join(' ')}
-          >
-            {statusLabel(order.status)}
-          </span>
         </div>
 
-        {/* Status tracker card */}
-        <section className="bg-surface-card rounded-xl border border-table-border shadow-sm p-5 mb-4">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-1">
-                Order Date
-              </p>
-              <p className="font-semibold text-on-surface text-sm">
-                {fmtDateTime(order.created_at)}
-              </p>
-            </div>
-            <div className="md:text-right">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-1">
-                Estimated Delivery
-              </p>
-              <p className="font-bold text-primary text-sm flex items-center gap-1 md:justify-end">
-                <CalendarCheck size={14} />
-                {estimatedDelivery(order)}
-              </p>
-            </div>
-          </div>
-          <OrderTimeline status={order.status} />
-        </section>
+        <div className="max-w-4xl mx-auto px-4 pb-10">
 
-        {/* Admin custom message */}
-        {order.custom_message && (
-          <div className="bg-secondary-container rounded-xl border border-table-border p-4 mb-4 flex items-start gap-3">
-            <span className="text-on-secondary-container text-xs font-bold uppercase tracking-widest mt-0.5">
-              Note from BCR Traders
-            </span>
-            <p className="text-sm text-on-secondary-container">{order.custom_message}</p>
-          </div>
-        )}
-
-        {/* Items */}
-        <section className="mb-4">
-          <h3 className="font-bold text-on-surface text-base mb-3">
-            Items Ordered ({order.items.length} {order.items.length === 1 ? 'item' : 'items'})
-          </h3>
-          <div className="flex flex-col gap-3">
-            {order.items.map((item, idx) => (
-              <OrderItemRow key={`${item.product_id}-${idx}`} item={item} />
-            ))}
-          </div>
-        </section>
-
-        {/* Details bento grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          {/* Delivery address */}
-          <div className="bg-surface-card rounded-xl border border-table-border shadow-sm p-5 flex flex-col">
-            <div className="flex items-center gap-2 mb-3">
-              <MapPin size={18} className="text-primary flex-shrink-0" />
-              <h4 className="font-bold text-on-surface text-sm">Delivery Address</h4>
-            </div>
-            <div className="text-sm text-on-surface-variant space-y-1 flex-1">
-              <p className="font-semibold text-on-surface">{order.address.name}</p>
-              <p>{order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ''}</p>
-              <p>{order.address.city}, {order.address.state} {order.address.pincode}</p>
-              <p className="flex items-center gap-1 text-on-surface pt-1.5">
-                <span className="text-outline">📞</span> {order.address.phone}
-              </p>
-            </div>
-          </div>
-
-          {/* Payment */}
-          <div className="bg-surface-card rounded-xl border border-table-border shadow-sm p-5 flex flex-col">
-            <div className="flex items-center gap-2 mb-3">
-              <CreditCard size={18} className="text-primary flex-shrink-0" />
-              <h4 className="font-bold text-on-surface text-sm">Payment Method</h4>
-            </div>
-            <div className="flex-1 flex flex-col justify-center items-center py-3 bg-surface-container-low rounded-xl border border-table-border">
-              <p className="text-2xl font-bold text-on-surface mb-1">C.O.D.</p>
-              <p className="text-xs text-on-surface-variant text-center px-4">
-                Cash on Delivery<br />
-                Please have exact change ready.
-              </p>
-            </div>
-          </div>
-
-          {/* Order summary */}
-          <div className="bg-surface-card rounded-xl border border-table-border shadow-sm p-5 flex flex-col md:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2 mb-3">
-              <Receipt size={18} className="text-primary flex-shrink-0" />
-              <h4 className="font-bold text-on-surface text-sm">Order Summary</h4>
-            </div>
-            <div className="flex flex-col gap-2 text-sm flex-1">
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
-                <span className="font-semibold text-on-surface">{fmt(order.subtotal)}</span>
+          {/* Status tracker */}
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 mb-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-5">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Order Date</p>
+                <p className="font-black text-primary text-sm">{fmtDateTime(order.created_at)}</p>
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-on-surface-variant">
-                  <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
-                  <span className="font-semibold text-error">-{fmt(discount)}</span>
+              <div className="md:text-right">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Estimated Delivery</p>
+                <p className="font-black text-primary text-sm flex items-center gap-1 md:justify-end">
+                  <CalendarCheck size={13} strokeWidth={2.5} /> {estimatedDelivery(order)}
+                </p>
+              </div>
+            </div>
+            <OrderTimeline status={order.status} />
+          </section>
+
+          {/* Admin note */}
+          {order.custom_message && (
+            <div className="border-2 border-primary/30 bg-primary/4 rounded-2xl p-4 mb-4 flex items-start gap-3">
+              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-primary/60 mt-0.5 flex-shrink-0">Note</span>
+              <p className="text-sm font-medium text-on-surface/80">{order.custom_message}</p>
+            </div>
+          )}
+
+          {/* Items */}
+          <section className="mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-px flex-1 bg-table-border" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">
+                {order.items.length} {order.items.length === 1 ? 'Item' : 'Items'} Ordered
+              </span>
+              <div className="h-px flex-1 bg-table-border" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {order.items.map((item, idx) => (
+                <OrderItemRow key={`${item.product_id}-${idx}`} item={item} />
+              ))}
+            </div>
+          </section>
+
+          {/* Info bento grid */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            {/* Delivery address */}
+            <div className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                  <MapPin size={14} className="text-white" />
                 </div>
-              )}
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Delivery Fee</span>
-                <span className={order.delivery_fee === 0 ? 'font-bold text-primary' : 'font-semibold text-on-surface'}>
-                  {order.delivery_fee === 0 ? 'FREE' : fmt(order.delivery_fee)}
-                </span>
+                <h4 className="font-black text-sm uppercase tracking-wider text-primary">Delivery Address</h4>
               </div>
-              <hr className="border-table-border my-1" />
-              <div className="flex justify-between items-end">
-                <span className="font-bold text-on-surface">Grand Total</span>
-                <span className="font-bold text-xl text-primary">{fmt(order.total)}</span>
+              <div className="text-sm space-y-1">
+                <p className="font-black text-primary">{order.address.name}</p>
+                <p className="text-on-surface-variant/70 font-medium">{order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ''}</p>
+                <p className="text-on-surface-variant/70 font-medium">{order.address.city}, {order.address.state} {order.address.pincode}</p>
+                <p className="text-on-surface-variant/60 font-medium pt-1">{order.address.phone}</p>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* Skipped items warning */}
-        {skippedItems.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-error-container border border-error/20 mb-3">
-            <AlertTriangle size={18} className="text-error flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-on-error-container mb-1">
-                {skippedItems.length} item{skippedItems.length > 1 ? 's' : ''} skipped (out of stock)
-              </p>
-              <p className="text-xs text-on-error-container/80">
-                {skippedItems.join(', ')}
-              </p>
+            {/* Payment */}
+            <div className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                  <CreditCard size={14} className="text-white" />
+                </div>
+                <h4 className="font-black text-sm uppercase tracking-wider text-primary">Payment</h4>
+              </div>
+              <div className="flex flex-col justify-center items-center py-4 bg-primary/4 rounded-xl border-2 border-primary/20">
+                <p className="text-2xl font-black text-primary mb-1">C.O.D.</p>
+                <p className="text-[11px] font-medium text-on-surface-variant/60 text-center">Cash on Delivery</p>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-table-border">
-          <button
-            onClick={() => window.print()}
-            className="px-5 py-3 rounded-xl text-sm font-semibold text-on-surface bg-transparent border border-table-border hover:bg-surface-container-low active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden"
-          >
-            <Printer size={16} /> Print Invoice
-          </button>
-          <a
-            href={`/api/orders/${order.id}/invoice`}
-            download
-            className="px-5 py-3 rounded-xl text-sm font-semibold text-on-surface bg-transparent border border-table-border hover:bg-surface-container-low active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden"
-          >
-            <Download size={16} /> Download PDF
-          </a>
-          <button
-            onClick={handleReorder}
-            disabled={reordering}
-            className="px-6 py-3 rounded-xl text-sm font-semibold text-on-primary bg-primary hover:opacity-90 shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {reordering ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-            Reorder Items
-          </button>
+            {/* Order summary */}
+            <div className="relative bg-primary rounded-2xl overflow-hidden p-5 md:col-span-2 lg:col-span-1">
+              <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
+                    <Receipt size={14} className="text-white" />
+                  </div>
+                  <h4 className="font-black text-sm uppercase tracking-wider text-white">Summary</h4>
+                </div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <div className="flex justify-between"><span className="text-white/50 font-medium">Subtotal ({totalItems})</span><span className="text-white font-black">{fmt(order.subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between"><span className="text-white/50 font-medium">Discount</span><span className="text-white font-black">-{fmt(discount)}</span></div>}
+                  <div className="flex justify-between pb-2 border-b border-white/15"><span className="text-white/50 font-medium">Delivery</span><span className="text-white font-black">{order.delivery_fee === 0 ? 'FREE' : fmt(order.delivery_fee)}</span></div>
+                  <div className="flex justify-between items-end pt-1"><span className="text-[10px] font-black uppercase tracking-widest text-white/40">Grand Total</span><span className="font-black text-2xl text-white">{fmt(order.total)}</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Skipped items */}
+          {skippedItems.length > 0 && (
+            <div className="flex items-start gap-3 p-4 rounded-2xl border-2 border-error/30 bg-error/5 mb-4">
+              <AlertTriangle size={16} className="text-error flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-black text-error uppercase tracking-wide mb-1">{skippedItems.length} item{skippedItems.length > 1 ? 's' : ''} out of stock</p>
+                <p className="text-xs font-medium text-on-surface-variant/70">{skippedItems.join(', ')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t-2 border-table-border">
+            <button onClick={() => window.print()} className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
+              <Printer size={15} /> Print
+            </button>
+            <a href={`/api/orders/${order.id}/invoice`} download className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
+              <Download size={15} /> Download PDF
+            </a>
+            <button onClick={handleReorder} disabled={reordering} className="px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest text-white bg-primary border-2 border-primary hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+              {reordering ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} Reorder
+            </button>
+          </div>
         </div>
       </div>
     </>
   )
 }
+
+
