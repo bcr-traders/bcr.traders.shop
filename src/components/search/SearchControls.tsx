@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition, useRef, useEffect } from 'react'
-import { Search, X, SlidersHorizontal } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import type { Category } from '@/types/database.types'
 
 interface Props {
@@ -51,12 +51,13 @@ export default function SearchControls({ categories, initialQ, initialCategory }
   }
 
   return (
-    <div className="space-y-3">
-      {/* Search input */}
-      <div className="relative">
+    <div className="space-y-4">
+      {/* ── Search bar ── */}
+      <div className="relative group">
         <Search
           size={17}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+          className={`absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200 ${isPending ? 'text-primary' : 'text-on-surface-variant/50 group-focus-within:text-primary'
+            }`}
         />
         <input
           ref={inputRef}
@@ -64,44 +65,46 @@ export default function SearchControls({ categories, initialQ, initialCategory }
           defaultValue={initialQ}
           onChange={handleInput}
           placeholder="Search products, brands…"
-          className="w-full pl-10 pr-10 py-3 bg-surface-card border border-table-border rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors shadow-sm"
+          className="w-full pl-11 pr-10 py-3.5 bg-surface-card border-2 border-table-border rounded-2xl text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-all duration-200 shadow-sm focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)]"
         />
+        {/* Clear button */}
         {initialQ && (
           <button
             onClick={clearQ}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-on-surface/8 hover:bg-on-surface/15 text-on-surface-variant hover:text-primary transition-all duration-150 active:scale-90"
             aria-label="Clear search"
           >
-            <X size={16} />
+            <X size={13} strokeWidth={2.5} />
           </button>
         )}
+        {/* Loading spinner */}
         {isPending && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         )}
       </div>
 
-      {/* Category filter chips */}
+      {/* ── Category filter chips ── */}
       {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+          {/* All chip */}
           <button
             onClick={() => selectCat('')}
-            className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-              !initialCategory
-                ? 'bg-primary text-on-primary border-primary'
-                : 'bg-surface-card border-table-border text-on-surface-variant hover:border-primary hover:text-primary'
-            }`}
+            className={`flex-shrink-0 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl border-2 transition-all duration-200 active:scale-95 ${!initialCategory
+                ? 'bg-primary text-on-primary border-primary shadow-sm'
+                : 'bg-surface-card border-table-border text-on-surface-variant hover:border-primary/50 hover:text-primary'
+              }`}
           >
             All
           </button>
+
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => selectCat(cat.slug)}
-              className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-                initialCategory === cat.slug
-                  ? 'bg-primary text-on-primary border-primary'
-                  : 'bg-surface-card border-table-border text-on-surface-variant hover:border-primary hover:text-primary'
-              }`}
+              className={`flex-shrink-0 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl border-2 transition-all duration-200 active:scale-95 whitespace-nowrap ${initialCategory === cat.slug
+                  ? 'bg-primary text-on-primary border-primary shadow-sm'
+                  : 'bg-surface-card border-table-border text-on-surface-variant hover:border-primary/50 hover:text-primary'
+                }`}
             >
               {cat.name}
             </button>
