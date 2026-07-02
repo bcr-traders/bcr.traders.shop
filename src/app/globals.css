@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@tailwind utilities;
+@tailwind components;
 
 @theme {
   /* Brand color palette */
@@ -58,15 +60,15 @@
   --color-inverse-on-surface: #f4f0e8;
 
   /* Extra surface / border tokens */
-  --color-surface-card:    #ffffff;
-  --color-table-border:    #e5e1d9;
+  --color-surface-card: #ffffff;
+  --color-table-border: #e5e1d9;
 
   /* Status colours */
-  --color-status-placed:     #6B7280;
-  --color-status-confirmed:  #3B82F6;
-  --color-status-packed:     #F59E0B;
-  --color-status-shipping:   #8B5CF6;
-  --color-status-delivered:  #0C831F;
+  --color-status-placed: #6B7280;
+  --color-status-confirmed: #3B82F6;
+  --color-status-packed: #F59E0B;
+  --color-status-shipping: #8B5CF6;
+  --color-status-delivered: #0C831F;
 
   /* Font families */
   --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
@@ -108,8 +110,8 @@
   --radius-pill: 9999px;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.12);
 
   /* Success / Add-to-cart green */
   --color-success: #16a34a;
@@ -118,13 +120,21 @@
 }
 
 /* Remove default disclosure triangle from <details> */
-details > summary { list-style: none; }
-details > summary::-webkit-details-marker { display: none; }
+details>summary {
+  list-style: none;
+}
+
+details>summary::-webkit-details-marker {
+  display: none;
+}
 
 /* Admin dashboard chart animation */
 @keyframes chart-draw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
+
 @utility animate-chart {
   stroke-dasharray: 1500;
   stroke-dashoffset: 1500;
@@ -132,8 +142,13 @@ details > summary::-webkit-details-marker { display: none; }
 }
 
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @utility animate-marquee {
@@ -143,7 +158,10 @@ details > summary::-webkit-details-marker { display: none; }
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility font-odia {
@@ -157,8 +175,11 @@ body {
 }
 
 @media print {
+
   /* Hide all site chrome — only the order detail content prints */
-  header, nav, footer,
+  header,
+  nav,
+  footer,
   [data-print-hide],
   .print\:hidden {
     display: none !important;
@@ -171,14 +192,16 @@ body {
   }
 
   /* Expand the order detail to fill the page */
-  main, .max-w-4xl {
+  main,
+  .max-w-4xl {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
   /* Ensure cards print with visible borders */
-  .border, [class*="border-"] {
+  .border,
+  [class*="border-"] {
     border-color: #ccc !important;
   }
 
