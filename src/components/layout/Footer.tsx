@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react'
+import { Phone, Mail, MapPin } from 'lucide-react'
 
 const LINKS = [
   { label: 'Home', href: '/' },
@@ -11,45 +11,48 @@ const LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="mt-24 relative overflow-hidden bg-primary text-white border-t-2 border-primary">
-      <div className="relative z-10 px-6 md:px-12 py-16 md:py-24 max-w-[1400px] mx-auto flex flex-col md:flex-row gap-16 md:justify-between">
-        {/* Brand & Info */}
-        <div className="flex flex-col">
-          <ul className="flex flex-col gap-6 text-sm font-black uppercase tracking-widest text-white/70">
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <MapPin size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
-              <span className="max-w-[200px] leading-relaxed">
-                Malgodown, Cuttack<br />Odisha 753003
-              </span>
+    <footer className="mt-12 border-t border-table-border/60 bg-surface-container-low text-center md:text-left">
+      <div className="px-4 py-12 max-w-7xl mx-auto md:flex md:gap-16 md:items-start">
+        {/* Brand */}
+        <div className="mb-10 md:mb-0 md:flex-1">
+          <h4 className="font-black tracking-tight text-primary text-2xl mb-3">BCR Traders</h4>
+          <p className="text-xs md:text-sm font-medium text-on-surface-variant/80 leading-relaxed max-w-sm mx-auto md:mx-0">
+            {process.env.NEXT_PUBLIC_APP_TAGLINE ??
+              "Odisha's trusted wholesale distributor for commodities."}
+          </p>
+          <ul className="mt-6 flex flex-col gap-3.5 text-xs text-on-surface-variant items-center md:items-start font-medium">
+            <li className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <MapPin size={14} className="text-primary flex-shrink-0" />
+              </div>
+              <span className="text-on-surface-variant">Malgodown, Cuttack, Odisha 753003</span>
             </li>
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <Phone size={24} strokeWidth={2.5} className="group-hover:-rotate-12 transition-transform duration-300" />
-              <span>+91 98765 43210</span>
+            <li className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Phone size={14} className="text-primary flex-shrink-0" />
+              </div>
+              <span className="text-on-surface-variant">+91 98765 43210</span>
             </li>
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <Mail size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
-              <span>wholesale@bcrtraders.in</span>
+            <li className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail size={14} className="text-primary flex-shrink-0" />
+              </div>
+              <span className="text-on-surface-variant">wholesale@bcrtraders.in</span>
             </li>
           </ul>
         </div>
 
         {/* Links */}
-        <div className="flex flex-col md:items-end">
-          <h5 className="font-black text-white/50 text-[10px] uppercase tracking-[0.2em] mb-6">
-            Directory
-          </h5>
-          <ul className="flex flex-col gap-2">
+        <div className="mb-10 md:mb-0 pb-16 md:pb-0"> {/* padding bottom for mobile floating nav */}
+          <h5 className="font-black text-primary text-xs uppercase tracking-widest mb-4">Quick Links</h5>
+          <ul className="flex flex-col md:flex-row flex-wrap justify-center md:justify-start gap-x-6 gap-y-3">
             {LINKS.map(({ label, href }) => (
-              <li key={href} className="flex justify-start md:justify-end overflow-hidden">
+              <li key={href}>
                 <Link
                   href={href}
-                  className="group flex items-center gap-3 text-2xl md:text-4xl font-black text-white hover:text-white/80 transition-colors uppercase tracking-tighter"
+                  className="text-xs font-bold text-on-surface-variant/80 hover:text-primary underline underline-offset-4 decoration-transparent hover:decoration-primary/30 transition-all duration-200"
                 >
-                  <ArrowRight size={24} strokeWidth={3} className="opacity-0 -ml-8 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 ease-out" />
-                  <span className="relative">
-                    {label}
-                    <span className="absolute -bottom-1 left-0 w-0 h-[3px] bg-white group-hover:w-full transition-all duration-300 rounded-none" />
-                  </span>
+                  {label}
                 </Link>
               </li>
             ))}
@@ -57,20 +60,10 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Massive Typography Logo */}
-      <div className="w-full border-t border-white/20 pt-8 pb-32 md:pb-8 flex flex-col items-center justify-center overflow-hidden">
-        <Link href="/" className="inline-block group hover:scale-[1.02] transition-transform duration-700">
-          <h4 className="font-black tracking-tighter text-white text-[5rem] sm:text-[8rem] md:text-[12rem] lg:text-[16rem] leading-[0.75] lowercase px-4 text-center">
-            bcr traders.
-          </h4>
-        </Link>
-        <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-[10px] font-black tracking-[0.2em] text-white/50 uppercase">
-          <span>© 2025 BCR Traders</span>
-          <span className="hidden md:inline">·</span>
-          <span>Wholesale Distributor</span>
-          <span className="hidden md:inline">·</span>
-          <span>Odisha</span>
-        </div>
+      <div className="border-t border-table-border/50 text-center pb-24 pt-6 md:pb-6 md:pt-6 bg-surface-container">
+        <p className="text-[10px] font-bold tracking-wider text-secondary/60 uppercase">
+          © 2025 BCR Traders · Wholesale Distributor · Odisha
+        </p>
       </div>
     </footer>
   )

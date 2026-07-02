@@ -28,21 +28,22 @@ export default function ProductCard({ product, className }: ProductCardProps) {
   return (
     <div
       className={cn(
-        'w-40 md:w-48 flex-shrink-0 bg-background border-2 border-primary flex flex-col group relative',
-        'hover:-translate-y-1 hover:translate-x-1 hover:shadow-[-6px_6px_0px_#000000] transition-all duration-300',
+        'w-40 md:w-44 flex-shrink-0 bg-gradient-to-b from-surface-card to-surface-container-low/30 border border-table-border/60 hover:border-primary/30 rounded-2xl overflow-hidden flex flex-col group relative',
+        'shadow-[0_4px_12px_rgba(38,23,12,0.03)] hover:shadow-[0_16px_40px_rgba(38,23,12,0.12)] hover:-translate-y-1.5 transition-all duration-500',
         className,
       )}
     >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none mix-blend-overlay z-20" />
       <Link href={`/product/${product.slug}`} className="block flex-1 relative z-10">
         {/* ── Square image ── */}
-        <div className="relative aspect-square w-full bg-surface-container-low overflow-hidden border-b-2 border-primary p-4">
+        <div className="relative aspect-square w-full bg-surface-container-low/50 overflow-hidden">
           {product.images?.[0] ? (
             <Image
               src={product.images[0]}
               alt={name}
               fill
-              sizes="(max-width: 768px) 160px, 192px"
-              className="object-contain p-4 mix-blend-multiply grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+              sizes="(max-width: 768px) 160px, 176px"
+              className="object-cover p-3 mix-blend-multiply group-hover:scale-103 transition-transform duration-300"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -52,43 +53,48 @@ export default function ProductCard({ product, className }: ProductCardProps) {
 
           {/* Discount badge */}
           {discount && !outOfStock && (
-            <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-black px-2 py-0.5 shadow-sm uppercase tracking-widest">
+            <span className="absolute top-2 left-2 bg-gradient-to-r from-success to-success/90 text-on-success text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs">
               -{discount}%
             </span>
           )}
 
           {/* Out of stock overlay */}
           {outOfStock && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-white px-3 py-1.5 border-2 border-primary shadow-[4px_4px_0px_rgba(0,0,0,0.2)]">
-                Sold Out
+            <div className="absolute inset-0 bg-surface-card/65 backdrop-blur-2xs flex items-center justify-center">
+              <span className="text-[10px] font-bold text-on-surface-variant bg-surface-card px-2.5 py-1 rounded-full border border-outline-variant/60 shadow-3xs">
+                Out of Stock
               </span>
             </div>
           )}
         </div>
 
         {/* ── Info ── */}
-        <div className="px-4 pt-4 pb-2 flex flex-col gap-1 bg-background group-hover:bg-primary transition-colors duration-300">
+        <div className="px-3 pt-3 pb-1.5 flex flex-col gap-0.5">
           {/* Product name — bold weight, 13px, 2-line clamp */}
-          <h4 className="text-[13px] md:text-sm font-black text-primary group-hover:text-white leading-snug line-clamp-2 min-h-[38px] uppercase tracking-wider">
+          <h4 className="text-[13px] font-bold text-primary leading-snug line-clamp-2 min-h-[36px]">
             {name}
           </h4>
 
           {/* Unit — 11px muted */}
-          <p className="text-[11px] font-bold text-on-surface-variant group-hover:text-white/70 tracking-widest">{unit}</p>
+          <p className="text-[11px] font-medium text-secondary/60">{unit}</p>
 
-          {/* Price row */}
-          <div className="flex items-center gap-2 flex-wrap mt-2">
-            <span className="text-base font-black text-primary group-hover:text-white">₹{product.price}</span>
+          {/* Price row: ₹price · MRP strikethrough · discount% badge */}
+          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+            <span className="text-[14px] font-black text-primary">₹{product.price}</span>
             {product.mrp && product.mrp > product.price && (
-              <span className="text-[11px] text-on-surface-variant group-hover:text-white/50 line-through font-bold">₹{product.mrp}</span>
+              <span className="text-[11px] text-secondary/45 line-through">₹{product.mrp}</span>
+            )}
+            {discount && (
+              <span className="text-[9px] font-black text-success uppercase tracking-wider">
+                {discount}% off
+              </span>
             )}
           </div>
         </div>
       </Link>
 
       {/* ── Add to cart — always at bottom ── */}
-      <div className="p-3 pt-0 bg-background group-hover:bg-primary transition-colors duration-300 mt-auto border-t-2 border-transparent group-hover:border-white/10">
+      <div className="px-3 pb-3 mt-auto pt-1">
         <AddToCartButton
           product={product}
           variant="full"

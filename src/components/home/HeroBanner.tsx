@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '@/hooks/useT'
 import type { Banner } from '@/types/database.types'
 
@@ -45,58 +45,66 @@ export default function HeroBanner({ banners }: Props) {
 
   if (!banners.length) {
     return (
-      <section className="px-4 md:px-8 max-w-7xl mx-auto w-full py-16 md:py-28">
-        <div className="flex flex-col items-start w-full">
-          {/* Subtle Label */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-10 md:mb-16"
-          >
-            <span className="block text-[9px] font-black tracking-[0.2em] text-on-surface-variant uppercase mb-2">
-              LATEST UPDATE
-            </span>
-            <span className="block text-sm font-black tracking-tight text-primary">
-              Premium Wholesale Supply Launched
-            </span>
-          </motion.div>
+      <section className="px-4 max-w-7xl mx-auto w-full">
+        <div className="relative w-full h-56 md:h-72 rounded-3xl overflow-hidden bg-surface-container-low border border-white/20 flex items-center justify-center shadow-lg group">
+          {/* Animated Ambient Background Gradients */}
+          <div className="absolute inset-0 bg-gradient-to-br from-surface-card via-surface-container-low to-primary-container/40 overflow-hidden">
+            <div className="absolute -top-[40%] -left-[10%] w-[70%] h-[150%] bg-gradient-to-r from-primary/20 to-secondary/20 blur-[100px] rounded-full group-hover:rotate-12 transition-transform duration-[3s] pointer-events-none" />
+            <div className="absolute -bottom-[40%] -right-[10%] w-[70%] h-[150%] bg-gradient-to-l from-primary/10 to-primary-container/30 blur-[120px] rounded-full group-hover:-rotate-12 transition-transform duration-[3s] pointer-events-none" />
+          </div>
           
-          {/* Massive Typography */}
-          <motion.h2 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-6xl sm:text-8xl md:text-[9rem] lg:text-[11rem] font-black text-primary leading-[0.8] tracking-tighter uppercase mb-8"
-          >
-            BULK<br />DEALS
-          </motion.h2>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="text-primary text-xs md:text-sm font-bold tracking-tight max-w-md mb-12 leading-relaxed"
-          >
-            Secure high-volume supply for your retail business instantly. Direct from Odisha's trusted distributor.
-          </motion.p>
+          {/* Subtle Grid Overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-wrap items-center gap-4"
-          >
-            <Link
-              href="/search"
-              className="group flex items-center gap-4 px-6 md:px-8 py-3.5 md:py-4 rounded-full bg-primary text-white font-black text-[10px] md:text-xs uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 shadow-2xl shadow-black/20"
+          {/* Content */}
+          <div className="relative z-10 text-center px-6 flex flex-col items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm mb-5"
             >
-              EXPLORE CATALOG
-              <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center group-hover:-rotate-45 transition-transform duration-300">
-                <ArrowRight size={14} className="text-primary" strokeWidth={3} />
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
               </span>
-            </Link>
-          </motion.div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mt-0.5">
+                Premium Quality
+              </span>
+            </motion.div>
+            
+            <motion.h2 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary/60 leading-tight mb-2 tracking-tight drop-shadow-sm"
+            >
+              Bulk Deals Available
+            </motion.h2>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-on-surface-variant/80 text-sm md:text-base font-semibold max-w-sm mx-auto"
+            >
+              Secure high-volume supply for your retail business instantly.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Link
+                href="/search"
+                className="mt-6 inline-block px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-primary-container text-white font-black text-xs uppercase tracking-widest hover:to-primary hover:shadow-[0_8px_30px_rgba(38,23,12,0.25)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden group/btn shadow-md"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out" />
+                Explore Catalog
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
     )
@@ -108,9 +116,9 @@ export default function HeroBanner({ banners }: Props) {
   const ctaText = banner.cta_text ? tField(banner.cta_text, banner.cta_text_or) : null
 
   return (
-    <section className="px-4 md:px-8 max-w-7xl mx-auto w-full py-8 md:py-16">
+    <section className="px-4 max-w-7xl mx-auto w-full">
       <div
-        className="relative w-full h-[60vh] md:h-[75vh] min-h-[400px] overflow-hidden select-none bg-surface-container"
+        className="relative w-full h-48 md:h-64 rounded-2xl overflow-hidden select-none border border-table-border/60 shadow-[0_3px_8px_rgba(38,23,12,0.02)]"
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           const diff = touchStartX.current - e.changedTouches[0].clientX
@@ -126,67 +134,65 @@ export default function HeroBanner({ banners }: Props) {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: 'tween', duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 bg-surface-variant"
+            transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
+            className="absolute inset-0"
           >
-            {banner.image_url && (
+            {banner.image_url ? (
               <Image
                 src={banner.image_url}
                 alt={title ?? 'Banner'}
                 fill
                 priority={index === 0}
                 sizes="100vw"
-                className="object-cover object-center mix-blend-multiply opacity-50 grayscale transition-opacity duration-1000"
+                className="object-cover object-center mix-blend-multiply opacity-80"
               />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-container to-primary/80" />
             )}
-            
-            <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-16 lg:px-24 z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/45 to-transparent" />
+
+            <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-10 z-10">
               <motion.span
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="block text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4"
+                transition={{ delay: 0.1, duration: 0.35 }}
+                className="inline-block text-[9px] font-black uppercase tracking-wider bg-primary-fixed text-on-primary-fixed-variant px-2.5 py-1 rounded-full w-max mb-2.5 shadow-3xs"
               >
-                LATEST UPDATE
+                Premium Quality
               </motion.span>
 
               {title && (
                 <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-5xl sm:text-7xl md:text-[7rem] lg:text-[9rem] font-black text-primary leading-[0.85] tracking-tighter uppercase mb-6 max-w-4xl"
+                  transition={{ delay: 0.18, duration: 0.35 }}
+                  className="text-lg md:text-3xl font-black text-primary max-w-xs md:max-w-md leading-tight"
                 >
                   {title}
                 </motion.h2>
               )}
-              
               {subtitle && (
                 <motion.p
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-primary/80 text-xs md:text-sm font-bold tracking-tight mt-2 max-w-md leading-relaxed"
+                  transition={{ delay: 0.26, duration: 0.35 }}
+                  className="text-xs md:text-sm text-secondary/80 font-medium mt-1 max-w-[70%] leading-snug"
                 >
                   {subtitle}
                 </motion.p>
               )}
-              
               {ctaText && banner.link_url && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="mt-10"
+                  transition={{ delay: 0.34, duration: 0.35 }}
+                  className="mt-4"
                 >
                   <Link
                     href={banner.link_url}
-                    className="group inline-flex items-center gap-4 px-6 md:px-8 py-3.5 md:py-4 rounded-full bg-primary text-white font-black text-[10px] md:text-xs uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 shadow-xl shadow-black/10"
+                    className="inline-block px-5 py-2 bg-primary text-on-primary text-xs font-bold rounded-full hover:bg-primary/95 transition-all shadow-3xs active:scale-95 hover:shadow-2xs"
                   >
                     {ctaText}
-                    <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center group-hover:-rotate-45 transition-transform duration-300">
-                      <ArrowRight size={14} className="text-primary" strokeWidth={3} />
-                    </span>
                   </Link>
                 </motion.div>
               )}
@@ -200,26 +206,26 @@ export default function HeroBanner({ banners }: Props) {
             <button
               onClick={prev}
               aria-label="Previous"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-primary/20 bg-transparent hover:bg-primary hover:text-white text-primary flex items-center justify-center transition-all duration-300 active:scale-95"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/75 backdrop-blur-xs hover:bg-white text-primary flex items-center justify-center transition-all shadow-2xs hover:scale-105 active:scale-95"
             >
-              <ChevronLeft size={20} strokeWidth={1.5} />
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={next}
               aria-label="Next"
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-primary/20 bg-transparent hover:bg-primary hover:text-white text-primary flex items-center justify-center transition-all duration-300 active:scale-95"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/75 backdrop-blur-xs hover:bg-white text-primary flex items-center justify-center transition-all shadow-2xs hover:scale-105 active:scale-95"
             >
-              <ChevronRight size={20} strokeWidth={1.5} />
+              <ChevronRight size={16} />
             </button>
 
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
               {banners.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => go(i, i > index ? 1 : -1)}
                   aria-label={`Slide ${i + 1}`}
-                  className={`h-[2px] transition-all duration-500 ${
-                    i === index ? 'w-12 bg-primary' : 'w-6 bg-primary/20 hover:bg-primary/50'
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === index ? 'w-5 bg-primary' : 'w-1.5 bg-primary/25'
                   }`}
                 />
               ))}
