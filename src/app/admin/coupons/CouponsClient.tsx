@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { Coupon } from '@/types/database.types'
+import { Plus, Tag, Edit3, Trash2, Loader2 } from 'lucide-react'
 
 function formatDate(iso: string | null) {
   if (!iso) return '—'
@@ -47,127 +48,125 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
   }
 
   return (
-    <div className="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full space-y-gutter">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
-            Coupons
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Coupons.
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
-            {coupons.length} coupon{coupons.length !== 1 ? 's' : ''}
+          <p className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mt-1">
+            {coupons.length} coupon{coupons.length !== 1 ? 's' : ''} active
           </p>
         </div>
         <Link
           href="/admin/coupons/new"
-          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 px-5 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
+          <Plus size={16} strokeWidth={2.5} />
           Add Coupon
         </Link>
       </div>
 
       {/* ── Table ── */}
-      <div
-        className="bg-surface rounded-2xl border border-outline-variant/50"
-        style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.08)' }}
-      >
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
         {coupons.length === 0 ? (
-          <div className="py-20 text-center">
-            <span className="material-symbols-outlined text-on-surface-variant text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              local_offer
-            </span>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-3">No coupons yet.</p>
+          <div className="py-24 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-surface border-2 border-table-border rounded-2xl flex items-center justify-center mb-4">
+              <Tag size={24} className="text-on-surface-variant/40" />
+            </div>
+            <p className="font-black text-sm uppercase tracking-widest text-on-surface-variant mb-6">No coupons yet.</p>
             <Link
               href="/admin/coupons/new"
-              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
             >
-              <span className="material-symbols-outlined text-[18px]">add</span>
+              <Plus size={16} strokeWidth={2.5} />
               Create first coupon
             </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                  {['Code', 'Type', 'Value', 'Min Order', 'Cap', 'Usage', 'Valid Until', 'Active', 'Actions'].map(h => (
-                    <th key={h} className="py-3 px-4">{h}</th>
+                <tr className="bg-primary text-white">
+                  {['Code', 'Type', 'Value', 'Min Order', 'Cap', 'Usage', 'Valid Until', 'Active', 'Actions'].map((h, i) => (
+                    <th key={h} className={cn("py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70", i < 8 ? "border-r border-white/10" : "", h === "Actions" || h === "Active" ? "text-center" : "")}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {coupons.map(coupon => {
+                {coupons.map((coupon, idx) => {
                   const pct = usagePercent(coupon)
                   const expired = isExpired(coupon)
                   return (
                     <tr
                       key={coupon.id}
                       className={cn(
-                        'border-b border-outline-variant/20 last:border-0 transition-colors',
+                        'group transition-colors',
                         expired ? 'bg-surface-container-low/40' : 'hover:bg-surface-container-low',
+                        idx !== coupons.length - 1 ? 'border-b-2 border-table-border' : ''
                       )}
                     >
                       {/* Code */}
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-5 border-r border-table-border">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 bg-primary-container text-on-primary-container rounded-lg font-mono font-bold text-sm tracking-wide">
+                          <span className="px-3 py-1.5 bg-primary/5 text-primary border-2 border-primary/20 rounded-lg font-mono font-black text-xs tracking-widest">
                             {coupon.code}
                           </span>
                           {expired && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-label-sm text-label-sm text-[10px]">
+                            <span className="px-2.5 py-1 border-2 border-error text-error rounded-lg font-black text-[10px] uppercase tracking-widest">
                               Expired
                             </span>
                           )}
                         </div>
                         {coupon.description && (
-                          <p className="font-label-sm text-label-sm text-on-surface-variant mt-0.5 max-w-[180px] truncate">
+                          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 max-w-[200px] truncate">
                             {coupon.description}
                           </p>
                         )}
                       </td>
 
                       {/* Type */}
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-5 border-r border-table-border">
                         <span className={cn(
-                          'px-2.5 py-1 rounded-full font-label-sm text-label-sm',
+                          'px-2.5 py-1 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest',
                           coupon.discount_type === 'percentage'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-green-100 text-green-700',
+                            ? 'bg-blue-50 text-blue-600 border-blue-200'
+                            : 'bg-green-50 text-green-600 border-green-200',
                         )}>
                           {coupon.discount_type === 'percentage' ? 'Percentage' : 'Flat'}
                         </span>
                       </td>
 
                       {/* Value */}
-                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface font-semibold">
+                      <td className="py-4 px-5 border-r border-table-border font-black text-sm text-primary">
                         {coupon.discount_type === 'percentage'
                           ? `${coupon.discount_value}%`
                           : `₹${coupon.discount_value}`}
                       </td>
 
                       {/* Min order */}
-                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface-variant">
+                      <td className="py-4 px-5 border-r border-table-border font-bold text-sm text-on-surface-variant">
                         {coupon.min_order_amount ? `₹${coupon.min_order_amount}` : '—'}
                       </td>
 
                       {/* Cap */}
-                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface-variant">
+                      <td className="py-4 px-5 border-r border-table-border font-bold text-sm text-on-surface-variant">
                         {coupon.max_discount ? `₹${coupon.max_discount}` : '—'}
                       </td>
 
                       {/* Usage */}
-                      <td className="py-3 px-4">
-                        <div className="space-y-1">
-                          <p className="font-body-md text-body-md text-on-surface">
+                      <td className="py-4 px-5 border-r border-table-border">
+                        <div className="space-y-2">
+                          <p className="font-black text-xs text-primary">
                             {coupon.usage_count}
                             {coupon.usage_limit ? ` / ${coupon.usage_limit}` : ''}
                           </p>
                           {pct !== null && (
-                            <div className="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+                            <div className="w-20 h-2 border-2 border-table-border bg-surface rounded-full overflow-hidden">
                               <div
-                                className={cn('h-full rounded-full', pct >= 90 ? 'bg-error' : pct >= 70 ? 'bg-amber-500' : 'bg-primary')}
+                                className={cn('h-full', pct >= 90 ? 'bg-error' : pct >= 70 ? 'bg-amber-500' : 'bg-primary')}
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -176,12 +175,12 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
                       </td>
 
                       {/* Valid until */}
-                      <td className={cn('py-3 px-4 font-body-md text-body-md', expired ? 'text-error' : 'text-on-surface-variant')}>
+                      <td className={cn('py-4 px-5 border-r border-table-border font-bold text-sm', expired ? 'text-error' : 'text-on-surface-variant')}>
                         {formatDate(coupon.valid_until)}
                       </td>
 
                       {/* Active toggle */}
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-5 border-r border-table-border text-center">
                         <button
                           type="button"
                           role="switch"
@@ -189,36 +188,34 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
                           disabled={!!saving[coupon.id]}
                           onClick={() => toggleActive(coupon.id, coupon.is_active)}
                           className={cn(
-                            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50',
-                            coupon.is_active ? 'bg-primary' : 'bg-surface-container-highest',
+                            'relative inline-flex h-6 w-11 items-center rounded-full border-2 transition-colors disabled:opacity-50 active:scale-95 mx-auto',
+                            coupon.is_active ? 'bg-primary border-primary' : 'bg-surface border-table-border',
                           )}
                         >
                           <span className={cn(
-                            'inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform',
-                            coupon.is_active ? 'translate-x-4' : 'translate-x-1',
+                            'inline-block h-3.5 w-3.5 rounded-full shadow transition-transform',
+                            coupon.is_active ? 'translate-x-5 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50',
                           )} />
                         </button>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1">
+                      <td className="py-4 px-5 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Link
                             href={`/admin/coupons/${coupon.id}`}
                             title="Edit"
-                            className="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                            className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                           >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                            <Edit3 size={16} strokeWidth={2.5} />
                           </Link>
                           <button
                             onClick={() => deleteCoupon(coupon.id, coupon.code)}
                             disabled={deleting === coupon.id}
                             title="Delete"
-                            className="p-1.5 rounded-full text-on-surface-variant hover:text-error hover:bg-error/8 transition-colors disabled:opacity-40"
+                            className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-all disabled:opacity-40 active:scale-95"
                           >
-                            <span className="material-symbols-outlined text-[18px]">
-                              {deleting === coupon.id ? 'progress_activity' : 'delete'}
-                            </span>
+                            {deleting === coupon.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2.5} />}
                           </button>
                         </div>
                       </td>

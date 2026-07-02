@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import AdminSidebar from './AdminSidebar'
+import { Menu, Bell } from 'lucide-react'
 
 export interface AdminBadges {
   orders: number
@@ -34,8 +35,7 @@ export default function AdminShell({ role, children, badges }: Props) {
 
   return (
     <div className="flex min-h-screen bg-background">
-
-      {/* ── Desktop sidebar (sticky, part of flex flow) ── */}
+      {/* ── Desktop sidebar ── */}
       <AdminSidebar
         role={role}
         badges={badges}
@@ -45,52 +45,51 @@ export default function AdminShell({ role, children, badges }: Props) {
       {/* ── Mobile sidebar overlay ── */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-10">
-            <AdminSidebar role={role} badges={badges} onClose={() => setMobileOpen(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="relative z-10 w-72 max-w-[80vw]">
+            <AdminSidebar role={role} badges={badges} onClose={() => setMobileOpen(false)} className="w-full h-full" />
           </div>
         </div>
       )}
 
       {/* ── Main column ── */}
       <div className="flex-1 flex flex-col min-w-0">
-
+        
         {/* Mobile top bar */}
-        <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-16 bg-surface-bright border-b border-outline-variant">
+        <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-16 bg-primary border-b-2 border-primary">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
-              className="p-2 -ml-2 rounded-full hover:bg-surface-container-high transition-colors"
-              aria-label="Open menu"
+              className="p-2 -ml-2 text-white/70 hover:text-white transition-colors"
             >
-              <span className="material-symbols-outlined text-primary">menu</span>
+              <Menu size={24} />
             </button>
-            <span className="font-headline-md text-headline-md text-primary font-bold">BCR Traders</span>
+            <span className="font-black text-xl text-white tracking-tight lowercase">bcr traders.</span>
           </div>
-          <button className="relative p-2 rounded-full hover:bg-surface-container-high transition-colors">
-            <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full" />
+          <button className="relative p-2 text-white/70 hover:text-white transition-colors">
+            <Bell size={20} />
+            <span className="absolute top-1.5 right-2 w-2 h-2 bg-error border-2 border-primary rounded-full" />
           </button>
         </header>
 
         {/* Desktop top bar */}
-        <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between px-margin-desktop h-16 bg-surface-bright border-b border-outline-variant">
-          <h2 className="font-headline-md text-headline-md text-primary font-bold">BCR Traders</h2>
+        <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between px-8 h-16 bg-white border-b-2 border-table-border shadow-sm">
+          <h2 className="font-black text-xl text-primary tracking-tight uppercase">Admin Panel</h2>
           <div className="flex items-center gap-2">
-            <button className="relative p-2 rounded-full hover:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full" />
+            <button className="relative p-2 text-on-surface-variant hover:text-primary transition-colors">
+              <Bell size={20} />
+              <span className="absolute top-1.5 right-2 w-2 h-2 bg-error border-2 border-white rounded-full" />
             </button>
           </div>
         </header>
 
-        {/* Page content — add bottom padding on mobile for the bottom nav */}
+        {/* Page content */}
         <main className="flex-1 pb-20 lg:pb-0">
           {children}
         </main>
 
         {/* ── Mobile bottom nav ── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center h-16 px-2 bg-surface-container-highest shadow-[0px_-4px_20px_rgba(61,43,31,0.10)]">
+        <nav className="lg:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center h-16 px-2 bg-primary border-t-2 border-primary/50 shadow-[0px_-4px_20px_rgba(0,0,0,0.25)]" style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
           {BOTTOM_NAV.map((item) => {
             const active = isActive(item.href)
             return (
@@ -98,24 +97,23 @@ export default function AdminShell({ role, children, badges }: Props) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-full transition-all',
+                  'flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-xl transition-all',
                   active
-                    ? 'bg-primary-container text-on-primary-container'
-                    : 'text-on-surface-variant hover:text-primary active:scale-90 transition-transform',
+                    ? 'text-white'
+                    : 'text-white/40 hover:text-white/80',
                 )}
               >
                 <span
-                  className="material-symbols-outlined text-[22px]"
+                  className="material-symbols-outlined text-[24px]"
                   style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
                 >
                   {item.icon}
                 </span>
-                <span className="font-label-sm text-label-sm">{item.label}</span>
+                <span className="font-black text-[9px] uppercase tracking-wider">{item.label}</span>
               </Link>
             )
           })}
         </nav>
-
       </div>
     </div>
   )

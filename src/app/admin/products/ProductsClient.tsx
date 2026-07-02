@@ -4,6 +4,10 @@ import { useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/types/database.types'
+import { 
+  Upload, Download, Plus, Search, Star, X, CheckSquare, Square, 
+  ArrowUp, ArrowDown, ChevronsUpDown, Edit3, MessageCircleQuestion, MessageSquare, Image as ImageIcon
+} from 'lucide-react'
 
 type SortField = 'name' | 'price' | 'stock_quantity' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -160,15 +164,15 @@ export default function ProductsClient({
   }
 
   return (
-    <div className="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full space-y-gutter">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
-            Products
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Products.
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+          <p className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mt-1">
             {products.length} total · {filtered.length} shown
           </p>
         </div>
@@ -177,173 +181,175 @@ export default function ProductsClient({
           <button
             onClick={() => importRef.current?.click()}
             disabled={importing}
-            className="flex items-center gap-1.5 px-3 py-2 bg-surface-container-high text-on-surface rounded-full font-body-md text-body-md hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card border-2 border-table-border text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/40 transition-colors disabled:opacity-50 active:scale-95"
           >
-            <span className="material-symbols-outlined text-[16px]">upload</span>
+            <Upload size={16} strokeWidth={2.5} />
             {importing ? 'Importing…' : 'Import CSV'}
           </button>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-surface-container-high text-on-surface rounded-full font-body-md text-body-md hover:bg-surface-container-highest transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card border-2 border-table-border text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/40 transition-colors active:scale-95"
           >
-            <span className="material-symbols-outlined text-[16px]">download</span>
+            <Download size={16} strokeWidth={2.5} />
             Export CSV
           </button>
           <Link
             href="/admin/products/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <Plus size={16} strokeWidth={2.5} />
             Add Product
           </Link>
         </div>
       </div>
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center bg-surface-card border-2 border-table-border p-4 rounded-2xl">
         <div className="relative min-w-[220px] flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
-            search
-          </span>
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40" />
           <input
             type="text"
             placeholder="Search name or SKU…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-surface-container rounded-full border border-outline-variant font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
+            className="w-full pl-11 pr-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-surface-container rounded-full border border-outline-variant font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors"
-        >
-          <option value="all">All Categories</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="relative">
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="pl-4 pr-10 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors appearance-none"
+          >
+            <option value="all">All Categories</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary opacity-50">
+            <ChevronsUpDown size={16} />
+          </div>
+        </div>
 
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-          className="px-4 py-2 bg-surface-container rounded-full border border-outline-variant font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors"
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <div className="relative">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as StatusFilter)}
+            className="pl-4 pr-10 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors appearance-none"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary opacity-50">
+            <ChevronsUpDown size={16} />
+          </div>
+        </div>
 
-        <select
-          value={stockFilter}
-          onChange={e => setStockFilter(e.target.value as StockFilter)}
-          className="px-4 py-2 bg-surface-container rounded-full border border-outline-variant font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors"
-        >
-          <option value="all">All Stock</option>
-          <option value="in_stock">In Stock</option>
-          <option value="out_of_stock">Out of Stock</option>
-        </select>
+        <div className="relative">
+          <select
+            value={stockFilter}
+            onChange={e => setStockFilter(e.target.value as StockFilter)}
+            className="pl-4 pr-10 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors appearance-none"
+          >
+            <option value="all">All Stock</option>
+            <option value="in_stock">In Stock</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary opacity-50">
+            <ChevronsUpDown size={16} />
+          </div>
+        </div>
 
         <button
           onClick={() => setFeaturedOnly(v => !v)}
           className={cn(
-            'flex items-center gap-1.5 px-4 py-2 rounded-full font-body-md text-body-md transition-colors',
+            'flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-widest',
             featuredOnly
-              ? 'bg-primary text-on-primary'
-              : 'bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high',
+              ? 'bg-primary border-primary text-white shadow-md'
+              : 'bg-surface border-table-border text-on-surface-variant hover:border-primary/40 hover:text-primary',
           )}
         >
-          <span
-            className="material-symbols-outlined text-[16px]"
-            style={{ fontVariationSettings: featuredOnly ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            star
-          </span>
+          <Star size={16} fill={featuredOnly ? 'currentColor' : 'none'} strokeWidth={2.5} />
           Featured
         </button>
       </div>
 
       {/* ── Bulk Actions Bar ── */}
       {someSelected && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-primary-container rounded-xl">
-          <p className="font-body-md text-body-md text-on-primary-container flex-1">
+        <div className="flex flex-wrap items-center gap-3 px-6 py-4 bg-primary text-white rounded-2xl border-2 border-primary shadow-lg animate-in slide-in-from-bottom-4 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
+          <p className="font-black text-sm uppercase tracking-widest flex-1 relative z-10">
             {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} selected
           </p>
-          <button
-            onClick={() => bulkAction('activate')}
-            className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full font-label-sm text-label-sm hover:bg-green-200 transition-colors"
-          >
-            Activate
-          </button>
-          <button
-            onClick={() => bulkAction('deactivate')}
-            className="px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full font-label-sm text-label-sm hover:bg-surface-container-high transition-colors"
-          >
-            Deactivate
-          </button>
-          <button
-            onClick={() => bulkAction('delete')}
-            className="px-3 py-1.5 bg-error/10 text-error rounded-full font-label-sm text-label-sm hover:bg-error/20 transition-colors"
-          >
-            Delete
-          </button>
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            className="p-1 rounded-full hover:bg-on-primary-container/10 transition-colors"
-            aria-label="Clear selection"
-          >
-            <span className="material-symbols-outlined text-on-primary-container text-[18px]">close</span>
-          </button>
+          <div className="flex gap-2 relative z-10">
+            <button
+              onClick={() => bulkAction('activate')}
+              className="px-4 py-2 border-2 border-white/20 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-primary transition-colors"
+            >
+              Activate
+            </button>
+            <button
+              onClick={() => bulkAction('deactivate')}
+              className="px-4 py-2 border-2 border-white/20 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-primary transition-colors"
+            >
+              Deactivate
+            </button>
+            <button
+              onClick={() => bulkAction('delete')}
+              className="px-4 py-2 border-2 border-error/50 bg-error/20 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-error hover:text-white transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="p-2 border-2 border-white/20 bg-white/10 text-white rounded-xl hover:bg-white hover:text-primary transition-colors"
+              aria-label="Clear selection"
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       )}
 
       {/* ── Table ── */}
-      <div
-        className="bg-surface rounded-2xl border border-outline-variant/50"
-        style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.08)' }}
-      >
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left whitespace-nowrap">
+          <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
-              <tr className="border-b border-outline-variant/30">
-                <th className="py-3 px-4 w-10">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 accent-primary rounded"
-                  />
+              <tr className="bg-primary">
+                <th className="py-4 px-4 w-12 border-r border-white/10">
+                  <button onClick={toggleSelectAll} className="text-white/70 hover:text-white transition-colors">
+                    {allSelected ? <CheckSquare size={20} /> : <Square size={20} />}
+                  </button>
                 </th>
-                <th className="py-3 px-4 w-14 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 w-16 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Image
                 </th>
-                <th className="py-3 px-4">
+                <th className="py-4 px-5 border-r border-white/10">
                   <SortBtn label="SKU" field="name" current={sortField} dir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="py-3 px-4">
+                <th className="py-4 px-5 border-r border-white/10">
                   <SortBtn label="Name" field="name" current={sortField} dir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Category
                 </th>
-                <th className="py-3 px-4">
+                <th className="py-4 px-5 border-r border-white/10">
                   <SortBtn label="Price" field="price" current={sortField} dir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                  MRP
-                </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Unit
                 </th>
-                <th className="py-3 px-4">
+                <th className="py-4 px-5 border-r border-white/10">
                   <SortBtn label="Stock" field="stock_quantity" current={sortField} dir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Featured
                 </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Active
                 </th>
-                <th className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70">
                   Actions
                 </th>
               </tr>
@@ -352,80 +358,79 @@ export default function ProductsClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-20 text-center font-body-md text-body-md text-on-surface-variant">
-                    No products match your filters.
+                  <td colSpan={11} className="py-24 text-center">
+                    <p className="font-black text-sm uppercase tracking-widest text-on-surface-variant">
+                      No products match your filters.
+                    </p>
                   </td>
                 </tr>
-              ) : filtered.map(product => (
+              ) : filtered.map((product, idx) => (
                 <tr
                   key={product.id}
                   className={cn(
-                    'border-b border-outline-variant/20 last:border-0 transition-colors',
+                    'transition-colors group',
+                    idx !== filtered.length - 1 ? 'border-b-2 border-table-border' : '',
                     selectedIds.has(product.id)
-                      ? 'bg-primary-container/20'
+                      ? 'bg-primary/5'
                       : 'hover:bg-surface-container-low',
                   )}
                 >
                   {/* Checkbox */}
-                  <td className="py-3 px-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(product.id)}
-                      onChange={() => toggleSelect(product.id)}
-                      className="w-4 h-4 accent-primary rounded"
-                    />
+                  <td className="py-4 px-4 border-r border-table-border text-center">
+                    <button onClick={() => toggleSelect(product.id)} className={cn(
+                      "transition-colors",
+                      selectedIds.has(product.id) ? "text-primary" : "text-on-surface-variant/40 group-hover:text-primary/60"
+                    )}>
+                      {selectedIds.has(product.id) ? <CheckSquare size={20} /> : <Square size={20} />}
+                    </button>
                   </td>
 
                   {/* Image */}
-                  <td className="py-3 px-4">
+                  <td className="py-4 px-5 border-r border-table-border">
                     {product.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={product.images[0]}
                         alt=""
-                        className="w-10 h-10 rounded-lg object-cover"
+                        className="w-12 h-12 rounded-xl object-cover border-2 border-table-border"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-                        <span className="material-symbols-outlined text-on-surface-variant text-[16px]">image</span>
+                      <div className="w-12 h-12 rounded-xl bg-surface border-2 border-table-border flex items-center justify-center">
+                        <ImageIcon size={20} className="text-on-surface-variant/40" />
                       </div>
                     )}
                   </td>
 
                   {/* SKU */}
-                  <td className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant">
+                  <td className="py-4 px-5 border-r border-table-border font-black text-[10px] uppercase tracking-widest text-on-surface-variant">
                     {product.sku ?? '—'}
                   </td>
 
                   {/* Name */}
-                  <td className="py-3 px-4 max-w-[180px]">
-                    <p className="font-body-md text-body-md text-on-surface font-medium truncate">
+                  <td className="py-4 px-5 border-r border-table-border max-w-[220px]">
+                    <p className="font-bold text-sm text-primary truncate">
                       {product.name}
                     </p>
                   </td>
 
                   {/* Category */}
-                  <td className="py-3 px-4 font-body-md text-body-md text-on-surface-variant">
+                  <td className="py-4 px-5 border-r border-table-border font-bold text-xs text-on-surface-variant">
                     {categoryMap[product.category_id ?? ''] ?? '—'}
                   </td>
 
                   {/* Price */}
-                  <td className="py-3 px-4 font-body-md text-body-md text-on-surface font-semibold">
-                    ₹{product.price.toLocaleString('en-IN')}
-                  </td>
-
-                  {/* MRP */}
-                  <td className="py-3 px-4 font-body-md text-body-md text-on-surface-variant">
-                    {product.mrp ? `₹${product.mrp}` : '—'}
+                  <td className="py-4 px-5 border-r border-table-border">
+                    <p className="font-black text-sm text-primary">₹{product.price.toLocaleString('en-IN')}</p>
+                    {product.mrp && <p className="font-bold text-[10px] text-on-surface-variant line-through">₹{product.mrp}</p>}
                   </td>
 
                   {/* Unit */}
-                  <td className="py-3 px-4 font-body-md text-body-md text-on-surface-variant">
+                  <td className="py-4 px-5 border-r border-table-border font-bold text-xs text-on-surface-variant">
                     {product.unit}
                   </td>
 
                   {/* Stock (inline edit) */}
-                  <td className="py-3 px-4">
+                  <td className="py-4 px-5 border-r border-table-border">
                     {editingStockId === product.id ? (
                       <input
                         type="number"
@@ -438,7 +443,7 @@ export default function ProductsClient({
                           if (e.key === 'Escape') setEditingStockId(null)
                         }}
                         onBlur={() => saveStock(product.id)}
-                        className="w-16 px-2 py-1 border border-primary rounded-lg font-body-md text-body-md text-on-surface focus:outline-none"
+                        className="w-20 px-3 py-1.5 border-2 border-primary rounded-lg font-black text-sm text-primary focus:outline-none"
                       />
                     ) : (
                       <button
@@ -448,12 +453,12 @@ export default function ProductsClient({
                         }}
                         title="Click to edit stock"
                         className={cn(
-                          'font-body-md text-body-md px-2 py-0.5 rounded-lg hover:bg-surface-container-high transition-colors',
+                          'font-black text-sm px-3 py-1.5 rounded-lg border-2 transition-colors active:scale-95',
                           product.stock_quantity === 0
-                            ? 'text-error font-semibold'
+                            ? 'bg-error/10 border-error/30 text-error hover:border-error'
                             : product.stock_quantity < 10
-                              ? 'text-amber-600 font-semibold'
-                              : 'text-on-surface',
+                              ? 'bg-amber-100/50 border-amber-300 text-amber-700 hover:border-amber-500'
+                              : 'bg-surface border-table-border text-primary hover:border-primary/40',
                         )}
                       >
                         {saving[product.id] ? '…' : product.stock_quantity}
@@ -462,7 +467,7 @@ export default function ProductsClient({
                   </td>
 
                   {/* Featured toggle */}
-                  <td className="py-3 px-4">
+                  <td className="py-4 px-5 border-r border-table-border text-center">
                     <Toggle
                       checked={product.is_featured}
                       disabled={!!saving[product.id]}
@@ -471,7 +476,7 @@ export default function ProductsClient({
                   </td>
 
                   {/* Active toggle */}
-                  <td className="py-3 px-4">
+                  <td className="py-4 px-5 border-r border-table-border text-center">
                     <Toggle
                       checked={product.is_active}
                       disabled={!!saving[product.id]}
@@ -480,28 +485,28 @@ export default function ProductsClient({
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-0.5">
+                  <td className="py-4 px-5">
+                    <div className="flex items-center gap-2">
                       <Link
                         href={`/admin/products/${product.id}`}
                         title="Edit product"
-                        className="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        <Edit3 size={16} strokeWidth={2.5} />
                       </Link>
                       <Link
                         href={`/admin/products/${product.id}/faq`}
                         title="Manage FAQs"
-                        className="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[18px]">quiz</span>
+                        <MessageCircleQuestion size={16} strokeWidth={2.5} />
                       </Link>
                       <Link
                         href={`/admin/products/${product.id}/reviews`}
                         title="Manage reviews"
-                        className="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                        className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[18px]">reviews</span>
+                        <MessageSquare size={16} strokeWidth={2.5} />
                       </Link>
                     </div>
                   </td>
@@ -528,14 +533,14 @@ function Toggle({
       onClick={onChange}
       disabled={disabled}
       className={cn(
-        'relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus-visible:outline-none disabled:opacity-50',
-        checked ? 'bg-primary' : 'bg-surface-container-highest',
+        'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border-2 transition-colors focus-visible:outline-none disabled:opacity-50 active:scale-95',
+        checked ? 'bg-primary border-primary' : 'bg-surface border-table-border',
       )}
     >
       <span
         className={cn(
-          'inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform',
-          checked ? 'translate-x-4' : 'translate-x-1',
+          'inline-block h-3.5 w-3.5 rounded-full shadow-sm transition-transform',
+          checked ? 'translate-x-5 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50',
         )}
       />
     </button>
@@ -558,14 +563,16 @@ function SortBtn({
     <button
       onClick={() => onSort(field)}
       className={cn(
-        'flex items-center gap-1 font-label-sm text-label-sm uppercase tracking-wider hover:text-primary transition-colors',
-        active ? 'text-primary' : 'text-on-surface-variant',
+        'flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[0.2em] transition-colors',
+        active ? 'text-white' : 'text-white/70 hover:text-white',
       )}
     >
       {label}
-      <span className="material-symbols-outlined text-[13px]">
-        {active ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
-      </span>
+      {active ? (
+        dir === 'asc' ? <ArrowUp size={14} strokeWidth={3} /> : <ArrowDown size={14} strokeWidth={3} />
+      ) : (
+        <ChevronsUpDown size={14} className="opacity-50" />
+      )}
     </button>
   )
 }

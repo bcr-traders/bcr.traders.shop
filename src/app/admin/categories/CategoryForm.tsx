@@ -7,8 +7,9 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { cn } from '@/lib/utils'
 import type { Category } from '@/types/database.types'
+import { ArrowLeft, Loader2, AlertCircle, X, CloudUpload, Bold, Italic, List, ListOrdered } from 'lucide-react'
 
-const inputCls = 'w-full px-4 py-2.5 bg-surface-container rounded-xl border border-outline-variant font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
 
 function toSlug(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
@@ -100,6 +101,10 @@ export default function CategoryForm({
       is_active: form.is_active,
       parent_id: form.parent_id || null,
       image_url: form.image_url || null,
+      description: form.description || null,
+      description_or: form.description_or || null,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
     }
 
     const url = isEdit ? `/api/categories/${category.id}` : '/api/categories'
@@ -131,36 +136,36 @@ export default function CategoryForm({
     <div className="flex flex-col min-h-screen">
 
       {/* ── Header ── */}
-      <div className="sticky top-16 z-30 bg-surface border-b border-outline-variant/30 px-margin-mobile md:px-margin-desktop py-4 flex items-center justify-between gap-4">
+      <div className="sticky top-16 z-30 bg-surface border-b-2 border-table-border px-4 md:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/categories"
-            className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+            className="p-2.5 rounded-xl border-2 border-table-border bg-surface-card hover:bg-surface-container-low transition-colors text-primary active:scale-95"
           >
-            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            <ArrowLeft size={20} strokeWidth={2.5} />
           </Link>
           <div>
-            <h1 className="font-headline-md text-headline-md text-primary leading-tight">
-              {isEdit ? form.name || 'Edit Category' : 'New Category'}
+            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight lowercase">
+              {isEdit ? form.name || 'Edit Category' : 'New Category.'}
             </h1>
             {isEdit && (
-              <p className="font-label-sm text-label-sm text-on-surface-variant">/{category.slug}</p>
+              <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">/{category.slug}</p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link
             href="/admin/categories"
-            className="px-4 py-2 rounded-full font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            className="px-5 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-xs uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all active:scale-95"
           >
             Cancel
           </Link>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 disabled:opacity-60 transition-opacity"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-opacity disabled:opacity-60 active:scale-95 shadow-sm"
           >
-            {saving && <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>}
+            {saving && <Loader2 size={16} className="animate-spin" />}
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Category'}
           </button>
         </div>
@@ -168,18 +173,18 @@ export default function CategoryForm({
 
       {/* ── Error ── */}
       {error && (
-        <div className="mx-margin-mobile md:mx-margin-desktop mt-4 flex items-center gap-3 px-4 py-3 bg-error/10 border border-error/20 rounded-xl text-error font-body-md text-body-md">
-          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+        <div className="mx-4 md:mx-8 mt-6 flex items-center gap-3 px-5 py-4 bg-error/10 border-2 border-error/20 rounded-xl text-error font-bold text-sm">
+          <AlertCircle size={18} strokeWidth={2.5} />
           {error}
-          <button onClick={() => setError(null)} className="ml-auto">
-            <span className="material-symbols-outlined text-[16px]">close</span>
+          <button onClick={() => setError(null)} className="ml-auto hover:text-error/70 transition-colors">
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
       )}
 
       {/* ── Form ── */}
-      <div className="flex-1 p-margin-mobile md:p-margin-desktop pb-12">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <div className="flex-1 p-4 md:p-8 pb-12">
+        <div className="max-w-[900px] mx-auto space-y-10">
 
           {/* Basic Info */}
           <Section title="Basic Info">
@@ -256,10 +261,10 @@ export default function CategoryForm({
               </Field>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-surface-container rounded-xl border border-outline-variant/50 max-w-xs">
+            <div className="flex items-center justify-between gap-6 p-5 bg-surface-card rounded-2xl border-2 border-table-border max-w-sm">
               <div>
-                <p className="font-body-md text-body-md text-on-surface font-medium">Active</p>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">Visible in the shop</p>
+                <p className="font-black text-xs text-primary uppercase tracking-widest">Active</p>
+                <p className="font-bold text-[10px] text-on-surface-variant mt-1">Visible in the shop</p>
               </div>
               <button
                 type="button"
@@ -267,13 +272,13 @@ export default function CategoryForm({
                 aria-checked={form.is_active}
                 onClick={() => set('is_active', !form.is_active)}
                 className={cn(
-                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                  form.is_active ? 'bg-primary' : 'bg-surface-container-highest',
+                  'relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full border-2 transition-colors active:scale-95',
+                  form.is_active ? 'bg-primary border-primary' : 'bg-surface border-table-border',
                 )}
               >
                 <span className={cn(
-                  'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
-                  form.is_active ? 'translate-x-6' : 'translate-x-1',
+                  'inline-block h-4 w-4 rounded-full shadow transition-transform',
+                  form.is_active ? 'translate-x-6 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50',
                 )} />
               </button>
             </div>
@@ -281,7 +286,7 @@ export default function CategoryForm({
 
           {/* Category Image */}
           <Section title="Category Image">
-            <p className="font-body-md text-body-md text-on-surface-variant -mt-2">
+            <p className="font-bold text-xs text-on-surface-variant -mt-3 mb-4">
               Shown in the category grid on the homepage.
             </p>
             <ImageUploadField
@@ -309,7 +314,7 @@ export default function CategoryForm({
                 placeholder="ଓଡ଼ିଆ ବିବରଣ…"
               />
             </Field>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">
+            <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">
               Note: descriptions are stored locally and will persist once DB migration adds description columns.
             </p>
           </Section>
@@ -338,7 +343,7 @@ export default function CategoryForm({
                 />
               </Field>
             </div>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">
+            <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">
               Note: SEO fields will persist once DB migration adds meta_title/meta_description columns to categories.
             </p>
           </Section>
@@ -348,7 +353,7 @@ export default function CategoryForm({
 
       {/* ── Toast ── */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-on-surface text-surface rounded-full font-body-md text-body-md shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
           {toast}
         </div>
       )}
@@ -360,8 +365,8 @@ export default function CategoryForm({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-5">
-      <h2 className="font-headline-sm text-headline-sm text-primary border-b border-outline-variant/30 pb-2">
+    <section className="space-y-6">
+      <h2 className="font-black text-xl text-primary tracking-tight border-b-2 border-table-border pb-3">
         {title}
       </h2>
       {children}
@@ -373,11 +378,11 @@ function Field({ label, required, hint, children }: {
   label: string; required?: boolean; hint?: string; children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="font-label-md text-label-md text-on-surface font-medium">
+    <div className="space-y-2">
+      <label className="font-black text-xs text-primary uppercase tracking-widest flex items-center">
         {label}
         {required && <span className="text-error ml-1">*</span>}
-        {hint && <span className="font-label-sm text-label-sm text-on-surface-variant ml-2 font-normal">{hint}</span>}
+        {hint && <span className="font-bold text-[10px] text-on-surface-variant ml-3 normal-case tracking-normal">{hint}</span>}
       </label>
       {children}
     </div>
@@ -398,22 +403,24 @@ function ImageUploadField({
       {url ? (
         <div className="relative inline-block group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="" className="w-48 h-48 object-cover rounded-xl border border-outline-variant" />
+          <img src={url} alt="" className="w-48 h-48 object-cover rounded-xl border-2 border-table-border" />
           <button
             type="button"
             onClick={onClear}
-            className="absolute top-2 right-2 w-6 h-6 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-2 right-2 w-8 h-8 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <span className="material-symbols-outlined text-[14px]">close</span>
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
       ) : (
         <label className={cn(
-          'flex flex-col items-center justify-center w-48 h-48 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors',
+          'flex flex-col items-center justify-center w-48 h-48 border-2 border-dashed border-table-border bg-surface-card rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all active:scale-[0.99]',
           uploading && 'opacity-50 pointer-events-none',
         )}>
-          <span className="material-symbols-outlined text-on-surface-variant text-[32px]">cloud_upload</span>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2 text-center px-3">
+          <div className="p-3 bg-surface border-2 border-table-border rounded-xl mb-3">
+            <CloudUpload size={24} className="text-primary" />
+          </div>
+          <p className="font-bold text-xs text-primary text-center px-3">
             {uploading ? 'Uploading…' : placeholder}
           </p>
           <input
@@ -441,36 +448,36 @@ function RichTextEditor({ content, onChange, placeholder }: {
     content,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none min-h-[140px] p-4 focus:outline-none font-body-md text-body-md text-on-surface',
+        class: 'prose prose-sm max-w-none min-h-[140px] p-4 focus:outline-none font-bold text-sm text-on-surface',
       },
     },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   })
 
   return (
-    <div className="border border-outline-variant rounded-xl overflow-hidden">
-      <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-outline-variant bg-surface-container-low">
+    <div className="border-2 border-table-border rounded-xl bg-surface overflow-hidden">
+      <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b-2 border-table-border bg-surface-card">
         {[
-          { cmd: () => editor?.chain().focus().toggleBold().run(), active: !!editor?.isActive('bold'), icon: 'format_bold' },
-          { cmd: () => editor?.chain().focus().toggleItalic().run(), active: !!editor?.isActive('italic'), icon: 'format_italic' },
-          { cmd: () => editor?.chain().focus().toggleBulletList().run(), active: !!editor?.isActive('bulletList'), icon: 'format_list_bulleted' },
-          { cmd: () => editor?.chain().focus().toggleOrderedList().run(), active: !!editor?.isActive('orderedList'), icon: 'format_list_numbered' },
-        ].map(({ cmd, active, icon }) => (
+          { cmd: () => editor?.chain().focus().toggleBold().run(), active: !!editor?.isActive('bold'), icon: <Bold size={16} /> },
+          { cmd: () => editor?.chain().focus().toggleItalic().run(), active: !!editor?.isActive('italic'), icon: <Italic size={16} /> },
+          { cmd: () => editor?.chain().focus().toggleBulletList().run(), active: !!editor?.isActive('bulletList'), icon: <List size={16} /> },
+          { cmd: () => editor?.chain().focus().toggleOrderedList().run(), active: !!editor?.isActive('orderedList'), icon: <ListOrdered size={16} /> },
+        ].map(({ cmd, active, icon }, i) => (
           <button
-            key={icon}
+            key={i}
             type="button"
             onClick={cmd}
             className={cn(
-              'p-1.5 rounded-lg transition-colors',
-              active ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-container',
+              'p-1.5 rounded-lg border-2 transition-colors active:scale-95',
+              active ? 'bg-primary border-primary text-white shadow-sm' : 'bg-surface border-transparent text-on-surface-variant hover:border-table-border hover:bg-surface-card',
             )}
           >
-            <span className="material-symbols-outlined text-[18px]">{icon}</span>
+            {icon}
           </button>
         ))}
       </div>
-      {!content && (
-        <p className="absolute pointer-events-none p-4 text-on-surface-variant font-body-md text-body-md">{placeholder}</p>
+      {!content && !editor?.getText() && (
+        <p className="absolute pointer-events-none p-5 font-bold text-sm text-on-surface-variant">{placeholder}</p>
       )}
       <EditorContent editor={editor} />
     </div>

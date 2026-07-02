@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { Category } from '@/types/database.types'
+import { Plus, Edit3, Trash2, Folder, Image as ImageIcon, Loader2 } from 'lucide-react'
 
 export default function CategoriesClient({
   initialCategories,
@@ -55,116 +56,116 @@ export default function CategoriesClient({
   const sorted = [...categories].sort((a, b) => a.display_order - b.display_order)
 
   return (
-    <div className="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full space-y-gutter">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
-            Categories
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Categories.
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
-            {categories.length} categories
+          <p className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mt-1">
+            {categories.length} total categories
           </p>
         </div>
         <Link
           href="/admin/categories/new"
-          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 px-5 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
+          <Plus size={16} strokeWidth={2.5} />
           Add Category
         </Link>
       </div>
 
       {/* ── Table ── */}
-      <div
-        className="bg-surface rounded-2xl border border-outline-variant/50"
-        style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.08)' }}
-      >
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
         {sorted.length === 0 ? (
-          <div className="py-20 text-center">
-            <span className="material-symbols-outlined text-on-surface-variant text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>category</span>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-3">No categories yet.</p>
+          <div className="py-24 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-surface border-2 border-table-border rounded-2xl flex items-center justify-center mb-4">
+              <Folder size={24} className="text-on-surface-variant/40" />
+            </div>
+            <p className="font-black text-sm uppercase tracking-widest text-on-surface-variant mb-6">No categories yet.</p>
             <Link
               href="/admin/categories/new"
-              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
             >
-              <span className="material-symbols-outlined text-[18px]">add</span>
+              <Plus size={16} strokeWidth={2.5} />
               Create first category
             </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                  <th className="py-3 px-5 w-16">Image</th>
-                  <th className="py-3 px-5">Name</th>
-                  <th className="py-3 px-5">Slug</th>
-                  <th className="py-3 px-5 text-center">Products</th>
-                  <th className="py-3 px-5 text-center">Order</th>
-                  <th className="py-3 px-5 text-center">Active</th>
-                  <th className="py-3 px-5">Actions</th>
+                <tr className="bg-primary text-white">
+                  <th className="py-4 px-5 w-16 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">Image</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">Name</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">Slug</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10 text-center">Products</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10 text-center">Order</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10 text-center">Active</th>
+                  <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(cat => (
+                {sorted.map((cat, idx) => (
                   <tr
                     key={cat.id}
-                    className="border-b border-outline-variant/20 last:border-0 hover:bg-surface-container-low transition-colors"
+                    className={cn(
+                      'transition-colors group hover:bg-surface-container-low',
+                      idx !== sorted.length - 1 ? 'border-b-2 border-table-border' : ''
+                    )}
                   >
                     {/* Image */}
-                    <td className="py-3 px-5">
+                    <td className="py-4 px-5 border-r border-table-border">
                       {cat.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={cat.image_url}
                           alt=""
-                          className="w-12 h-12 rounded-xl object-cover"
+                          className="w-12 h-12 rounded-xl object-cover border-2 border-table-border"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center">
-                          <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
-                            {cat.icon ?? 'category'}
-                          </span>
+                        <div className="w-12 h-12 rounded-xl bg-surface border-2 border-table-border flex items-center justify-center">
+                          <ImageIcon size={20} className="text-on-surface-variant/40" />
                         </div>
                       )}
                     </td>
 
                     {/* Name */}
-                    <td className="py-3 px-5">
-                      <p className="font-body-md text-body-md text-on-surface font-medium">{cat.name}</p>
+                    <td className="py-4 px-5 border-r border-table-border min-w-[200px]">
+                      <p className="font-bold text-sm text-primary">{cat.name}</p>
                       {cat.name_or && (
-                        <p className="font-label-sm text-label-sm text-on-surface-variant">{cat.name_or}</p>
+                        <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant mt-0.5">{cat.name_or}</p>
                       )}
                     </td>
 
                     {/* Slug */}
-                    <td className="py-3 px-5 font-label-sm text-label-sm text-on-surface-variant">
+                    <td className="py-4 px-5 border-r border-table-border font-black text-[10px] uppercase tracking-widest text-on-surface-variant">
                       {cat.slug}
                     </td>
 
                     {/* Product count */}
-                    <td className="py-3 px-5 text-center">
+                    <td className="py-4 px-5 border-r border-table-border text-center">
                       <span className={cn(
-                        'px-2.5 py-1 rounded-full font-label-sm text-label-sm',
+                        'px-2.5 py-1 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest',
                         (productCounts[cat.id] ?? 0) > 0
-                          ? 'bg-secondary-container text-on-secondary-container'
-                          : 'bg-surface-container text-on-surface-variant',
+                          ? 'bg-primary/5 text-primary border-primary/20'
+                          : 'bg-surface text-on-surface-variant border-table-border',
                       )}>
                         {productCounts[cat.id] ?? 0}
                       </span>
                     </td>
 
                     {/* Display order (inline edit) */}
-                    <td className="py-3 px-5 text-center">
+                    <td className="py-4 px-5 border-r border-table-border text-center">
                       {editOrderId === cat.id ? (
                         <input
                           type="number"
                           value={orderDraft}
                           autoFocus
                           min={0}
-                          className="w-14 px-2 py-1 border border-primary rounded-lg font-body-md text-body-md text-center focus:outline-none"
+                          className="w-16 px-3 py-1.5 border-2 border-primary rounded-lg font-black text-sm text-center text-primary focus:outline-none"
                           onChange={e => setOrderDraft(e.target.value)}
                           onKeyDown={e => {
                             if (e.key === 'Enter') saveOrder(cat.id)
@@ -176,7 +177,7 @@ export default function CategoriesClient({
                         <button
                           onClick={() => { setEditOrderId(cat.id); setOrderDraft(cat.display_order.toString()) }}
                           title="Click to edit order"
-                          className="font-body-md text-body-md text-on-surface px-2 py-0.5 rounded-lg hover:bg-surface-container-high transition-colors"
+                          className="font-black text-sm text-primary px-3 py-1.5 rounded-lg border-2 border-transparent hover:border-table-border transition-colors active:scale-95"
                         >
                           {saving[cat.id] ? '…' : cat.display_order}
                         </button>
@@ -184,7 +185,7 @@ export default function CategoriesClient({
                     </td>
 
                     {/* Active toggle */}
-                    <td className="py-3 px-5 text-center">
+                    <td className="py-4 px-5 border-r border-table-border text-center">
                       <button
                         type="button"
                         role="switch"
@@ -192,36 +193,34 @@ export default function CategoriesClient({
                         disabled={!!saving[cat.id]}
                         onClick={() => patchCategory(cat.id, { is_active: !cat.is_active })}
                         className={cn(
-                          'relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50',
-                          cat.is_active ? 'bg-primary' : 'bg-surface-container-highest',
+                          'relative inline-flex h-6 w-11 items-center rounded-full border-2 transition-colors disabled:opacity-50 active:scale-95 mx-auto',
+                          cat.is_active ? 'bg-primary border-primary' : 'bg-surface border-table-border',
                         )}
                       >
                         <span className={cn(
-                          'inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform',
-                          cat.is_active ? 'translate-x-4' : 'translate-x-1',
+                          'inline-block h-3.5 w-3.5 rounded-full shadow transition-transform',
+                          cat.is_active ? 'translate-x-5 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50',
                         )} />
                       </button>
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3 px-5">
-                      <div className="flex items-center gap-1">
+                    <td className="py-4 px-5 text-center">
+                      <div className="flex items-center justify-center gap-2">
                         <Link
                           href={`/admin/categories/${cat.id}`}
                           title="Edit"
-                          className="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                          className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                         >
-                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                          <Edit3 size={16} strokeWidth={2.5} />
                         </Link>
                         <button
                           onClick={() => deleteCategory(cat.id, cat.name)}
                           disabled={deleting === cat.id}
                           title="Delete"
-                          className="p-1.5 rounded-full text-on-surface-variant hover:text-error hover:bg-error/8 transition-colors disabled:opacity-40"
+                          className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-all disabled:opacity-40 active:scale-95"
                         >
-                          <span className="material-symbols-outlined text-[18px]">
-                            {deleting === cat.id ? 'progress_activity' : 'delete'}
-                          </span>
+                          {deleting === cat.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2.5} />}
                         </button>
                       </div>
                     </td>

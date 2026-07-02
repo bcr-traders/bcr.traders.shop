@@ -233,34 +233,34 @@ export default function ProductForm({
     <div className="flex flex-col min-h-screen">
 
       {/* ── Header ── */}
-      <div className="sticky top-16 z-30 bg-surface border-b border-outline-variant/30 px-margin-mobile md:px-margin-desktop py-4 flex items-center justify-between gap-4">
+      <div className="sticky top-16 z-30 bg-surface border-b-2 border-table-border px-4 md:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+            className="p-2.5 rounded-xl border-2 border-table-border bg-surface-card hover:bg-surface-container-low transition-colors text-primary active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </Link>
           <div>
-            <h1 className="font-headline-md text-headline-md text-primary leading-tight">
-              {isEdit ? form.name || 'Edit Product' : 'New Product'}
+            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight lowercase">
+              {isEdit ? form.name || 'Edit Product' : 'New Product.'}
             </h1>
             {isEdit && (
-              <p className="font-label-sm text-label-sm text-on-surface-variant">{product.sku ?? 'No SKU'}</p>
+              <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">{product.sku ?? 'No SKU'}</p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="px-4 py-2 rounded-full font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            className="px-5 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-xs uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all active:scale-95"
           >
             Cancel
           </Link>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity disabled:opacity-60"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-opacity disabled:opacity-60 active:scale-95 shadow-sm"
           >
             {saving && <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>}
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Product'}
@@ -278,18 +278,18 @@ export default function ProductForm({
       )}
 
       {/* ── Tabs ── */}
-      <div className="sticky top-[calc(4rem+73px)] z-20 bg-surface border-b border-outline-variant/30">
-        <div className="px-margin-mobile md:px-margin-desktop overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 py-2 min-w-max">
+      <div className="sticky top-[calc(4rem+89px)] md:top-[calc(4rem+73px)] z-20 bg-surface border-b-2 border-table-border shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="px-4 md:px-8 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 py-3 min-w-max">
             {TABS.map((t, i) => (
               <button
                 key={i}
                 onClick={() => setTab(i)}
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full font-body-md text-body-md transition-colors whitespace-nowrap',
+                  'flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-widest whitespace-nowrap',
                   tab === i
-                    ? 'bg-primary-container text-on-primary-container'
-                    : 'text-on-surface-variant hover:bg-surface-container-high',
+                    ? 'bg-primary border-primary text-white shadow-sm'
+                    : 'bg-surface-card border-table-border text-on-surface-variant hover:border-primary/40 hover:text-primary',
                 )}
               >
                 <span
@@ -306,7 +306,7 @@ export default function ProductForm({
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="flex-1 p-margin-mobile md:p-margin-desktop max-w-4xl mx-auto w-full pb-12">
+      <div className="flex-1 p-4 md:p-8 max-w-[900px] mx-auto w-full pb-12">
 
         {/* Tab 0: Basic Info */}
         {tab === 0 && (
@@ -468,19 +468,19 @@ export default function ProductForm({
 
             {/* Price preview */}
             {form.price && (
-              <div className="p-4 bg-surface-container rounded-xl border border-outline-variant/50">
-                <p className="font-label-sm text-label-sm text-on-surface-variant mb-2">Price Preview</p>
+              <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border">
+                <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mb-3">Price Preview</p>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-headline-md text-headline-md text-primary">₹{parseFloat(form.price).toFixed(2)}</span>
+                  <span className="font-black text-2xl text-primary tracking-tight">₹{parseFloat(form.price).toFixed(2)}</span>
                   {form.mrp && parseFloat(form.mrp) > parseFloat(form.price) && (
                     <>
-                      <span className="font-body-md text-body-md text-on-surface-variant line-through">₹{parseFloat(form.mrp).toFixed(2)}</span>
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-label-sm text-label-sm">
+                      <span className="font-bold text-sm text-on-surface-variant line-through">₹{parseFloat(form.mrp).toFixed(2)}</span>
+                      <span className="px-2.5 py-1 bg-primary text-white rounded-lg font-black text-[10px] uppercase tracking-widest">
                         {Math.round((1 - parseFloat(form.price) / parseFloat(form.mrp)) * 100)}% off
                       </span>
                     </>
                   )}
-                  {form.unit && <span className="font-body-md text-body-md text-on-surface-variant">/ {form.unit}</span>}
+                  {form.unit && <span className="font-bold text-sm text-on-surface-variant">/ {form.unit}</span>}
                 </div>
               </div>
             )}
@@ -522,21 +522,21 @@ export default function ProductForm({
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-headline-md text-headline-md text-primary">SEO Settings</h3>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                <h3 className="font-black text-xl text-primary tracking-tight">SEO Settings</h3>
+                <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
                   Controls how this product appears in search results.
                 </p>
               </div>
               <button
                 onClick={generateSeo}
                 disabled={generatingSeo}
-                className="flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity disabled:opacity-60"
+                className="flex items-center gap-2 px-5 py-2.5 bg-surface-card border-2 border-table-border text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/40 transition-all disabled:opacity-60 active:scale-95"
               >
                 {generatingSeo
                   ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                   : <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
                 }
-                {generatingSeo ? 'Generating…' : '🤖 Generate SEO'}
+                {generatingSeo ? 'Generating…' : 'Generate SEO'}
               </button>
             </div>
 
@@ -568,7 +568,7 @@ export default function ProductForm({
                   {form.tags.map(tag => (
                     <span
                       key={tag}
-                      className="flex items-center gap-1 px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-label-sm text-label-sm"
+                      className="flex items-center gap-1.5 px-3 py-1 bg-surface-card border-2 border-table-border text-primary rounded-lg font-black text-[10px] uppercase tracking-widest"
                     >
                       {tag}
                       <button
@@ -603,15 +603,15 @@ export default function ProductForm({
 
             {/* SEO Preview */}
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant mb-3 uppercase tracking-wider">Google Preview</p>
-              <div className="p-5 border border-outline-variant rounded-xl bg-white space-y-1 max-w-xl">
-                <p className="text-[#1a0dab] text-[17px] font-medium truncate">
+              <p className="font-black text-[10px] text-on-surface-variant mb-3 uppercase tracking-widest">Google Preview</p>
+              <div className="p-5 border-2 border-table-border rounded-xl bg-surface space-y-1 max-w-xl">
+                <p className="text-[#1a0dab] text-lg font-bold truncate">
                   {form.meta_title || form.name || 'Product Title'}
                 </p>
-                <p className="text-[#006621] text-sm">
+                <p className="text-[#006621] font-bold text-xs">
                   bcr-traders.com/products/{form.slug || 'product-slug'}
                 </p>
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm font-medium text-on-surface-variant line-clamp-2 mt-1">
                   {form.meta_description || form.description?.replace(/<[^>]*>/g, '').slice(0, 160) || 'Product description will appear here…'}
                 </p>
               </div>
@@ -623,29 +623,29 @@ export default function ProductForm({
         {tab === 5 && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-headline-md text-headline-md text-primary">Google Merchant Center</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+              <h3 className="font-black text-xl text-primary tracking-tight">Google Merchant Center</h3>
+              <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
                 Data pulled from Basic Info and Pricing tabs and fed into Google Shopping.
               </p>
             </div>
 
-            <div className="p-5 bg-surface-container rounded-xl border border-outline-variant/50 space-y-3">
-              <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Shopping Preview</p>
+            <div className="p-6 bg-surface-card rounded-2xl border-2 border-table-border space-y-4">
+              <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">Shopping Preview</p>
               <div className="flex gap-4">
                 {images[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={images[0].url} alt="" className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
+                  <img src={images[0].url} alt="" className="w-24 h-24 rounded-xl object-cover flex-shrink-0 border-2 border-table-border" />
                 ) : (
-                  <div className="w-20 h-20 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-on-surface-variant">image</span>
+                  <div className="w-24 h-24 rounded-xl bg-surface border-2 border-table-border flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-on-surface-variant/40">image</span>
                   </div>
                 )}
                 <div>
-                  <p className="font-body-lg text-body-lg text-on-surface font-medium">{form.name || 'Product Name'}</p>
-                  <p className="font-headline-md text-headline-md text-primary">
+                  <p className="font-bold text-lg text-primary">{form.name || 'Product Name'}</p>
+                  <p className="font-black text-2xl text-primary tracking-tight mt-1">
                     {form.price ? `₹${parseFloat(form.price).toFixed(2)}` : '—'}
                   </p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">BCR Traders</p>
+                  <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant mt-2">BCR Traders</p>
                 </div>
               </div>
             </div>
@@ -655,7 +655,7 @@ export default function ProductForm({
                 href={`/api/merchant-feed?product_id=${product.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface rounded-full font-body-md text-body-md hover:bg-surface-container-highest transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-card border-2 border-table-border text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/40 transition-all active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                 View Merchant Feed
@@ -666,23 +666,23 @@ export default function ProductForm({
 
         {/* Tab 6: FAQ */}
         {tab === 6 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <h3 className="font-headline-md text-headline-md text-primary">FAQ</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+              <h3 className="font-black text-xl text-primary tracking-tight">FAQ</h3>
+              <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
                 Manage frequently asked questions for this product.
               </p>
             </div>
             {isEdit ? (
               <Link
                 href={`/admin/products/${product.id}/faq`}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-opacity active:scale-95 shadow-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">quiz</span>
                 Manage FAQs
               </Link>
             ) : (
-              <p className="font-body-md text-body-md text-on-surface-variant italic">
+              <p className="font-bold text-sm text-on-surface-variant italic">
                 Save the product first to manage FAQs.
               </p>
             )}
@@ -691,23 +691,23 @@ export default function ProductForm({
 
         {/* Tab 7: Reviews */}
         {tab === 7 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <h3 className="font-headline-md text-headline-md text-primary">Reviews</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+              <h3 className="font-black text-xl text-primary tracking-tight">Reviews</h3>
+              <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
                 Approve and manage customer reviews for this product.
               </p>
             </div>
             {isEdit ? (
               <Link
                 href={`/admin/products/${product.id}/reviews`}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-opacity active:scale-95 shadow-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">reviews</span>
                 Manage Reviews
               </Link>
             ) : (
-              <p className="font-body-md text-body-md text-on-surface-variant italic">
+              <p className="font-bold text-sm text-on-surface-variant italic">
                 Save the product first to manage reviews.
               </p>
             )}
@@ -717,7 +717,7 @@ export default function ProductForm({
 
       {/* ── Toast ── */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-on-surface text-surface rounded-full font-body-md text-body-md shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
           {toast}
         </div>
       )}
@@ -731,11 +731,11 @@ function Field({
   label, required, hint, children,
 }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="font-label-md text-label-md text-on-surface font-medium">
+    <div className="space-y-2">
+      <label className="font-black text-xs text-primary uppercase tracking-widest flex items-center">
         {label}
         {required && <span className="text-error ml-1">*</span>}
-        {hint && <span className="font-label-sm text-label-sm text-on-surface-variant ml-2 font-normal">{hint}</span>}
+        {hint && <span className="font-bold text-[10px] text-on-surface-variant ml-3 normal-case tracking-normal">{hint}</span>}
       </label>
       {children}
     </div>
@@ -748,10 +748,10 @@ function ToggleField({
   label, sub, checked, onChange,
 }: { label: string; sub: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between gap-6 p-4 bg-surface-container rounded-xl border border-outline-variant/50 min-w-[220px]">
+    <div className="flex items-center justify-between gap-6 p-5 bg-surface-card rounded-2xl border-2 border-table-border min-w-[240px]">
       <div>
-        <p className="font-body-md text-body-md text-on-surface font-medium">{label}</p>
-        <p className="font-label-sm text-label-sm text-on-surface-variant">{sub}</p>
+        <p className="font-black text-xs text-primary uppercase tracking-widest">{label}</p>
+        <p className="font-bold text-[10px] text-on-surface-variant mt-1">{sub}</p>
       </div>
       <button
         type="button"
@@ -759,11 +759,11 @@ function ToggleField({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors',
-          checked ? 'bg-primary' : 'bg-surface-container-highest',
+          'relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full border-2 transition-colors active:scale-95',
+          checked ? 'bg-primary border-primary' : 'bg-surface border-table-border',
         )}
       >
-        <span className={cn('inline-block h-4 w-4 rounded-full bg-white shadow transition-transform', checked ? 'translate-x-6' : 'translate-x-1')} />
+        <span className={cn('inline-block h-4 w-4 rounded-full shadow transition-transform', checked ? 'translate-x-6 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50')} />
       </button>
     </div>
   )
@@ -786,8 +786,8 @@ function RichTextEditor({
   })
 
   return (
-    <div className="border border-outline-variant rounded-xl overflow-hidden">
-      <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-outline-variant bg-surface-container-low">
+    <div className="border-2 border-table-border rounded-xl bg-surface overflow-hidden">
+      <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b-2 border-table-border bg-surface-card">
         <TipTapBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={!!editor?.isActive('bold')} icon="format_bold" title="Bold" />
         <TipTapBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={!!editor?.isActive('italic')} icon="format_italic" title="Italic" />
         <TipTapBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={!!editor?.isActive('strike')} icon="strikethrough_s" title="Strike" />
@@ -801,7 +801,7 @@ function RichTextEditor({
         <TipTapBtn onClick={() => editor?.chain().focus().redo().run()} active={false} icon="redo" title="Redo" />
       </div>
       {!editor?.getText() && !content && (
-        <div className="absolute pointer-events-none p-4 text-on-surface-variant font-body-md text-body-md">
+        <div className="absolute pointer-events-none p-5 font-bold text-sm text-on-surface-variant">
           {placeholder}
         </div>
       )}
@@ -817,8 +817,8 @@ function TipTapBtn({ onClick, active, icon, title }: { onClick: () => void; acti
       title={title}
       onClick={onClick}
       className={cn(
-        'p-1.5 rounded-lg transition-colors',
-        active ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-container',
+        'p-1.5 rounded-lg border-2 transition-colors active:scale-95',
+        active ? 'bg-primary border-primary text-white shadow-sm' : 'bg-surface border-transparent text-on-surface-variant hover:border-table-border hover:bg-surface-card',
       )}
     >
       <span className="material-symbols-outlined text-[18px]">{icon}</span>
@@ -870,15 +870,17 @@ function ImageUploader({
 
       {images.length < 8 && (
         <label className={cn(
-          'flex items-center gap-3 px-5 py-4 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors',
+          'flex items-center gap-4 px-6 py-8 border-2 border-dashed border-table-border bg-surface-card rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all active:scale-[0.99]',
           uploading && 'opacity-50 pointer-events-none',
         )}>
-          <span className="material-symbols-outlined text-on-surface-variant text-[24px]">cloud_upload</span>
+          <div className="p-3 bg-surface border-2 border-table-border rounded-xl">
+            <span className="material-symbols-outlined text-primary text-[28px]">cloud_upload</span>
+          </div>
           <div>
-            <p className="font-body-md text-body-md text-on-surface">
+            <p className="font-bold text-sm text-primary">
               {uploading ? 'Uploading…' : 'Click to upload images'}
             </p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">
+            <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
               {images.length}/8 images · PNG, JPG, WebP
             </p>
           </div>
@@ -921,7 +923,7 @@ function SortableImage({
       <img
         src={url}
         alt=""
-        className="w-24 h-24 rounded-xl object-cover cursor-grab active:cursor-grabbing"
+        className="w-28 h-28 rounded-xl object-cover cursor-grab active:cursor-grabbing border-2 border-table-border"
         {...attributes}
         {...listeners}
       />
@@ -943,4 +945,4 @@ function SortableImage({
 
 // ── Shared styles ──────────────────────────────────────────────────────────────
 
-const inputCls = 'w-full px-4 py-2.5 bg-surface-container rounded-xl border border-outline-variant font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'

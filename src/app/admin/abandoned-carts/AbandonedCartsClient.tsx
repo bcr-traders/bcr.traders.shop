@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Download } from 'lucide-react'
+import { X, Download, ShoppingCart, Eye, Check, AlertCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { AbandonedCart } from './page'
 
 interface Props { initialCarts: AbandonedCart[] }
@@ -37,104 +38,145 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Abandoned Carts</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Abandoned Carts.
+          </h1>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">
             {carts.filter((c) => !c.is_recovered).length} active · {carts.filter((c) => c.is_recovered).length} recovered
           </p>
         </div>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 rounded-full border-[1.5px] border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container transition-colors">
-          <Download size={14} /> Export CSV
+        <button onClick={exportCSV} className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-[10px] uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-95 shadow-sm">
+          <Download size={16} strokeWidth={2.5} /> Export CSV
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap items-center">
-        <div className="flex gap-1 bg-surface-container rounded-full p-1">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center border-b-2 border-table-border pb-4">
+        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto scrollbar-hide">
           {(['all', 'no', 'yes'] as const).map((v) => (
             <button
               key={v}
               onClick={() => setShowRecovered(v)}
-              className={`px-4 py-1.5 rounded-full font-label-sm text-label-sm transition-colors ${showRecovered === v ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
+              className={cn('px-6 py-3 font-black text-[10px] uppercase tracking-widest transition-all rounded-xl whitespace-nowrap', showRecovered === v ? 'bg-primary text-white border-2 border-primary shadow-sm' : 'bg-surface text-on-surface-variant border-2 border-transparent hover:border-table-border hover:bg-surface-card active:scale-95')}
             >
               {v === 'all' ? 'All' : v === 'no' ? 'Active' : 'Recovered'}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Min value ₹</span>
-          <input
-            type="number"
-            value={minValue}
-            onChange={(e) => setMinValue(e.target.value)}
-            placeholder="0"
-            className="w-24 px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary"
-          />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest whitespace-nowrap">Min value</span>
+          <div className="relative flex-1 sm:w-32">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-xs text-primary">₹</span>
+            <input
+              type="number"
+              value={minValue}
+              onChange={(e) => setMinValue(e.target.value)}
+              placeholder="0"
+              className="w-full pl-8 pr-3 py-2.5 rounded-xl border-2 border-table-border bg-surface font-black text-xs text-primary focus:outline-none focus:border-primary font-mono transition-colors"
+            />
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/50 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-surface-container-low border-b border-outline-variant/30">
-              {['Customer', 'Phone', 'Items', 'Cart Value', 'Last Activity', 'Status', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-outline-variant/30">
-            {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center font-body-md text-body-md text-on-surface-variant">No carts found.</td></tr>
-            ) : filtered.map((cart) => (
-              <tr key={cart.id} className="hover:bg-surface-container-low transition-colors">
-                <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{cart.customer_name ?? '—'}</td>
-                <td className="px-4 py-3 font-body-md text-body-md text-on-surface-variant">{cart.phone ?? '—'}</td>
-                <td className="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant">{cart.item_count} items</td>
-                <td className="px-4 py-3 font-body-md text-body-md text-on-surface font-semibold">₹{cart.total_value.toFixed(0)}</td>
-                <td className="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{formatDate(cart.last_activity)}</td>
-                <td className="px-4 py-3">
-                  {cart.is_recovered ? (
-                    <span className="inline-flex px-2.5 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] font-label-sm text-label-sm">Recovered</span>
-                  ) : (
-                    <span className="inline-flex px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm">Active</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <button onClick={() => setSelected(cart)} className="font-label-sm text-label-sm text-primary hover:underline">View</button>
-                </td>
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
+            <thead>
+              <tr className="bg-primary text-white">
+                {['Customer', 'Phone', 'Items', 'Cart Value', 'Last Activity', 'Status', 'Actions'].map((h, i) => (
+                  <th key={h} className={cn("px-5 py-4 font-black text-[10px] uppercase tracking-[0.2em] text-white/70", i < 6 ? "border-r border-white/10" : "", h === "Actions" || h === "Status" ? "text-center" : "")}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-24 text-center">
+                     <ShoppingCart size={32} className="mx-auto text-on-surface-variant/40 mb-4" />
+                     <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">No carts found.</p>
+                  </td>
+                </tr>
+              ) : filtered.map((cart, idx) => (
+                <tr key={cart.id} className={cn("hover:bg-surface-container-low transition-colors group", idx !== filtered.length - 1 ? 'border-b-2 border-table-border' : '')}>
+                  <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-primary">{cart.customer_name ?? '—'}</td>
+                  <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{cart.phone ?? '—'}</td>
+                  <td className="px-5 py-4 border-r border-table-border font-black text-[10px] uppercase tracking-widest text-on-surface-variant">
+                    {cart.item_count} {cart.item_count === 1 ? 'item' : 'items'}
+                  </td>
+                  <td className="px-5 py-4 border-r border-table-border font-black text-sm text-primary">₹{cart.total_value.toFixed(0)}</td>
+                  <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{formatDate(cart.last_activity)}</td>
+                  <td className="px-5 py-4 border-r border-table-border text-center">
+                    {cart.is_recovered ? (
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-green-200 bg-green-50 text-green-700 font-black text-[10px] uppercase tracking-widest">
+                        <Check size={12} strokeWidth={3} /> Recovered
+                      </span>
+                    ) : (
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-error/20 bg-error/10 text-error font-black text-[10px] uppercase tracking-widest">
+                        <AlertCircle size={12} strokeWidth={3} /> Active
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-center">
+                    <button onClick={() => setSelected(cart)} className="p-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95">
+                      <Eye size={16} strokeWidth={2.5} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-surface rounded-xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant">
-              <h3 className="font-headline-md text-headline-md text-on-surface">Cart Details</h3>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-full hover:bg-surface-container">
-                <X size={18} className="text-on-surface-variant" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-surface-card rounded-2xl border-2 border-table-border shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b-2 border-table-border bg-surface">
+              <h3 className="font-black text-xl text-primary">Cart Details.</h3>
+              <button onClick={() => setSelected(null)} className="p-2 rounded-xl border-2 border-table-border hover:bg-surface-card transition-colors active:scale-95">
+                <X size={16} strokeWidth={2.5} className="text-on-surface-variant" />
               </button>
             </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-on-surface-variant">Customer</span><p className="font-medium text-on-surface">{selected.customer_name ?? '—'}</p></div>
-                <div><span className="text-on-surface-variant">Phone</span><p className="font-medium text-on-surface">{selected.phone ?? '—'}</p></div>
-                <div><span className="text-on-surface-variant">Total Value</span><p className="font-medium text-on-surface">₹{selected.total_value.toFixed(0)}</p></div>
-                <div><span className="text-on-surface-variant">Last Activity</span><p className="font-medium text-on-surface">{formatDate(selected.last_activity)}</p></div>
+            
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-surface p-4 rounded-xl border-2 border-table-border">
+                  <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Customer</span>
+                  <p className="font-bold text-sm text-primary truncate">{selected.customer_name ?? '—'}</p>
+                </div>
+                <div className="bg-surface p-4 rounded-xl border-2 border-table-border">
+                  <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Phone</span>
+                  <p className="font-bold text-sm text-primary truncate">{selected.phone ?? '—'}</p>
+                </div>
+                <div className="bg-surface p-4 rounded-xl border-2 border-table-border">
+                  <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Total Value</span>
+                  <p className="font-black text-sm text-primary truncate">₹{selected.total_value.toFixed(0)}</p>
+                </div>
+                <div className="bg-surface p-4 rounded-xl border-2 border-table-border">
+                  <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mb-1">Last Activity</span>
+                  <p className="font-bold text-sm text-primary truncate">{formatDate(selected.last_activity)}</p>
+                </div>
               </div>
+
               <div>
-                <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Items</p>
-                <div className="space-y-2">
+                <p className="font-black text-xs text-primary uppercase tracking-widest mb-3 border-b-2 border-table-border pb-2">Items</p>
+                <div className="space-y-3">
                   {selected.items.map((item, i) => (
-                    <div key={i} className="flex justify-between bg-surface-container-low rounded-lg px-3 py-2">
-                      <span className="font-body-md text-body-md text-on-surface">{item.name} ({item.unit})</span>
-                      <span className="font-body-md text-body-md text-on-surface-variant">×{item.quantity} — ₹{(item.price * item.quantity).toFixed(0)}</span>
+                    <div key={i} className="flex justify-between items-center bg-surface p-4 rounded-xl border-2 border-table-border">
+                      <div className="min-w-0 flex-1 pr-4">
+                        <span className="font-bold text-sm text-primary block truncate">{item.name}</span>
+                        <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mt-0.5">{item.unit}</span>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest block mb-0.5">×{item.quantity}</span>
+                        <span className="font-black text-sm text-primary">₹{(item.price * item.quantity).toFixed(0)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

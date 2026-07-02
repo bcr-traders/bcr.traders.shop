@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Loader2, Search, Download, Plus, Trash2, List, Map } from 'lucide-react'
+import { Loader2, Search, Download, Plus, Trash2, List, Map, Upload, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PincodeRow } from './page'
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
 
 interface Props { initialRows: PincodeRow[] }
 
@@ -115,179 +115,183 @@ export default function PincodesClient({ initialRows }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Serviceable Pincodes</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">{rows.length} pincodes configured</p>
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">Serviceable Pincodes.</h1>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">{rows.length} pincodes configured</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-3 flex-wrap">
           {/* View toggle */}
-          <div className="flex rounded-full border border-outline-variant overflow-hidden">
+          <div className="flex rounded-xl border-2 border-table-border overflow-hidden">
             <button
               onClick={() => setView('list')}
-              className={cn('flex items-center gap-1.5 px-4 py-2 font-label-sm text-label-sm transition-colors', view === 'list' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container')}
+              className={cn('flex items-center gap-1.5 px-4 py-2 font-black text-[10px] uppercase tracking-widest transition-colors', view === 'list' ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant hover:bg-surface-card')}
             >
-              <List size={13} /> List
+              <List size={14} strokeWidth={2.5} /> List
             </button>
             <button
               onClick={() => setView('map')}
-              className={cn('flex items-center gap-1.5 px-4 py-2 font-label-sm text-label-sm transition-colors border-l border-outline-variant', view === 'map' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container')}
+              className={cn('flex items-center gap-1.5 px-4 py-2 font-black text-[10px] uppercase tracking-widest transition-colors border-l-2 border-table-border', view === 'map' ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant hover:bg-surface-card')}
             >
-              <Map size={13} /> By City
+              <Map size={14} strokeWidth={2.5} /> By City
             </button>
           </div>
-          <button onClick={() => csvRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 rounded-full border-[1.5px] border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container transition-colors">
-            <span className="material-symbols-outlined text-[16px]">upload</span> Import CSV
+          <button onClick={() => csvRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-[10px] uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-95">
+            <Upload size={14} strokeWidth={2.5} /> Import CSV
           </button>
           <input ref={csvRef} type="file" accept=".csv" className="hidden" onChange={handleBulkCSV} />
-          <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 rounded-full border-[1.5px] border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container transition-colors">
-            <Download size={14} /> Export CSV
+          <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-[10px] uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-95">
+            <Download size={14} strokeWidth={2.5} /> Export CSV
           </button>
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-full font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-opacity active:scale-95 shadow-sm"
           >
-            <Plus size={15} /> Add Pincode
+            <Plus size={15} strokeWidth={2.5} /> Add Pincode
           </button>
         </div>
       </div>
 
       {/* Add form */}
       {isAdding && (
-        <form onSubmit={handleAdd} className="bg-surface-container-lowest rounded-xl border border-outline-variant/50 shadow-sm p-5 space-y-4">
-          <h2 className="font-headline-md text-headline-md text-on-surface">Add Pincode</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-1">Pincode *</label>
+        <form onSubmit={handleAdd} className="bg-surface-card rounded-2xl border-2 border-table-border p-6 space-y-6">
+          <h2 className="font-black text-xl text-primary">Add Pincode.</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="space-y-2">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">Pincode <span className="text-error">*</span></label>
               <input value={form.pincode} onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value }))} placeholder="751001" maxLength={6} className={inputCls} />
             </div>
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-1">Area Name</label>
+            <div className="space-y-2">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">Area Name</label>
               <input value={form.area_name} onChange={(e) => setForm((f) => ({ ...f, area_name: e.target.value }))} placeholder="Bhubaneswar Central" className={inputCls} />
             </div>
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-1">City *</label>
+            <div className="space-y-2">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">City <span className="text-error">*</span></label>
               <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Bhubaneswar" className={inputCls} />
             </div>
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-1">State</label>
+            <div className="space-y-2">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">State</label>
               <input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder="Odisha" className={inputCls} />
             </div>
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-1">Delivery Days</label>
+            <div className="space-y-2">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">Delivery Days</label>
               <input type="number" min={1} max={7} value={form.delivery_days} onChange={(e) => setForm((f) => ({ ...f, delivery_days: e.target.value }))} className={inputCls} />
             </div>
           </div>
-          {error && <p className="font-label-sm text-label-sm text-error">{error}</p>}
-          <div className="flex gap-3">
-            <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-full font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 disabled:opacity-60">
-              {isSaving && <Loader2 size={13} className="animate-spin" />} Save
+          {error && <p className="font-bold text-sm text-error">{error}</p>}
+          <div className="flex gap-4 pt-4 border-t-2 border-table-border">
+            <button type="button" onClick={() => { setIsAdding(false); setError('') }} className="px-6 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-xs uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-95">Cancel</button>
+            <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-opacity active:scale-95 shadow-sm">
+              {isSaving && <Loader2 size={16} className="animate-spin" />} Save Pincode
             </button>
-            <button type="button" onClick={() => { setIsAdding(false); setError('') }} className="px-5 py-2.5 rounded-full border-[1.5px] border-outline-variant text-on-surface-variant font-label-sm text-label-sm">Cancel</button>
           </div>
         </form>
       )}
 
       {/* Search */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+      <div className="relative max-w-lg">
+        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2.5} />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search pincode, city, or area…"
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors"
+          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-table-border bg-surface font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant"
         />
       </div>
 
       {/* List view */}
       {view === 'list' && (
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/50 shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                {['Pincode', 'Area', 'City', 'State', 'Days', 'Active', 'Actions'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/30">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-12 text-center font-body-md text-body-md text-on-surface-variant">No pincodes found.</td></tr>
-              ) : (
-                filtered.map((row) => (
-                  <PincodeTableRow key={row.id} row={row} onToggle={handleToggle} onDelete={handleDelete} />
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-primary text-white">
+                  {['Pincode', 'Area', 'City', 'State', 'Days', 'Active', 'Actions'].map((h, i) => (
+                    <th key={h} className={cn("py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70", i < 6 ? "border-r border-white/10" : "", h === "Actions" || h === "Active" ? "text-center" : "")}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={7} className="px-5 py-24 text-center font-black text-sm text-on-surface-variant uppercase tracking-widest">No pincodes found.</td></tr>
+                ) : (
+                  filtered.map((row, idx) => (
+                    <PincodeTableRow key={row.id} row={row} isLast={idx === filtered.length - 1} onToggle={handleToggle} onDelete={handleDelete} />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* City-grouped (map) view */}
       {view === 'map' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {cityEntries.length === 0 ? (
-            <p className="text-center font-body-md text-body-md text-on-surface-variant py-12">No pincodes found.</p>
+            <div className="bg-surface-card rounded-2xl border-2 border-table-border py-24 text-center">
+              <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">No pincodes found.</p>
+            </div>
           ) : (
             <>
-              <div className="flex gap-3 justify-end">
-                <button onClick={expandAll} className="font-label-sm text-label-sm text-primary hover:underline">Expand all</button>
-                <button onClick={collapseAll} className="font-label-sm text-label-sm text-on-surface-variant hover:underline">Collapse all</button>
+              <div className="flex gap-4 justify-end">
+                <button onClick={expandAll} className="font-black text-[10px] uppercase tracking-widest text-primary hover:underline">Expand all</button>
+                <button onClick={collapseAll} className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant hover:underline">Collapse all</button>
               </div>
               {cityEntries.map(([city, cityRows]) => {
                 const active = cityRows.filter((r) => r.is_active).length
                 const isOpen = openCities.has(city)
                 return (
-                  <div key={city} className="bg-surface-container-lowest rounded-xl border border-outline-variant/50 shadow-sm overflow-hidden">
+                  <div key={city} className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
                     <button
                       onClick={() => toggleCity(city)}
-                      className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-surface-container-low transition-colors text-left"
+                      className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-surface-container-low transition-colors text-left"
                     >
-                      <div className="flex items-center gap-3">
-                        <Map size={16} className="text-primary shrink-0" />
-                        <span className="font-headline-md text-headline-md text-on-surface">{city}</span>
-                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <Map size={20} className="text-primary shrink-0" strokeWidth={2.5} />
+                        <span className="font-black text-lg text-primary">{city}</span>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-primary bg-primary/10 border-2 border-primary/20 px-3 py-1 rounded-lg">
                           {cityRows.length} pincode{cityRows.length !== 1 ? 's' : ''}
                         </span>
                         {active < cityRows.length && (
-                          <span className="font-label-sm text-label-sm text-error bg-error/10 px-2 py-0.5 rounded-full">
+                          <span className="font-black text-[10px] uppercase tracking-widest text-error bg-error/10 border-2 border-error/20 px-3 py-1 rounded-lg">
                             {cityRows.length - active} inactive
                           </span>
                         )}
                       </div>
-                      <span className={cn('text-on-surface-variant transition-transform', isOpen ? 'rotate-180' : '')}>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <span className={cn('text-primary transition-transform', isOpen ? 'rotate-180' : '')}>
+                        <ChevronDown size={20} strokeWidth={2.5} />
                       </span>
                     </button>
                     {isOpen && (
-                      <div className="border-t border-outline-variant/30">
-                        <table className="w-full">
+                      <div className="border-t-2 border-table-border overflow-x-auto">
+                        <table className="w-full text-left border-collapse whitespace-nowrap">
                           <thead>
-                            <tr className="bg-surface-container-low">
-                              {['Pincode', 'Area', 'Days', 'Active', ''].map((h) => (
-                                <th key={h} className="px-4 py-2.5 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{h}</th>
+                            <tr className="bg-primary text-white">
+                              {['Pincode', 'Area', 'Days', 'Active', 'Actions'].map((h, i) => (
+                                <th key={h} className={cn("px-5 py-3 font-black text-[10px] uppercase tracking-[0.2em] text-white/70", i < 4 ? "border-r border-white/10" : "", h === "Actions" || h === "Active" ? "text-center" : "")}>{h}</th>
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-outline-variant/30">
-                            {cityRows.map((row) => (
-                              <tr key={row.id} className="hover:bg-surface-container-low transition-colors">
-                                <td className="px-4 py-3 font-label-sm text-label-sm text-primary">{row.pincode}</td>
-                                <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{row.area_name ?? '—'}</td>
-                                <td className="px-4 py-3 font-body-md text-body-md text-on-surface-variant">{row.delivery_days}d</td>
-                                <td className="px-4 py-3">
+                          <tbody>
+                            {cityRows.map((row, idx) => (
+                              <tr key={row.id} className={cn("hover:bg-surface-container-low transition-colors", idx !== cityRows.length - 1 ? 'border-b-2 border-table-border' : '')}>
+                                <td className="px-5 py-4 border-r border-table-border font-mono font-black text-xs text-primary tracking-widest">{row.pincode}</td>
+                                <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface">{row.area_name ?? '—'}</td>
+                                <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{row.delivery_days}d</td>
+                                <td className="px-5 py-4 border-r border-table-border text-center">
                                   <button
                                     onClick={() => handleToggle(row)}
-                                    className={cn('relative w-9 h-5 rounded-full transition-colors', row.is_active ? 'bg-primary' : 'bg-outline-variant')}
+                                    className={cn('relative inline-flex h-6 w-11 items-center rounded-full border-2 transition-colors active:scale-95 mx-auto', row.is_active ? 'bg-primary border-primary' : 'bg-surface border-table-border')}
                                   >
-                                    <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform', row.is_active ? 'translate-x-[18px]' : 'translate-x-0.5')} />
+                                    <span className={cn('inline-block h-3.5 w-3.5 rounded-full shadow transition-transform', row.is_active ? 'translate-x-5 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50')} />
                                   </button>
                                 </td>
-                                <td className="px-4 py-3">
-                                  <button onClick={() => handleDelete(row)} className="text-error hover:opacity-70 transition-opacity">
-                                    <Trash2 size={15} />
+                                <td className="px-5 py-4 text-center">
+                                  <button onClick={() => handleDelete(row)} className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-all active:scale-95">
+                                    <Trash2 size={16} strokeWidth={2.5} />
                                   </button>
                                 </td>
                               </tr>
@@ -305,8 +309,8 @@ export default function PincodesClient({ initialRows }: Props) {
       )}
 
       {/* CSV format hint */}
-      <p className="font-label-sm text-label-sm text-on-surface-variant">
-        CSV import format: <code className="bg-surface-container px-1 rounded">pincode,area_name,city,state,delivery_days</code>
+      <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">
+        CSV import format: <code className="bg-surface border-2 border-table-border px-2 py-1 rounded-lg text-primary mx-1 normal-case font-mono tracking-normal">pincode,area_name,city,state,delivery_days</code>
       </p>
     </div>
   )
@@ -314,31 +318,33 @@ export default function PincodesClient({ initialRows }: Props) {
 
 function PincodeTableRow({
   row,
+  isLast,
   onToggle,
   onDelete,
 }: {
   row: PincodeRow
+  isLast: boolean
   onToggle: (row: PincodeRow) => void
   onDelete: (row: PincodeRow) => void
 }) {
   return (
-    <tr className="hover:bg-surface-container-low transition-colors">
-      <td className="px-4 py-3 font-label-sm text-label-sm text-primary">{row.pincode}</td>
-      <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{row.area_name ?? '—'}</td>
-      <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{row.city}</td>
-      <td className="px-4 py-3 font-body-md text-body-md text-on-surface-variant">{row.state}</td>
-      <td className="px-4 py-3 font-body-md text-body-md text-on-surface-variant">{row.delivery_days}d</td>
-      <td className="px-4 py-3">
+    <tr className={cn("hover:bg-surface-container-low transition-colors group", !isLast ? "border-b-2 border-table-border" : "")}>
+      <td className="px-5 py-4 border-r border-table-border font-mono font-black text-xs text-primary tracking-widest">{row.pincode}</td>
+      <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface">{row.area_name ?? '—'}</td>
+      <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface">{row.city}</td>
+      <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{row.state}</td>
+      <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{row.delivery_days}d</td>
+      <td className="px-5 py-4 border-r border-table-border text-center">
         <button
           onClick={() => onToggle(row)}
-          className={cn('relative w-9 h-5 rounded-full transition-colors', row.is_active ? 'bg-primary' : 'bg-outline-variant')}
+          className={cn('relative inline-flex h-6 w-11 items-center rounded-full border-2 transition-colors active:scale-95 mx-auto', row.is_active ? 'bg-primary border-primary' : 'bg-surface border-table-border')}
         >
-          <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform', row.is_active ? 'translate-x-[18px]' : 'translate-x-0.5')} />
+          <span className={cn('inline-block h-3.5 w-3.5 rounded-full shadow transition-transform', row.is_active ? 'translate-x-5 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50')} />
         </button>
       </td>
-      <td className="px-4 py-3">
-        <button onClick={() => onDelete(row)} className="text-error hover:opacity-70 transition-opacity">
-          <Trash2 size={15} />
+      <td className="px-5 py-4 text-center">
+        <button onClick={() => onDelete(row)} className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-all active:scale-95">
+          <Trash2 size={16} strokeWidth={2.5} />
         </button>
       </td>
     </tr>

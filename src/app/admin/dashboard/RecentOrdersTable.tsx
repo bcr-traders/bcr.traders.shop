@@ -8,13 +8,13 @@ import type { OrderStatus } from '@/types/database.types'
 const ALL_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled', 'returned']
 
 const STATUS_CHIP: Record<OrderStatus, string> = {
-  placed:    'bg-surface-container text-on-surface-variant',
-  confirmed: 'bg-blue-100 text-blue-700',
-  packed:    'bg-amber-100 text-amber-700',
-  shipping:  'bg-purple-100 text-purple-700',
-  delivered: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
-  returned:  'bg-gray-100 text-gray-600',
+  placed:    'bg-surface-container-high text-on-surface-variant border-table-border',
+  confirmed: 'bg-primary text-white border-primary',
+  packed:    'bg-secondary-container text-on-secondary-container border-table-border',
+  shipping:  'bg-primary/80 text-white border-primary',
+  delivered: 'bg-success/10 text-success border-success/30',
+  cancelled: 'bg-error/10 text-error border-error/30',
+  returned:  'bg-surface-container text-on-surface-variant border-table-border',
 }
 
 export type RecentOrderRow = {
@@ -44,75 +44,96 @@ export default function RecentOrdersTable({ initialOrders }: { initialOrders: Re
   }
 
   return (
-    <section
-      className="bg-surface rounded-2xl border border-outline-variant/50"
-      style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.08)' }}
-    >
-      <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
-        <h4 className="font-headline-md text-headline-md text-primary">Recent Orders</h4>
-        <Link href="/admin/orders" className="font-body-md text-body-md text-secondary hover:underline">
+    <section className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-5 border-b-2 border-table-border bg-surface-container-low">
+        <h4 className="font-black text-lg text-primary uppercase tracking-wider">Recent Orders</h4>
+        <Link href="/admin/orders" className="text-xs font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">
           View all →
         </Link>
       </div>
 
       {orders.length === 0 ? (
-        <p className="py-12 text-center font-body-md text-body-md text-on-surface-variant">No orders yet.</p>
+        <div className="py-16 text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4">
+            <span className="material-symbols-outlined text-3xl text-on-surface-variant/50">receipt_long</span>
+          </div>
+          <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">No recent orders.</p>
+        </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                {['Order #', 'Customer', 'Items', 'Total', 'Status', 'Date', ''].map(h => (
-                  <th key={h} className="py-3 px-4 border-b border-outline-variant/20 whitespace-nowrap">{h}</th>
+              <tr className="bg-primary">
+                {['Order #', 'Customer', 'Items', 'Total', 'Status', 'Date', ''].map((h, i) => (
+                  <th key={h} className={cn(
+                    "py-3 px-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/70 whitespace-nowrap",
+                    i !== 6 ? "border-r border-white/10" : ""
+                  )}>
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => {
+              {orders.map((order, idx) => {
                 const addr = order.address
                 const itemCount = order.items?.length ?? 0
                 return (
                   <tr
                     key={order.id}
-                    className="border-b border-outline-variant/20 hover:bg-surface-container-low transition-colors last:border-0"
+                    className={cn(
+                      "group hover:bg-surface-container-low transition-colors",
+                      idx !== orders.length - 1 ? "border-b-2 border-table-border" : ""
+                    )}
                   >
-                    <td className="py-3 px-4 font-bold font-label-sm text-label-sm text-primary">
-                      #{order.id.slice(-8).toUpperCase()}
+                    <td className="py-4 px-5 border-r border-table-border">
+                      <span className="font-black text-xs text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">
-                      <p className="font-body-md text-body-md text-on-surface">{addr?.name ?? '—'}</p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">{addr?.phone ?? ''}</p>
+                    <td className="py-4 px-5 border-r border-table-border">
+                      <p className="font-bold text-sm text-on-surface">{addr?.name ?? '—'}</p>
+                      <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant mt-0.5">{addr?.phone ?? ''}</p>
                     </td>
-                    <td className="py-3 px-4 font-body-md text-body-md text-on-surface">
-                      {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                    <td className="py-4 px-5 border-r border-table-border">
+                      <span className="font-bold text-sm text-on-surface">
+                        {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                      </span>
                     </td>
-                    <td className="py-3 px-4 font-body-md text-body-md text-on-surface font-semibold">
-                      ₹{order.total.toLocaleString('en-IN')}
+                    <td className="py-4 px-5 border-r border-table-border">
+                      <span className="font-black text-sm text-primary">
+                        ₹{order.total.toLocaleString('en-IN')}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={order.status}
-                        disabled={updating === order.id}
-                        onChange={e => changeStatus(order.id, e.target.value as OrderStatus)}
-                        className={cn(
-                          'font-label-sm text-label-sm rounded-full px-3 py-1.5 border-0 outline-none cursor-pointer capitalize appearance-none disabled:opacity-50 transition-colors',
-                          STATUS_CHIP[order.status],
-                        )}
-                      >
-                        {ALL_STATUSES.map(s => (
-                          <option key={s} value={s} className="bg-surface text-on-surface capitalize">{s}</option>
-                        ))}
-                      </select>
+                    <td className="py-4 px-5 border-r border-table-border">
+                      <div className="relative">
+                        <select
+                          value={order.status}
+                          disabled={updating === order.id}
+                          onChange={e => changeStatus(order.id, e.target.value as OrderStatus)}
+                          className={cn(
+                            'font-black text-[10px] uppercase tracking-wider rounded-xl px-4 py-2 border-2 outline-none cursor-pointer appearance-none disabled:opacity-50 transition-all focus:ring-2 focus:ring-primary focus:ring-offset-1 w-full',
+                            STATUS_CHIP[order.status],
+                          )}
+                        >
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s} className="bg-surface text-on-surface capitalize font-medium">{s}</option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-current opacity-70">
+                          <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">
+                    <td className="py-4 px-5 border-r border-table-border font-bold text-xs text-on-surface-variant whitespace-nowrap">
                       {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-4 px-5">
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="text-secondary font-body-md text-body-md hover:underline whitespace-nowrap"
+                        className="flex items-center justify-center p-2 rounded-xl border-2 border-table-border text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all active:scale-95"
                       >
-                        View →
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                       </Link>
                     </td>
                   </tr>

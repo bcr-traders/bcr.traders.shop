@@ -167,43 +167,45 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full space-y-gutter">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6 md:space-y-8">
 
       {/* ── Header + Quick Actions ── */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
-            Dashboard
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Dashboard.
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">{todayLabel}</p>
+          <p className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mt-1">
+            {todayLabel}
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/admin/products/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity active:scale-95 shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Product
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Product
           </Link>
           <Link
             href="/admin/categories"
-            className="flex items-center gap-1.5 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full font-body-md text-body-md hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-4 py-2 border-2 border-table-border bg-surface-card text-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:border-primary/40 transition-colors active:scale-95"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Category
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Category
           </Link>
           <Link
             href="/admin/coupons/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-surface-container-high text-on-surface rounded-full font-body-md text-body-md hover:bg-surface-container-highest transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 border-2 border-table-border bg-surface-card text-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:border-primary/40 transition-colors active:scale-95"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Coupon
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Coupon
           </Link>
         </div>
       </div>
 
       {/* ── 4 Stat Cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Today's Orders"
           value={todayOrders.length.toString()}
@@ -216,74 +218,74 @@ export default async function DashboardPage() {
           value={pendingOrders.length.toString()}
           icon="pending_actions"
           sub={pendingOrders.length > 0 ? `${placedCount} placed · ${confirmedCount} confirmed` : 'All clear'}
-          subColor={pendingOrders.length > 0 ? 'text-error' : 'text-secondary'}
+          subColor={pendingOrders.length > 0 ? 'text-error' : 'text-on-surface-variant'}
         />
         <StatCard
           label="Month Revenue"
           value={formatRevenue(monthRevenue)}
           icon="payments"
           sub={`${monthOrders.filter(o => o.status !== 'cancelled').length} orders`}
-          subColor="text-secondary"
+          subColor="text-on-surface-variant"
+          inverted={true}
         />
         <StatCard
           label="Active Products"
           value={activeProductCount.toString()}
           icon="inventory_2"
           sub={lowStockProducts.length > 0 ? `⚠ ${lowStockProducts.length} low stock` : 'All in stock'}
-          subColor={lowStockProducts.length > 0 ? 'text-error' : 'text-secondary'}
+          subColor={lowStockProducts.length > 0 ? 'text-error' : 'text-on-surface-variant'}
         />
       </div>
 
       {/* ── Charts Row: Line + Donut ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-surface-card rounded-2xl border-2 border-table-border p-4">
           <DailyOrdersChart data={dailyData} />
         </div>
-        <div>
+        <div className="bg-surface-card rounded-2xl border-2 border-table-border p-4">
           <StatusDonutChart data={statusData} />
         </div>
       </div>
 
       {/* ── Category Revenue Bar Chart ── */}
-      <CategoryRevenueChart data={categoryData} />
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border p-4">
+        <CategoryRevenueChart data={categoryData} />
+      </div>
 
       {/* ── Low Stock Alerts ── */}
       {lowStockProducts.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <span
-              className="material-symbols-outlined text-error text-[20px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-table-border">
+            <span className="material-symbols-outlined text-error text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
               warning
             </span>
-            <h4 className="font-headline-md text-headline-md text-primary">Low Stock Alerts</h4>
+            <h4 className="font-black text-lg text-primary uppercase tracking-wider">Low Stock Alerts</h4>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {lowStockProducts.map(product => (
               <Link
                 key={product.id}
                 href={`/admin/products/${product.id}`}
-                className="flex items-center gap-3 p-4 bg-error/5 border border-error/20 rounded-xl hover:bg-error/10 transition-colors"
+                className="flex items-center gap-3 p-4 bg-error/5 border-2 border-error/30 rounded-2xl hover:bg-error/10 transition-colors"
               >
                 {product.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={product.images[0]}
                     alt=""
-                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                    className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-error/20"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-on-surface-variant text-[18px]">inventory_2</span>
+                  <div className="w-12 h-12 rounded-xl bg-white border border-error/20 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-error text-[20px]">inventory_2</span>
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-body-md text-body-md text-on-surface font-medium truncate">{product.name}</p>
+                  <p className="font-bold text-sm text-on-surface truncate">{product.name}</p>
                   {product.sku && (
-                    <p className="font-label-sm text-label-sm text-on-surface-variant">{product.sku}</p>
+                    <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant/70">{product.sku}</p>
                   )}
-                  <p className="font-label-sm text-label-sm text-error font-medium">
+                  <p className="font-black text-xs text-error mt-0.5">
                     {product.stock_quantity} left
                   </p>
                 </div>
@@ -303,7 +305,7 @@ export default async function DashboardPage() {
 // ── StatCard ──────────────────────────────────────────────────────────────────
 
 function StatCard({
-  label, value, icon, sub, subColor, delta, deltaLabel,
+  label, value, icon, sub, subColor, delta, deltaLabel, inverted = false
 }: {
   label: string
   value: string
@@ -312,6 +314,7 @@ function StatCard({
   subColor?: string
   delta?: number
   deltaLabel?: string
+  inverted?: boolean
 }) {
   const showDelta = delta !== undefined && deltaLabel
   const deltaText = showDelta
@@ -320,26 +323,44 @@ function StatCard({
     : `= Same ${deltaLabel}`
     : null
   const deltaColor = delta !== undefined
-    ? delta > 0 ? 'text-green-600'
+    ? delta > 0 ? 'text-success'
     : 'text-on-surface-variant'
     : ''
 
+  if (inverted) {
+    return (
+      <div className="relative bg-primary p-5 rounded-2xl border-2 border-primary flex flex-col justify-between min-h-[140px] overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
+        <div className="relative z-10 flex justify-between items-start mb-4">
+          <p className="font-black text-[10px] text-white/50 uppercase tracking-widest">{label}</p>
+          {icon && <span className="material-symbols-outlined text-white/60 text-[20px]">{icon}</span>}
+        </div>
+        <div className="relative z-10">
+          <p className="font-black text-3xl text-white tracking-tight">{value}</p>
+          {deltaText && (
+            <p className={`font-black text-[10px] uppercase tracking-wider mt-1 ${deltaColor === 'text-success' ? 'text-[#86efac]' : 'text-white/60'}`}>{deltaText}</p>
+          )}
+          {sub && !deltaText && (
+            <p className={`font-black text-[10px] uppercase tracking-wider mt-1 ${subColor === 'text-error' ? 'text-[#fca5a5]' : 'text-white/60'}`}>{sub}</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div
-      className="bg-surface p-5 rounded-2xl border border-outline-variant/50 flex flex-col justify-between min-h-[140px]"
-      style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.08)' }}
-    >
-      <div className="flex justify-between items-start">
-        <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{label}</p>
-        {icon && <span className="material-symbols-outlined text-secondary text-[20px]">{icon}</span>}
+    <div className="bg-surface-card p-5 rounded-2xl border-2 border-table-border flex flex-col justify-between min-h-[140px]">
+      <div className="flex justify-between items-start mb-4">
+        <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">{label}</p>
+        {icon && <span className="material-symbols-outlined text-primary/40 text-[20px]">{icon}</span>}
       </div>
       <div>
-        <p className="font-headline-lg text-headline-lg text-primary">{value}</p>
+        <p className="font-black text-3xl text-primary tracking-tight">{value}</p>
         {deltaText && (
-          <p className={`font-label-sm text-label-sm mt-0.5 ${deltaColor}`}>{deltaText}</p>
+          <p className={`font-black text-[10px] uppercase tracking-wider mt-1 ${deltaColor}`}>{deltaText}</p>
         )}
         {sub && !deltaText && (
-          <p className={`font-label-sm text-label-sm mt-0.5 ${subColor ?? 'text-on-surface-variant'}`}>{sub}</p>
+          <p className={`font-black text-[10px] uppercase tracking-wider mt-1 ${subColor}`}>{sub}</p>
         )}
       </div>
     </div>

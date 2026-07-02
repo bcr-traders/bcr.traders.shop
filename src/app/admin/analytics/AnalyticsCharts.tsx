@@ -7,6 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts'
+import { Download, BarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Shared types ───────────────────────────────────────────────────────────────
@@ -37,19 +38,19 @@ export type AnalyticsSummary = {
 
 // ── Colour palette ─────────────────────────────────────────────────────────────
 
-const BRAND   = '#26170c'
-const BRAND2  = '#715a3e'
-const BRAND3  = '#bc8d5f'
-const BRAND4  = '#f0bd8b'
+const BRAND   = '#000000'
+const BRAND2  = '#333333'
+const BRAND3  = '#666666'
+const BRAND4  = '#999999'
 const STATUS_COLORS: Record<string, string> = {
   placed:    '#6B7280',
   confirmed: '#3B82F6',
   packed:    '#F59E0B',
   shipping:  '#8B5CF6',
   delivered: '#0C831F',
-  cancelled: '#ba1a1a',
+  cancelled: '#DC2626',
 }
-const BAR_PALETTE = [BRAND, BRAND2, BRAND3, BRAND4, '#fdddb9', '#e0c29f', '#cbb49a', '#b89a80', '#a07850', '#886040']
+const BAR_PALETTE = ['#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6']
 
 function rupee(v: number) {
   if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`
@@ -58,10 +59,10 @@ function rupee(v: number) {
 }
 
 const TOOLTIP_STYLE = {
-  background: '#fdf9f1', border: '1px solid #d2c4bc',
-  borderRadius: 8, fontSize: 12, fontFamily: 'inherit',
+  background: '#ffffff', border: '2px solid #000000',
+  borderRadius: 12, fontSize: 12, fontFamily: 'inherit', fontWeight: 'bold'
 }
-const TICK = { fontSize: 11, fill: '#4f453f', fontFamily: 'inherit' }
+const TICK = { fontSize: 10, fill: '#000000', fontFamily: 'inherit', fontWeight: 'bold' }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
@@ -142,61 +143,63 @@ export default function AnalyticsCharts({
   }
 
   return (
-    <div className="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full space-y-gutter pb-12">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8 pb-12">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">
-          Analytics
-        </h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b-2 border-table-border pb-6">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+            Analytics.
+          </h1>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">
+            Store performance & insights
+          </p>
+        </div>
         <button
           onClick={exportCSV}
-          className="flex items-center gap-1.5 px-4 py-2 bg-surface-container-high text-on-surface rounded-full font-body-md text-body-md hover:bg-surface-container-highest transition-colors"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-[10px] uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-95 shadow-sm"
         >
-          <span className="material-symbols-outlined text-[16px]">download</span>
+          <Download size={16} strokeWidth={2.5} />
           Export CSV
         </button>
       </div>
 
       {/* ── Summary cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Total Revenue',   value: rupee(summary.totalRevenue),                    icon: 'payments' },
-          { label: 'Total Orders',    value: summary.totalOrders.toLocaleString('en-IN'),     icon: 'receipt_long' },
-          { label: 'Avg Order Value', value: rupee(summary.avgOrderValue),                   icon: 'trending_up' },
-          { label: 'Customers',       value: summary.uniqueCustomers.toLocaleString('en-IN'), icon: 'group' },
-          { label: 'Repeat Customers',value: summary.repeatCustomers.toLocaleString('en-IN'), icon: 'repeat' },
-          { label: 'Repeat Rate',     value: `${summary.repeatRate.toFixed(1)}%`,             icon: 'percent' },
+          { label: 'Total Revenue',   value: rupee(summary.totalRevenue) },
+          { label: 'Total Orders',    value: summary.totalOrders.toLocaleString('en-IN') },
+          { label: 'Avg Order Value', value: rupee(summary.avgOrderValue) },
+          { label: 'Customers',       value: summary.uniqueCustomers.toLocaleString('en-IN') },
+          { label: 'Repeat Customers',value: summary.repeatCustomers.toLocaleString('en-IN') },
+          { label: 'Repeat Rate',     value: `${summary.repeatRate.toFixed(1)}%` },
         ].map(card => (
-          <div key={card.label} className="bg-surface rounded-2xl border border-outline-variant/50 p-4" style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.07)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="material-symbols-outlined text-secondary text-[18px]">{card.icon}</span>
-            </div>
-            <p className="font-headline-md text-headline-md text-primary leading-tight">{card.value}</p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{card.label}</p>
+          <div key={card.label} className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <p className="font-black text-2xl lg:text-3xl text-primary leading-tight truncate" title={card.value}>{card.value}</p>
+            <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mt-2 truncate" title={card.label}>{card.label}</p>
           </div>
         ))}
       </div>
 
       {/* ── Row 1: Monthly Revenue + Status Donut ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Monthly Revenue (combo bar+line) */}
         <ChartCard title="Revenue by Month" sub="Last 12 months" className="lg:col-span-2">
           {monthly.every(m => m.revenue === 0) ? (
             <EmptyChart />
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <ComposedChart data={monthly} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.4} vertical={false} />
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={monthly} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" strokeOpacity={1} vertical={false} />
                 <XAxis dataKey="month" tick={TICK} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="rev" tick={TICK} tickLine={false} axisLine={false} tickFormatter={rupee} />
                 <YAxis yAxisId="ord" orientation="right" tick={TICK} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={TOOLTIP_STYLE}
                   formatter={(v: unknown, name: unknown) => [name === 'revenue' ? rupee(Number(v)) : String(v ?? ''), name === 'revenue' ? 'Revenue' : 'Orders']}
                 />
-                <Bar yAxisId="rev" dataKey="revenue" fill={BRAND4} radius={[3, 3, 0, 0]} opacity={0.8} />
-                <Line yAxisId="ord" type="monotone" dataKey="orders" stroke={BRAND} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Bar yAxisId="rev" dataKey="revenue" fill={BRAND4} radius={[4, 4, 0, 0]} />
+                <Line yAxisId="ord" type="monotone" dataKey="orders" stroke={BRAND} strokeWidth={3} dot={false} activeDot={{ r: 5, strokeWidth: 2, fill: '#fff', stroke: BRAND }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -207,16 +210,16 @@ export default function AnalyticsCharts({
           {statusBreakdown.length === 0 ? (
             <EmptyChart />
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="count" nameKey="status">
+                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="count" nameKey="status" stroke="none">
                   {statusBreakdown.map((entry, i) => (
                     <Cell key={i} fill={STATUS_COLORS[entry.status] ?? BAR_PALETTE[i % BAR_PALETTE.length]} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [v, String(n)]} />
-                <Legend iconType="circle" iconSize={8} formatter={v => (
-                  <span style={{ fontSize: 11, fontFamily: 'inherit', color: '#4f453f', textTransform: 'capitalize' }}>{v}</span>
+                <Legend iconType="circle" iconSize={10} formatter={v => (
+                  <span style={{ fontSize: 10, fontFamily: 'inherit', fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.05em', paddingLeft: 4 }}>{v}</span>
                 )} />
               </PieChart>
             </ResponsiveContainer>
@@ -225,22 +228,22 @@ export default function AnalyticsCharts({
       </div>
 
       {/* ── Row 2: Avg Order Value + New Customers ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Avg Order Value" sub="Trend over 12 months">
           {monthly.every(m => m.avg === 0) ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={monthly} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={monthly} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="avgGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={BRAND} stopOpacity={0.15} />
+                    <stop offset="5%" stopColor={BRAND} stopOpacity={0.2} />
                     <stop offset="95%" stopColor={BRAND} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.4} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" strokeOpacity={1} vertical={false} />
                 <XAxis dataKey="month" tick={TICK} tickLine={false} axisLine={false} />
                 <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={rupee} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: unknown) => [rupee(Number(v)), 'Avg Order Value']} />
-                <Area type="monotone" dataKey="avg" stroke={BRAND} strokeWidth={2} fill="url(#avgGrad)" dot={false} activeDot={{ r: 4, fill: BRAND }} />
+                <Area type="monotone" dataKey="avg" stroke={BRAND} strokeWidth={3} fill="url(#avgGrad)" dot={false} activeDot={{ r: 5, strokeWidth: 2, fill: '#fff', stroke: BRAND }} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -248,14 +251,14 @@ export default function AnalyticsCharts({
 
         <ChartCard title="New Customers" sub="Per month">
           {newCustomers.every(c => c.count === 0) ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={newCustomers} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.4} vertical={false} />
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={newCustomers} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" strokeOpacity={1} vertical={false} />
                 <XAxis dataKey="month" tick={TICK} tickLine={false} axisLine={false} />
                 <YAxis tick={TICK} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: unknown) => [String(v ?? ''), 'New Customers']} />
-                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {newCustomers.map((_, i) => <Cell key={i} fill={BAR_PALETTE[i % BAR_PALETTE.length]} />)}
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {newCustomers.map((_, i) => <Cell key={i} fill={BRAND2} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -268,14 +271,14 @@ export default function AnalyticsCharts({
         title="Top 10 Products"
         sub={activeProduct === 'revenue' ? 'By revenue' : 'By units sold'}
         headerRight={
-          <div className="flex gap-1">
+          <div className="flex bg-surface border-2 border-table-border rounded-xl overflow-hidden p-1">
             {(['revenue', 'units'] as const).map(k => (
               <button
                 key={k}
                 onClick={() => setActiveProduct(k)}
                 className={cn(
-                  'px-3 py-1 rounded-full font-label-sm text-label-sm transition-colors',
-                  activeProduct === k ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
+                  'px-4 py-2 font-black text-[10px] uppercase tracking-widest transition-colors rounded-lg',
+                  activeProduct === k ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-card',
                 )}
               >
                 {k === 'revenue' ? 'Revenue' : 'Units'}
@@ -285,20 +288,20 @@ export default function AnalyticsCharts({
         }
       >
         {(activeProduct === 'revenue' ? topByRevenue : topByUnits).length === 0 ? <EmptyChart /> : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart
               data={activeProduct === 'revenue' ? topByRevenue : topByUnits}
               layout="vertical"
               margin={{ top: 0, right: 60, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.4} horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" strokeOpacity={1} horizontal={false} />
               <XAxis type="number" tick={TICK} tickLine={false} axisLine={false}
                 tickFormatter={activeProduct === 'revenue' ? rupee : v => String(v)} />
-              <YAxis type="category" dataKey="name" tick={{ ...TICK, fontSize: 10 }} tickLine={false} axisLine={false} width={130}
-                tickFormatter={v => (v as string).length > 18 ? (v as string).slice(0, 18) + '…' : v as string} />
+              <YAxis type="category" dataKey="name" tick={{ ...TICK, fontSize: 9 }} tickLine={false} axisLine={false} width={150}
+                tickFormatter={v => (v as string).length > 22 ? (v as string).slice(0, 22) + '…' : v as string} />
               <Tooltip contentStyle={TOOLTIP_STYLE}
                 formatter={(v: unknown) => [activeProduct === 'revenue' ? rupee(Number(v)) : String(v ?? ''), activeProduct === 'revenue' ? 'Revenue' : 'Units']} />
-              <Bar dataKey={activeProduct} radius={[0, 3, 3, 0]}>
+              <Bar dataKey={activeProduct} radius={[0, 4, 4, 0]}>
                 {(activeProduct === 'revenue' ? topByRevenue : topByUnits).map((_, i) => (
                   <Cell key={i} fill={BAR_PALETTE[i % BAR_PALETTE.length]} />
                 ))}
@@ -311,9 +314,9 @@ export default function AnalyticsCharts({
       {/* ── Row 4: Category Revenue ── */}
       <ChartCard title="Revenue by Category" sub="This year">
         {categoryRevenue.length === 0 ? <EmptyChart /> : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={categoryRevenue} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.4} vertical={false} />
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={categoryRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" strokeOpacity={1} vertical={false} />
               <XAxis dataKey="category" tick={TICK} tickLine={false} axisLine={false} />
               <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={rupee} />
               <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: unknown) => [rupee(Number(v)), 'Revenue']} />
@@ -326,7 +329,7 @@ export default function AnalyticsCharts({
       </ChartCard>
 
       {/* ── Row 5: Coupons + Pincodes ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Most used coupons */}
         <DataTable
@@ -335,12 +338,12 @@ export default function AnalyticsCharts({
           empty={couponUsage.length === 0}
           headers={['Code', 'Uses', 'Type', 'Value']}
           rows={couponUsage.map(c => [
-            <span key="code" className="font-mono font-bold text-primary px-2 py-0.5 bg-primary-container rounded-lg text-sm">{c.code}</span>,
-            <span key="count" className="font-semibold">{c.count}</span>,
-            <span key="type" className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium', c.type === 'percentage' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>
+            <span key="code" className="font-mono font-black text-primary px-3 py-1 bg-surface border-2 border-table-border rounded-lg text-xs">{c.code}</span>,
+            <span key="count" className="font-black text-sm">{c.count}</span>,
+            <span key="type" className={cn('px-3 py-1 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest', c.type === 'percentage' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200')}>
               {c.type === 'percentage' ? '%' : '₹'}
             </span>,
-            <span key="val">{c.type === 'percentage' ? `${c.value}%` : `₹${c.value}`}</span>,
+            <span key="val" className="font-black text-sm">{c.type === 'percentage' ? `${c.value}%` : `₹${c.value}`}</span>,
           ])}
         />
 
@@ -351,46 +354,48 @@ export default function AnalyticsCharts({
           empty={pincodeHeatmap.length === 0}
           headers={['Pincode', 'City', 'Attempts']}
           rows={pincodeHeatmap.map((p) => [
-            <span key="pin" className="font-mono font-bold">{p.pincode}</span>,
-            <span key="city" className="text-on-surface-variant">{p.city ?? '—'}</span>,
-            <div key="count" className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden max-w-[60px]">
+            <span key="pin" className="font-mono font-black text-sm">{p.pincode}</span>,
+            <span key="city" className="font-bold text-sm text-on-surface-variant">{p.city ?? '—'}</span>,
+            <div key="count" className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-surface border-2 border-table-border rounded-full overflow-hidden max-w-[80px]">
                 <div
-                  className="h-full rounded-full bg-error"
+                  className="h-full bg-error"
                   style={{ width: `${pincodeHeatmap[0]?.count ? (p.count / pincodeHeatmap[0].count) * 100 : 0}%` }}
                 />
               </div>
-              <span className="font-semibold text-error">{p.count}</span>
+              <span className="font-black text-sm text-error">{p.count}</span>
             </div>,
           ])}
         />
       </div>
 
       {/* ── Customer Segments ──────────────────────────────────────────────── */}
-      <div
-        className="bg-surface rounded-2xl border border-outline-variant/50 p-6"
-        style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.07)' }}
-      >
-        <h3 className="font-headline-md text-headline-md text-primary mb-1">Customer Segments</h3>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-5">
-          All-time customer breakdown
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="bg-surface-card rounded-2xl border-2 border-table-border p-6 md:p-8">
+        <div className="border-b-2 border-table-border pb-4 mb-6">
+          <h3 className="font-black text-xl text-primary">Customer Segments.</h3>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">
+            All-time customer breakdown
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[
-            { label: 'New Customers', value: segments.newCustomers, sub: '1 order placed', color: 'bg-blue-100 text-blue-800' },
-            { label: 'Returning',     value: segments.returning,    sub: '2+ orders placed', color: 'bg-green-100 text-green-800' },
-            { label: 'High-Value',    value: segments.highValue,    sub: 'Total spend > ₹5 000', color: 'bg-amber-100 text-amber-800' },
-            { label: 'Bulk Buyers',   value: segments.bulkBuyers,   sub: 'Has bulk order', color: 'bg-purple-100 text-purple-800' },
+            { label: 'New Customers', value: segments.newCustomers, sub: '1 order placed', color: 'bg-blue-50 text-blue-800 border-blue-200' },
+            { label: 'Returning',     value: segments.returning,    sub: '2+ orders placed', color: 'bg-green-50 text-green-800 border-green-200' },
+            { label: 'High-Value',    value: segments.highValue,    sub: 'Total spend > ₹5 000', color: 'bg-amber-50 text-amber-800 border-amber-200' },
+            { label: 'Bulk Buyers',   value: segments.bulkBuyers,   sub: 'Has bulk order', color: 'bg-purple-50 text-purple-800 border-purple-200' },
           ].map((seg) => (
             <div
               key={seg.label}
-              className="rounded-xl border border-outline-variant/40 p-4 flex flex-col gap-1"
+              className="rounded-2xl border-2 border-table-border p-5 bg-surface flex flex-col items-start gap-4"
             >
-              <span className={`self-start px-2 py-0.5 rounded-full text-[11px] font-semibold ${seg.color}`}>
+              <span className={`px-3 py-1.5 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest ${seg.color}`}>
                 {seg.label}
               </span>
-              <span className="text-3xl font-bold text-on-surface mt-1">{seg.value}</span>
-              <span className="text-xs text-on-surface-variant">{seg.sub}</span>
+              <div>
+                <span className="text-4xl font-black text-primary block">{seg.value}</span>
+                <span className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 block">{seg.sub}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -412,14 +417,11 @@ function ChartCard({
   headerRight?: React.ReactNode
 }) {
   return (
-    <div
-      className={cn('bg-surface rounded-2xl border border-outline-variant/50 p-6', className)}
-      style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.07)' }}
-    >
-      <div className="flex items-start justify-between mb-5">
+    <div className={cn('bg-surface-card rounded-2xl border-2 border-table-border p-6', className)}>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b-2 border-table-border pb-4 mb-6">
         <div>
-          <h3 className="font-headline-md text-headline-md text-primary">{title}</h3>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">{sub}</p>
+          <h3 className="font-black text-xl text-primary">{title}.</h3>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">{sub}</p>
         </div>
         {headerRight}
       </div>
@@ -430,9 +432,9 @@ function ChartCard({
 
 function EmptyChart() {
   return (
-    <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-on-surface-variant">
-      <span className="material-symbols-outlined text-[36px]">bar_chart</span>
-      <p className="font-body-md text-body-md">No data yet</p>
+    <div className="h-[260px] flex flex-col items-center justify-center gap-3 text-on-surface-variant bg-surface border-2 border-dashed border-table-border rounded-2xl">
+      <BarChart2 size={32} strokeWidth={2.5} className="text-on-surface-variant/40" />
+      <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant">No data yet</p>
     </div>
   )
 }
@@ -447,36 +449,35 @@ function DataTable({
   empty: boolean
 }) {
   return (
-    <div
-      className="bg-surface rounded-2xl border border-outline-variant/50 p-6"
-      style={{ boxShadow: '0px 4px 20px rgba(61,43,31,0.07)' }}
-    >
-      <div className="mb-5">
-        <h3 className="font-headline-md text-headline-md text-primary">{title}</h3>
-        <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">{sub}</p>
+    <div className="bg-surface-card rounded-2xl border-2 border-table-border overflow-hidden flex flex-col">
+      <div className="p-6 border-b-2 border-table-border bg-surface">
+        <h3 className="font-black text-xl text-primary">{title}.</h3>
+        <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">{sub}</p>
       </div>
-      {empty ? (
-        <div className="py-10 text-center text-on-surface-variant font-body-md text-body-md">No data yet</div>
-      ) : (
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-outline-variant/30">
-              {headers.map(h => (
-                <th key={h} className="pb-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className="border-b border-outline-variant/20 last:border-0">
-                {row.map((cell, j) => (
-                  <td key={j} className="py-2.5 pr-3 font-body-md text-body-md text-on-surface">{cell}</td>
+      <div className="flex-1 overflow-x-auto">
+        {empty ? (
+          <div className="py-24 text-center text-on-surface-variant font-black text-[10px] uppercase tracking-widest">No data yet</div>
+        ) : (
+          <table className="w-full text-left border-collapse whitespace-nowrap">
+            <thead>
+              <tr className="bg-primary text-white">
+                {headers.map((h, i) => (
+                  <th key={h} className={cn("px-5 py-3 font-black text-[10px] uppercase tracking-[0.2em] text-white/70", i !== headers.length - 1 ? 'border-r border-white/10' : '')}>{h}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className={cn("hover:bg-surface-container-low transition-colors group", i !== rows.length - 1 ? 'border-b-2 border-table-border' : '')}>
+                  {row.map((cell, j) => (
+                    <td key={j} className={cn("px-5 py-4 font-bold text-sm text-primary", j !== row.length - 1 ? 'border-r border-table-border' : '')}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

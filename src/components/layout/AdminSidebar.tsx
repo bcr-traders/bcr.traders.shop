@@ -6,6 +6,7 @@ import { useUser, useClerk } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
 import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import type { AdminBadges } from './AdminShell'
+import { X, LogOut, ShieldAlert } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -62,7 +63,7 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
         { href: '/admin/pincodes',          label: 'Serviceable PINs',icon: 'pin_drop',             show: can('manage_pincodes') },
         { href: '/admin/unserviceable',     label: 'Unserviceable',   icon: 'location_off',         show: can('view_unserviceable'),   badge: badges?.unserviceable },
         { href: '/admin/abandoned-carts',   label: 'Abandoned Carts', icon: 'remove_shopping_cart', show: can('view_abandoned_carts') },
-        { href: '/admin/delivery/persons',  label: 'Delivery',        icon: 'delivery_dining',      show: can('manage_delivery_persons') },
+        { href: '/admin/delivery/persons',  label: 'Delivery Team',   icon: 'delivery_dining',      show: can('manage_delivery_persons') },
       ],
     },
     {
@@ -85,92 +86,98 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
 
   return (
     <aside className={cn(
-      'flex flex-col w-72 bg-surface-container-low border-r border-outline-variant',
+      'flex flex-col w-72 h-screen bg-primary border-r-2 border-primary relative overflow-hidden',
       className,
     )}>
+      {/* Background texture */}
+      <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+
       {/* ── Brand ── */}
-      <div className="px-6 py-5 flex items-center gap-3 border-b border-outline-variant/40 flex-shrink-0">
-        <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+      <div className="px-6 py-6 flex items-center gap-3 flex-shrink-0 relative z-10 border-b-2 border-white/10">
+        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
           <span
-            className="material-symbols-outlined text-primary-fixed-dim text-[20px]"
+            className="material-symbols-outlined text-primary text-[24px]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             warehouse
           </span>
         </div>
         <div>
-          <h1 className="font-headline-md text-headline-md text-primary leading-tight">BCR Traders</h1>
-          <p className="font-label-sm text-label-sm text-on-surface-variant">Admin Portal</p>
+          <h1 className="text-xl font-black text-white tracking-tight leading-none mb-1 lowercase">bcr traders.</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Admin Panel</p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="ml-auto lg:hidden p-1 rounded-full hover:bg-surface-container text-on-surface-variant"
+            className="ml-auto lg:hidden p-1.5 rounded-xl text-white/50 hover:bg-white/10 hover:text-white transition-colors"
             aria-label="Close menu"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <X size={20} strokeWidth={2.5} />
           </button>
         )}
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto py-3 px-3 scrollbar-hide">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-hide relative z-10">
         {nav.map((group) => {
           const visible = group.items.filter((i) => i.show !== false)
           if (!visible.length) return null
           return (
-            <div key={group.label} className="mb-4">
-              <p className="px-4 py-1 font-label-sm text-label-sm text-on-surface-variant/50 uppercase tracking-widest">
+            <div key={group.label} className="mb-6">
+              <p className="px-4 py-1.5 text-[10px] font-black text-white/35 uppercase tracking-[0.2em]">
                 {group.label}
               </p>
-              {visible.map((item) => {
-                const active = isActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-2.5 rounded-full transition-colors font-body-md text-body-md',
-                      active
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface',
-                    )}
-                  >
-                    <span
-                      className="material-symbols-outlined text-[20px] flex-shrink-0"
-                      style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+              <div className="space-y-1">
+                {visible.map((item) => {
+                  const active = isActive(item.href)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold',
+                        active
+                          ? 'bg-white text-primary shadow-sm'
+                          : 'text-white/60 hover:bg-white/10 hover:text-white',
+                      )}
                     >
-                      {item.icon}
-                    </span>
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {!!item.badge && (
-                      <span className="ml-auto min-w-[20px] h-5 flex items-center justify-center rounded-full bg-error text-on-error font-label-sm text-[10px] px-1.5 flex-shrink-0 leading-none">
-                        {item.badge > 99 ? '99+' : item.badge}
+                      <span
+                        className="material-symbols-outlined text-[20px] flex-shrink-0"
+                        style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        {item.icon}
                       </span>
-                    )}
-                  </Link>
-                )
-              })}
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {!!item.badge && (
+                        <span className="ml-auto min-w-[24px] h-6 flex items-center justify-center rounded-lg bg-error text-white font-black text-[10px] px-1.5 flex-shrink-0 border-2 border-primary/20">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
             </div>
           )
         })}
       </nav>
 
       {/* ── User footer ── */}
-      <div className="px-3 py-4 border-t border-outline-variant flex-shrink-0 space-y-1">
+      <div className="px-4 py-4 border-t-2 border-white/10 flex-shrink-0 space-y-2 relative z-10 bg-primary">
         {/* User info */}
-        <div className="flex items-center gap-3 px-4 py-2.5">
-          <div className="w-8 h-8 rounded-full bg-primary-container/60 flex items-center justify-center flex-shrink-0">
-            <span className="font-label-sm text-label-sm text-primary font-bold">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <div className="w-10 h-10 rounded-xl bg-white/10 border-2 border-white/20 flex items-center justify-center flex-shrink-0">
+            <span className="font-black text-lg text-white">
               {user?.firstName?.[0]?.toUpperCase() ?? 'A'}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-body-md text-body-md text-on-surface font-bold truncate leading-tight">
+            <p className="text-sm text-white font-black truncate leading-tight mb-0.5">
               {user?.firstName ?? 'Admin'}
             </p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">
+            <p className="text-[10px] font-black text-white/50 uppercase tracking-widest flex items-center gap-1">
+              <ShieldAlert size={10} />
               {role === 'super_admin' ? 'Super Admin' : 'Admin'}
             </p>
           </div>
@@ -179,9 +186,9 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-error hover:bg-error/8 transition-colors font-body-md text-body-md"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-white/10 text-white hover:bg-error/20 hover:border-error/50 hover:text-error-container transition-colors text-xs font-black uppercase tracking-widest active:scale-95"
         >
-          <span className="material-symbols-outlined text-[20px] flex-shrink-0">logout</span>
+          <LogOut size={16} strokeWidth={2.5} />
           Logout
         </button>
       </div>
