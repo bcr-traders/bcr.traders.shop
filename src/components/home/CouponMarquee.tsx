@@ -20,7 +20,7 @@ export default function CouponMarquee({ coupons }: Props) {
   const items = [...coupons, ...coupons]
 
   return (
-    <div className="bg-primary text-on-primary text-xs py-2 overflow-hidden">
+    <div className="bg-gradient-to-r from-primary via-primary-container to-primary text-on-primary text-[11px] font-bold py-2.5 overflow-hidden shadow-3xs">
       <div className="flex whitespace-nowrap animate-marquee">
         {items.map((c, i) => {
           const label =
@@ -30,15 +30,15 @@ export default function CouponMarquee({ coupons }: Props) {
           const desc = c.description ? tField(c.description, c.description_or) : null
 
           return (
-            <span key={`${c.id}-${i}`} className="inline-flex items-center gap-2 px-5">
-              <Tag size={13} className="text-primary-fixed flex-shrink-0" />
-              <span className="font-bold tracking-wide">{c.code}</span>
-              <span className="text-on-primary/60">—</span>
-              <span className="text-on-primary/90">{label}</span>
+            <span key={`${c.id}-${i}`} className="inline-flex items-center gap-2 px-6">
+              <Tag size={12} className="text-primary-fixed flex-shrink-0 animate-pulse" />
+              <span className="tracking-wider uppercase">{c.code}</span>
+              <span className="text-on-primary/35">—</span>
+              <span className="text-primary-fixed">{label}</span>
               {desc && (
                 <>
-                  <span className="text-on-primary/40">·</span>
-                  <span className="text-on-primary/80">{desc}</span>
+                  <span className="text-on-primary/25">·</span>
+                  <span className="text-on-primary/75 font-medium">{desc}</span>
                 </>
               )}
             </span>

@@ -43,13 +43,13 @@ function StatItem({
 }) {
   const count = useCountUp(end, 1400, active)
   return (
-    <div className="flex flex-col items-center text-center flex-1 px-2 first:pl-0 last:pr-0">
-      <span className="text-2xl md:text-3xl font-black text-primary leading-none tabular-nums">
+    <div className="flex flex-col items-center text-center flex-1 px-1 sm:px-2 first:pl-0 last:pr-0">
+      <span className="text-xl sm:text-2xl md:text-3xl font-black text-primary leading-none tabular-nums tracking-tight">
         {count}
         {suffix}
       </span>
-      <span className="text-[11px] font-bold text-on-surface mt-1 leading-tight">{label}</span>
-      <span className="text-[10px] text-on-surface-variant leading-tight">{subLabel}</span>
+      <span className="text-[9px] sm:text-[10px] font-black text-secondary uppercase tracking-wider mt-1.5 leading-tight">{label}</span>
+      <span className="text-[8px] sm:text-[9px] font-medium text-secondary/60 leading-tight mt-0.5">{subLabel}</span>
     </div>
   )
 }
@@ -59,9 +59,9 @@ export default function AnimatedStats() {
   const inView = useInView(ref, { once: true, margin: '-50px' })
 
   return (
-    <section ref={ref} className="px-4">
-      <div className="bg-primary-fixed border border-table-border rounded-2xl py-5 px-4">
-        <div className="flex divide-x divide-table-border">
+    <section ref={ref} className="px-4 max-w-7xl mx-auto w-full">
+      <div className="bg-gradient-to-br from-surface-container-low to-surface-container border border-table-border/60 rounded-2xl py-6 px-4 shadow-[0_3px_8px_rgba(38,23,12,0.02)]">
+        <div className="flex divide-x divide-table-border/40">
           {STATS.map((stat) => (
             <StatItem key={stat.label} {...stat} active={inView} />
           ))}
@@ -70,3 +70,4 @@ export default function AnimatedStats() {
     </section>
   )
 }
+

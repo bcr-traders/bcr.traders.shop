@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Search, Truck, User } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useT } from '@/hooks/useT'
 
@@ -19,8 +20,8 @@ export default function BottomNav() {
   const { t } = useT()
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-table-border rounded-t-2xl shadow-lg">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="md:hidden fixed bottom-5 inset-x-4 z-50">
+      <div className="flex items-center justify-around h-16 px-2 bg-surface/85 backdrop-blur-2xl border border-white/40 rounded-full shadow-[0_12px_32px_rgba(38,23,12,0.15)] ring-1 ring-black/5">
         {TABS.map(({ key, href, icon: Icon }) => {
           const active = pathname === href || (href === '/' && pathname === '/')
           const isOrders = href === '/orders'
@@ -29,21 +30,30 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`relative flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl transition-all duration-150 active:scale-90 ${
+              className={`relative flex flex-col items-center justify-center gap-1 w-16 h-12 rounded-full transition-all duration-300 active:scale-95 ${
                 active
-                  ? 'bg-primary-fixed text-on-primary-fixed-variant'
+                  ? 'text-primary'
                   : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <div className="relative">
-                <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+              {/* Animated active pill background */}
+              {active && (
+                <motion.div
+                  layoutId="bottomNavIndicator"
+                  className="absolute inset-0 bg-primary/10 rounded-full"
+                  transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                />
+              )}
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} className="transition-transform duration-300 group-hover:-translate-y-0.5" />
                 {isOrders && totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 bg-status-packed text-primary text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 bg-success text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 leading-none shadow-sm shadow-success/40">
                     {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
+                <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">{t(key)}</span>
               </div>
-              <span className="text-[10px] font-medium">{t(key)}</span>
             </Link>
           )
         })}
@@ -51,3 +61,4 @@ export default function BottomNav() {
     </nav>
   )
 }
+

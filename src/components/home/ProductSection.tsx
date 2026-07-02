@@ -20,39 +20,42 @@ export default function ProductSection({ title, titleOr, products, viewAllHref }
   const displayTitle = tField(title, titleOr)
 
   return (
-    <section className="pl-4">
+    <section className="px-4 max-w-7xl mx-auto w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 pr-4">
-        <h3 className="text-base font-bold text-primary">{displayTitle}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-black uppercase tracking-wider text-primary">{displayTitle}</h3>
         {viewAllHref && (
           <Link
             href={viewAllHref}
-            className="text-sm text-primary underline underline-offset-2 flex items-center gap-1"
+            className="text-xs font-bold text-primary hover:text-secondary underline underline-offset-3 flex items-center gap-1 transition-colors"
           >
             {t('product.viewAll')}
+            <ArrowRight size={12} className="inline-block transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         )}
       </div>
 
       {/* Mobile: horizontal scroll */}
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-4 pr-4 md:hidden">
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 md:hidden">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
       </div>
 
       {/* Desktop: up to 5 + "View All" tile */}
-      <div className="hidden md:flex gap-4 overflow-hidden pr-4">
+      <div className="hidden md:flex gap-4 overflow-hidden py-2 px-1">
         {products.slice(0, 5).map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
         {products.length > 5 && viewAllHref && (
           <Link
             href={viewAllHref}
-            className="w-44 flex-shrink-0 rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
+            className="w-44 flex-shrink-0 rounded-2xl border-2 border-dashed border-outline-variant/60 hover:border-primary/50 bg-surface-container-low/40 hover:bg-surface-card flex flex-col items-center justify-center gap-3 text-on-surface-variant hover:text-primary transition-all duration-500 shadow-none hover:shadow-[0_12px_32px_rgba(38,23,12,0.08)] group hover:-translate-y-1"
           >
-            <ArrowRight size={22} />
-            <span className="text-sm font-semibold">{t('product.viewAll')}</span>
+            <div className="w-12 h-12 rounded-full bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors duration-500 ring-4 ring-transparent group-hover:ring-primary/5">
+              <ArrowRight size={20} className="text-primary transition-transform duration-500 group-hover:translate-x-1" />
+            </div>
+            <span className="text-sm font-black tracking-wide">{t('product.viewAll')}</span>
           </Link>
         )}
       </div>

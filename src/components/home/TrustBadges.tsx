@@ -16,25 +16,35 @@ const BADGES = [
 export default function TrustBadges() {
   const ref = useRef<HTMLElement>(null)
   const inView = useInView(ref, { once: true, margin: '-40px' })
-
   return (
-    <section ref={ref} className="px-4">
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+    <section ref={ref} className="px-4 max-w-7xl mx-auto w-full">
+      <div className="flex lg:grid lg:grid-cols-6 gap-3 lg:gap-4 overflow-x-auto lg:overflow-visible scrollbar-hide pb-4 lg:pb-0 snap-x snap-mandatory">
         {BADGES.map(({ icon: Icon, label, sub }, i) => (
           <motion.div
             key={label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: i * 0.07, duration: 0.4, ease: 'easeOut' }}
-            className="flex-shrink-0 flex flex-col items-center gap-2 w-[86px] bg-surface-card border border-table-border rounded-2xl py-3 px-2 shadow-sm"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+            transition={{ delay: i * 0.08, duration: 0.5, ease: 'easeOut' }}
+            className="snap-start w-[140px] sm:w-[150px] lg:w-auto flex-shrink-0 group relative flex flex-col items-center text-center gap-3 p-4 sm:p-5 bg-gradient-to-b from-surface-card to-surface-container-low/30 border border-table-border/60 hover:border-primary/40 rounded-[1.5rem] shadow-[0_4px_12px_rgba(38,23,12,0.02)] hover:shadow-[0_16px_40px_rgba(38,23,12,0.08)] hover:-translate-y-1.5 transition-all duration-500 overflow-hidden"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Icon size={20} className="text-primary" strokeWidth={1.5} />
+            {/* Glass glares and shimmers */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none mix-blend-overlay z-20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            
+            {/* Premium Icon Container */}
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 group-hover:from-primary/10 group-hover:to-primary/20 flex items-center justify-center transition-colors duration-500 ring-1 ring-primary/5 group-hover:ring-primary/20 flex-shrink-0 z-10 relative shadow-inner">
+              <Icon size={22} className="text-primary group-hover:scale-110 transition-transform duration-500 drop-shadow-sm" strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] font-bold text-primary uppercase tracking-wide text-center leading-tight">
-              {label}
-            </span>
-            <span className="text-[9px] text-on-surface-variant text-center leading-snug">{sub}</span>
+            
+            {/* Cinematic Typography */}
+            <div className="flex flex-col gap-1 z-10 relative mt-1">
+              <span className="text-[11px] font-black text-primary uppercase tracking-widest leading-tight">
+                {label}
+              </span>
+              <span className="text-[10px] font-bold text-secondary/60 leading-snug group-hover:text-secondary/80 transition-colors">
+                {sub}
+              </span>
+            </div>
           </motion.div>
         ))}
       </div>

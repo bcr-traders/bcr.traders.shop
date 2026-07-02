@@ -95,16 +95,17 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               onClick={handleAdd}
               disabled={disabled}
               className={cn(
-                'absolute inset-0 flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] font-semibold text-[13px] transition-all active:scale-95',
+                'absolute inset-0 flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] font-bold text-[13px] transition-all duration-300 active:scale-95 group/btn overflow-hidden',
                 disabled
-                  ? 'bg-surface-container text-on-surface-variant cursor-not-allowed'
+                  ? 'bg-surface-container text-on-surface-variant cursor-not-allowed border border-table-border/60'
                   : flash
-                  ? 'bg-success/80 text-on-success'
-                  : 'bg-success text-on-success hover:opacity-90',
+                  ? 'bg-success text-on-success shadow-[0_0_15px_rgba(34,197,94,0.5)] border border-success'
+                  : 'bg-gradient-to-br from-surface-container-low to-surface-card text-primary hover:from-primary hover:to-primary-container hover:text-white shadow-3xs hover:shadow-[0_4px_12px_rgba(38,23,12,0.15)] border border-table-border/80 hover:border-primary/50',
               )}
               aria-label={t('product.addToCart')}
             >
-              <Plus size={15} strokeWidth={2.5} />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-out pointer-events-none" />
+              <Plus size={15} strokeWidth={2.5} className="transition-transform duration-300 group-hover/btn:rotate-90" />
               ADD
             </motion.button>
           )}
