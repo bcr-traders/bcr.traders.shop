@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { HOMEPAGE_KEYWORDS } from '@/lib/seo/generator'
 import { getHomepageData } from '@/lib/data/homepage'
 import HeroBanner from '@/components/home/HeroBanner'
+import PromoCardsRow from '@/components/home/PromoCardsRow'
 import TrustBadges from '@/components/home/TrustBadges'
 import CategoryGrid from '@/components/home/CategoryGrid'
 import ProductSection from '@/components/home/ProductSection'
@@ -10,7 +11,6 @@ import CouponCards from '@/components/home/CouponCards'
 import CouponMarquee from '@/components/home/CouponMarquee'
 import AnimatedStats from '@/components/home/AnimatedStats'
 import WhatsAppFAB from '@/components/home/WhatsAppFAB'
-import LocationStrip from '@/components/home/LocationStrip'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.in'
 
@@ -83,7 +83,7 @@ const localBizJsonLd = {
 }
 
 export default async function HomePage() {
-  const { banners, categories, featuredProducts, categoryProducts, coupons, offerBanner } =
+  const { banners, promoCards, categories, featuredProducts, categoryProducts, coupons, offerBanner } =
     await getHomepageData()
 
   return (
@@ -100,11 +100,11 @@ export default async function HomePage() {
       />
 
       <div className="flex flex-col gap-6 py-4">
-        {/* 1. Location + inline search */}
-        <LocationStrip />
-
-        {/* 2. Hero banner carousel */}
+        {/* 1. Hero banner carousel */}
         <HeroBanner banners={banners} />
+
+        {/* 2. Promo cards row */}
+        <PromoCardsRow cards={promoCards} />
 
         {/* 3. Coupon marquee ticker */}
         {coupons.length > 0 && <CouponMarquee coupons={coupons} />}

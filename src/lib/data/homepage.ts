@@ -10,6 +10,7 @@ import type {
 
 export interface HomepageData {
   banners: Banner[]
+  promoCards: Banner[]
   categories: Category[]
   featuredProducts: Product[]
   coupons: Coupon[]
@@ -53,7 +54,9 @@ export async function getHomepageData(): Promise<HomepageData> {
       supabase.from('cms_content').select('*'),
     ])
 
-  const banners = bannersRes.data ?? []
+  const allBanners = bannersRes.data ?? []
+  const banners = allBanners.filter((b) => b.placement === 'hero')
+  const promoCards = allBanners.filter((b) => b.placement === 'mid_page').slice(0, 4)
   const categories = categoriesRes.data ?? []
   const featuredProducts = featuredRes.data ?? []
   const coupons = couponsRes.data ?? []
@@ -94,6 +97,7 @@ export async function getHomepageData(): Promise<HomepageData> {
 
   return {
     banners,
+    promoCards,
     categories,
     featuredProducts,
     coupons,

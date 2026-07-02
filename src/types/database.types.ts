@@ -2,16 +2,22 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
 
 // ── Domain interfaces ──────────────────────────────────────────────────────
 
+export type BannerPlacement = 'hero' | 'mid_page' | 'category' | 'product'
+
 export interface Banner {
   id: string
   title: string | null
   title_or: string | null
   subtitle: string | null
   subtitle_or: string | null
-  image_url: string
+  image_url: string | null
+  mobile_image_url: string | null
   link_url: string | null
   cta_text: string | null
   cta_text_or: string | null
+  background_color: string
+  text_color: string
+  placement: BannerPlacement
   display_order: number
   is_active: boolean
   created_at: string

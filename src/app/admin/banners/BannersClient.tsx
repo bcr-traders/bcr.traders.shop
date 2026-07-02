@@ -42,6 +42,11 @@ function bool(v: unknown, fallback = true): boolean {
   return typeof v === 'boolean' ? v : fallback
 }
 
+const PLACEMENT_LABELS: Record<string, string> = {
+  hero: 'Hero Carousel',
+  mid_page: 'Promo Card',
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function BannersClient({
@@ -113,21 +118,17 @@ function BannersTab({
   const [banners, setBanners] = useState(initialBanners)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Banner | null>(null)
+  const [formPlacement, setFormPlacement] = useState<Banner['placement']>('hero')
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState(false)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  const heroBanners = banners.filter(b => b.placement === 'hero')
+  const promoBanners = banners.filter(b => b.placement === 'mid_page')
 
-  async function handleDragEnd(e: DragEndEvent) {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    const oldIdx = banners.findIndex(b => b.id === active.id)
-    const newIdx = banners.findIndex(b => b.id === over.id)
-    const reordered = arrayMove(banners, oldIdx, newIdx).map((b, i) => ({ ...b, display_order: i }))
-    setBanners(reordered)
+  async function reorder(items: Banner[], oldIdx: number, newIdx: number) {
+    const reordered = arrayMove(items, oldIdx, newIdx).map((b, i) => ({ ...b, display_order: i }))
+    const reorderedIds = new Set(reordered.map(b => b.id))
+    setBanners(prev => [...prev.filter(b => !reorderedIds.has(b.id)), ...reordered])
     await Promise.all(reordered.map(b =>
       fetch(`/api/banners/${b.id}`, {
         method: 'PATCH',
@@ -178,14 +179,15 @@ function BannersTab({
         onToast('Banner updated')
       }
     } else {
+      const samePlacementCount = banners.filter(b => b.placement === data.placement).length
       const res = await fetch('/api/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, display_order: banners.length }),
+        body: JSON.stringify({ ...data, display_order: samePlacementCount }),
       })
       if (res.ok) {
         const newBanner = await res.json() as { id: string }
-        setBanners(prev => [...prev, { ...data, id: newBanner.id, display_order: prev.length, created_at: new Date().toISOString() } as Banner])
+        setBanners(prev => [...prev, { ...data, id: newBanner.id, display_order: samePlacementCount, created_at: new Date().toISOString() } as Banner])
         onToast('Banner created')
       }
     }
@@ -193,21 +195,11 @@ function BannersTab({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <button
-          onClick={() => { setEditing(null); setShowForm(true) }}
-          className="flex items-center gap-1.5 px-5 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          Add Banner
-        </button>
-      </div>
-
-      {/* Banner form modal */}
+    <div className="space-y-10">
       {showForm && (
         <BannerFormModal
           banner={editing}
+          defaultPlacement={formPlacement}
           uploading={uploading}
           onUpload={uploadImage}
           onSave={saveBanner}
@@ -215,25 +207,94 @@ function BannersTab({
         />
       )}
 
-      {banners.length === 0 ? (
-        <div className="py-24 text-center bg-surface-card rounded-2xl border-2 border-table-border">
+      <BannerSection
+        title="Hero Carousel"
+        hint="Full-width homepage banner. Rotates automatically."
+        items={heroBanners}
+        saving={saving}
+        onAdd={() => { setEditing(null); setFormPlacement('hero'); setShowForm(true) }}
+        onToggle={id => toggleActive(id, banners.find(b => b.id === id)!.is_active)}
+        onEdit={b => { setEditing(b); setFormPlacement(b.placement); setShowForm(true) }}
+        onDelete={deleteBanner}
+        onReorder={reorder}
+      />
+
+      <BannerSection
+        title="Promo Cards"
+        hint="Up to 4 small cards shown below the hero banner."
+        items={promoBanners}
+        saving={saving}
+        onAdd={() => { setEditing(null); setFormPlacement('mid_page'); setShowForm(true) }}
+        onToggle={id => toggleActive(id, banners.find(b => b.id === id)!.is_active)}
+        onEdit={b => { setEditing(b); setFormPlacement(b.placement); setShowForm(true) }}
+        onDelete={deleteBanner}
+        onReorder={reorder}
+      />
+    </div>
+  )
+}
+
+function BannerSection({
+  title, hint, items, saving, onAdd, onToggle, onEdit, onDelete, onReorder,
+}: {
+  title: string
+  hint: string
+  items: Banner[]
+  saving: Record<string, boolean>
+  onAdd: () => void
+  onToggle: (id: string) => void
+  onEdit: (b: Banner) => void
+  onDelete: (id: string) => void
+  onReorder: (items: Banner[], oldIdx: number, newIdx: number) => void
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e
+    if (!over || active.id === over.id) return
+    const oldIdx = items.findIndex(b => b.id === active.id)
+    const newIdx = items.findIndex(b => b.id === over.id)
+    onReorder(items, oldIdx, newIdx)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-black text-lg text-primary tracking-tight">{title}</h3>
+          <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">{hint}</p>
+        </div>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-1.5 px-5 py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          Add
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="py-16 text-center bg-surface-card rounded-2xl border-2 border-table-border">
           <div className="w-16 h-16 mx-auto bg-surface border-2 border-table-border rounded-2xl flex items-center justify-center mb-4">
             <ImageIcon size={24} className="text-on-surface-variant/40" />
           </div>
-          <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">No banners yet.</p>
+          <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">None yet.</p>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={banners.map(b => b.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={items.map(b => b.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
-              {banners.map(banner => (
+              {items.map(banner => (
                 <SortableBannerRow
                   key={banner.id}
                   banner={banner}
                   saving={!!saving[banner.id]}
-                  onToggle={() => toggleActive(banner.id, banner.is_active)}
-                  onEdit={() => { setEditing(banner); setShowForm(true) }}
-                  onDelete={() => deleteBanner(banner.id)}
+                  onToggle={() => onToggle(banner.id)}
+                  onEdit={() => onEdit(banner)}
+                  onDelete={() => onDelete(banner.id)}
                 />
               ))}
             </div>
@@ -264,8 +325,16 @@ function SortableBannerRow({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={banner.image_url} alt="" className="w-32 h-16 object-cover rounded-xl border-2 border-table-border flex-shrink-0" />
       ) : (
-        <div className="w-32 h-16 rounded-xl bg-surface-card border-2 border-table-border flex items-center justify-center flex-shrink-0">
-          <ImageIcon size={20} className="text-on-surface-variant/40" />
+        <div
+          className="w-32 h-16 rounded-xl border-2 border-table-border flex items-center justify-center flex-shrink-0 px-2"
+          style={{ backgroundColor: banner.background_color }}
+        >
+          <span
+            className="text-[10px] font-black uppercase tracking-widest text-center leading-tight truncate"
+            style={{ color: banner.text_color }}
+          >
+            {banner.title || 'Text banner'}
+          </span>
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -302,9 +371,10 @@ function SortableBannerRow({
 }
 
 function BannerFormModal({
-  banner, uploading, onUpload, onSave, onClose,
+  banner, defaultPlacement, uploading, onUpload, onSave, onClose,
 }: {
   banner: Banner | null
+  defaultPlacement: Banner['placement']
   uploading: boolean
   onUpload: (f: File) => Promise<string>
   onSave: (data: Partial<Banner>) => Promise<void>
@@ -319,12 +389,14 @@ function BannerFormModal({
     link_url: banner?.link_url ?? '',
     cta_text: banner?.cta_text ?? '',
     cta_text_or: banner?.cta_text_or ?? '',
+    background_color: banner?.background_color || '#0C831F',
+    text_color: banner?.text_color || '#FFFFFF',
+    placement: banner?.placement ?? defaultPlacement,
     is_active: banner?.is_active ?? true,
   })
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
-    if (!form.image_url) return
     setSaving(true)
     await onSave(form)
     setSaving(false)
@@ -335,17 +407,77 @@ function BannerFormModal({
       <div className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-table-border">
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-table-border">
           <h3 className="font-black text-xl text-primary tracking-tight">
-            {banner ? 'Edit Banner.' : 'Add Banner.'}
+            {banner ? 'Edit Banner.' : `Add ${PLACEMENT_LABELS[form.placement] ?? 'Banner'}.`}
           </h3>
           <button onClick={onClose} className="p-2 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:bg-surface-card transition-colors active:scale-95">
             <X size={16} strokeWidth={2.5} />
           </button>
         </div>
         <div className="p-6 space-y-6">
-          {/* Image */}
+          {/* Live preview */}
+          <div className="space-y-2">
+            <label className="font-black text-xs text-primary uppercase tracking-widest">Live Preview</label>
+            <div
+              className="rounded-2xl p-5 min-h-[110px] flex flex-col justify-center border-2 border-table-border"
+              style={{ backgroundColor: form.background_color }}
+            >
+              <p className="font-black text-lg leading-tight" style={{ color: form.text_color }}>
+                {form.title || 'Banner title'}
+              </p>
+              {form.subtitle && (
+                <p className="text-sm font-medium mt-1 opacity-85" style={{ color: form.text_color }}>{form.subtitle}</p>
+              )}
+              {form.cta_text && (
+                <span
+                  className="inline-flex w-max items-center px-3 py-1.5 rounded-lg bg-black/20 text-xs font-bold mt-3"
+                  style={{ color: form.text_color }}
+                >
+                  {form.cta_text}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Placement + Colors */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="font-black text-xs text-primary uppercase tracking-widest">Placement</label>
+              <select
+                value={form.placement}
+                onChange={e => setForm(p => ({ ...p, placement: e.target.value as Banner['placement'] }))}
+                className={inputCls}
+              >
+                <option value="hero">Hero Carousel</option>
+                <option value="mid_page">Promo Card</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="font-black text-xs text-primary uppercase tracking-widest">Background</label>
+              <div className="flex gap-2 items-center">
+                <div className="relative w-11 h-11 flex-shrink-0">
+                  <input type="color" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <div className="w-full h-full rounded-lg border-2 border-table-border pointer-events-none" style={{ backgroundColor: form.background_color }} />
+                </div>
+                <input type="text" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className={cn(inputCls, 'flex-1 font-mono uppercase text-xs px-3')} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="font-black text-xs text-primary uppercase tracking-widest">Text Color</label>
+              <div className="flex gap-2 items-center">
+                <div className="relative w-11 h-11 flex-shrink-0">
+                  <input type="color" value={form.text_color} onChange={e => setForm(p => ({ ...p, text_color: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <div className="w-full h-full rounded-lg border-2 border-table-border pointer-events-none" style={{ backgroundColor: form.text_color }} />
+                </div>
+                <input type="text" value={form.text_color} onChange={e => setForm(p => ({ ...p, text_color: e.target.value }))} className={cn(inputCls, 'flex-1 font-mono uppercase text-xs px-3')} />
+              </div>
+            </div>
+          </div>
+
+          {/* Image (optional) */}
           <div className="space-y-2">
             <label className="font-black text-xs text-primary uppercase tracking-widest flex items-center">
-              Banner Image <span className="text-error ml-1">*</span>
+              Banner Image
+              <span className="font-bold text-[10px] text-on-surface-variant ml-3 normal-case tracking-normal">Optional — text-only banners work fine</span>
             </label>
             {form.image_url ? (
               <div className="relative inline-block group w-full">
@@ -361,7 +493,7 @@ function BannerFormModal({
               </div>
             ) : (
               <label className={cn(
-                'flex flex-col items-center justify-center h-48 border-2 border-dashed border-table-border bg-surface-card rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all active:scale-[0.99]',
+                'flex flex-col items-center justify-center h-32 border-2 border-dashed border-table-border bg-surface-card rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all active:scale-[0.99]',
                 uploading && 'opacity-50 pointer-events-none',
               )}>
                 <div className="p-3 bg-surface border-2 border-table-border rounded-xl mb-3">
@@ -386,7 +518,7 @@ function BannerFormModal({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="font-black text-xs text-primary uppercase tracking-widest">Title EN</label>
-              <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className={inputCls} placeholder="Summer Sale" />
+              <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className={inputCls} placeholder="Stock up on daily essentials" />
             </div>
             <div className="space-y-2">
               <label className="font-black text-xs text-primary uppercase tracking-widest">Title Odia</label>
@@ -404,9 +536,9 @@ function BannerFormModal({
 
           <div className="space-y-2">
             <label className="font-black text-xs text-primary uppercase tracking-widest">Link URL</label>
-            <input type="text" value={form.link_url} onChange={e => setForm(p => ({ ...p, link_url: e.target.value }))} className={inputCls} placeholder="/products?category=oils" />
+            <input type="text" value={form.link_url} onChange={e => setForm(p => ({ ...p, link_url: e.target.value }))} className={inputCls} placeholder="/search?category=oils" />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="font-black text-xs text-primary uppercase tracking-widest">CTA Text EN</label>
@@ -440,7 +572,7 @@ function BannerFormModal({
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || !form.image_url}
+              disabled={saving}
               className="flex-1 py-3 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-opacity active:scale-95 shadow-sm"
             >
               {saving ? 'Saving…' : 'Save Banner'}

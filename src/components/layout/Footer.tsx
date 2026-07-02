@@ -1,7 +1,9 @@
 import Link from 'next/link'
-import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react'
+import { Phone, Mail, MapPin } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import type { Category } from '@/types/database.types'
 
-const LINKS = [
+const USEFUL_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'All Categories', href: '/search' },
   { label: 'Orders', href: '/orders' },
@@ -9,51 +11,89 @@ const LINKS = [
   { label: 'Cart', href: '/cart' },
 ]
 
-export default function Footer() {
+async function getFooterCategories(): Promise<Pick<Category, 'id' | 'name' | 'slug'>[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .order('display_order')
+  return data ?? []
+}
+
+export default async function Footer() {
+  const categories = await getFooterCategories()
+
   return (
     <footer className="mt-24 relative overflow-hidden bg-primary text-white border-t-2 border-primary">
-      <div className="relative z-10 px-6 md:px-12 py-16 md:py-24 max-w-[1400px] mx-auto flex flex-col md:flex-row gap-16 md:justify-between">
-        {/* Brand & Info */}
-        <div className="flex flex-col">
-          <ul className="flex flex-col gap-6 text-sm font-black uppercase tracking-widest text-white/70">
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <MapPin size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
-              <span className="max-w-[200px] leading-relaxed">
-                Malgodown, Cuttack<br />Odisha 753003
-              </span>
-            </li>
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <Phone size={24} strokeWidth={2.5} className="group-hover:-rotate-12 transition-transform duration-300" />
-              <span>+91 98765 43210</span>
-            </li>
-            <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-              <Mail size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
-              <span>wholesale@bcrtraders.in</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Links */}
-        <div className="flex flex-col md:items-end">
-          <h5 className="font-black text-white/50 text-[10px] uppercase tracking-[0.2em] mb-6">
-            Directory
-          </h5>
-          <ul className="flex flex-col gap-2">
-            {LINKS.map(({ label, href }) => (
-              <li key={href} className="flex justify-start md:justify-end overflow-hidden">
-                <Link
-                  href={href}
-                  className="group flex items-center gap-3 text-2xl md:text-4xl font-black text-white hover:text-white/80 transition-colors uppercase tracking-tighter"
-                >
-                  <ArrowRight size={24} strokeWidth={3} className="opacity-0 -ml-8 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 ease-out" />
-                  <span className="relative">
-                    {label}
-                    <span className="absolute -bottom-1 left-0 w-0 h-[3px] bg-white group-hover:w-full transition-all duration-300 rounded-none" />
-                  </span>
-                </Link>
+      <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 max-w-[1400px] mx-auto flex flex-col gap-14">
+        <div className="flex flex-col lg:flex-row gap-14 lg:gap-20">
+          {/* Brand & Info */}
+          <div className="flex flex-col flex-shrink-0">
+            <ul className="flex flex-col gap-6 text-sm font-black uppercase tracking-widest text-white/70">
+              <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
+                <MapPin size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
+                <span className="max-w-[200px] leading-relaxed">
+                  Malgodown, Cuttack<br />Odisha 753003
+                </span>
               </li>
-            ))}
-          </ul>
+              <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
+                <Phone size={24} strokeWidth={2.5} className="group-hover:-rotate-12 transition-transform duration-300" />
+                <span>+91 98765 43210</span>
+              </li>
+              <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
+                <Mail size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
+                <span>wholesale@bcrtraders.in</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Useful Links */}
+          <div className="flex flex-col flex-shrink-0">
+            <h5 className="font-black text-white text-sm uppercase tracking-wide mb-5">
+              Useful Links
+            </h5>
+            <ul className="flex flex-col gap-3">
+              {USEFUL_LINKS.map(({ label, href }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-sm font-medium text-white/60 hover:text-white transition-colors"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Categories — synced live from the admin panel */}
+          {categories.length > 0 && (
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-5">
+                <h5 className="font-black text-white text-sm uppercase tracking-wide">
+                  Categories
+                </h5>
+                <Link
+                  href="/search"
+                  className="text-sm font-bold text-success hover:text-success/80 transition-colors"
+                >
+                  see all
+                </Link>
+              </div>
+              <div className="columns-2 sm:columns-3 gap-x-8">
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/category/${cat.slug}`}
+                    className="block break-inside-avoid text-sm font-medium text-white/60 hover:text-white transition-colors py-1.5"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

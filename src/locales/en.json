@@ -3,6 +3,8 @@
   "nav.categories": "Categories",
   "nav.orders": "Orders",
   "nav.signIn": "Sign In",
+  "nav.account": "Account",
+  "nav.myCart": "My Cart",
   "nav.searchPlaceholder": "Search products...",
   "category.shopAll": "Shop All",
   "category.sectionTitle": "Shop by Category",
