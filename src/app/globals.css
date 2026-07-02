@@ -1,72 +1,72 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand color palette */
-  --color-background: #fdf9f1;
-  --color-surface: #fdf9f1;
-  --color-surface-bright: #fdf9f1;
-  --color-surface-dim: #dddad2;
-  --color-surface-variant: #e6e2da;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f7f3eb;
-  --color-surface-container: #f1ede5;
-  --color-surface-container-high: #ece8e0;
-  --color-surface-container-highest: #e6e2da;
-  --color-surface-tint: #705a4c;
+  /* Brutalist / Minimalist Awwwards Palette */
+  --color-background: #F3F2EF;
+  --color-surface: #F3F2EF;
+  --color-surface-bright: #FFFFFF;
+  --color-surface-dim: #E4E3DF;
+  --color-surface-variant: #D1D0CC;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #FAFAFA;
+  --color-surface-container: #F3F2EF;
+  --color-surface-container-high: #EBEAE7;
+  --color-surface-container-highest: #E4E3DF;
+  --color-surface-tint: #000000;
 
-  --color-primary: #26170c;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #3d2b1f;
-  --color-on-primary-container: #ac9181;
-  --color-primary-fixed: #fbddca;
-  --color-primary-fixed-dim: #dec1af;
-  --color-on-primary-fixed: #28180d;
-  --color-on-primary-fixed-variant: #574335;
-  --color-inverse-primary: #dec1af;
+  --color-primary: #000000;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #111111;
+  --color-on-primary-container: #FFFFFF;
+  --color-primary-fixed: #222222;
+  --color-primary-fixed-dim: #333333;
+  --color-on-primary-fixed: #FFFFFF;
+  --color-on-primary-fixed-variant: #E4E3DF;
+  --color-inverse-primary: #FFFFFF;
 
-  --color-secondary: #715a3e;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #fdddb9;
-  --color-on-secondary-container: #786044;
-  --color-secondary-fixed: #fdddb9;
-  --color-secondary-fixed-dim: #e0c29f;
-  --color-on-secondary-fixed: #281803;
-  --color-on-secondary-fixed-variant: #584329;
+  --color-secondary: #000000;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #222222;
+  --color-on-secondary-container: #FFFFFF;
+  --color-secondary-fixed: #333333;
+  --color-secondary-fixed-dim: #444444;
+  --color-on-secondary-fixed: #FFFFFF;
+  --color-on-secondary-fixed-variant: #E4E3DF;
 
-  --color-tertiary: #2a1500;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #472803;
-  --color-on-tertiary-container: #bc8d5f;
-  --color-tertiary-fixed: #ffdcbd;
-  --color-tertiary-fixed-dim: #f0bd8b;
-  --color-on-tertiary-fixed: #2c1600;
-  --color-on-tertiary-fixed-variant: #623f18;
+  --color-tertiary: #111111;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #333333;
+  --color-on-tertiary-container: #FFFFFF;
+  --color-tertiary-fixed: #444444;
+  --color-tertiary-fixed-dim: #555555;
+  --color-on-tertiary-fixed: #FFFFFF;
+  --color-on-tertiary-fixed-variant: #D1D0CC;
 
-  --color-error: #ba1a1a;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error: #FF0000;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #FFEEEE;
+  --color-on-error-container: #990000;
 
-  --color-outline: #81756e;
-  --color-outline-variant: #d2c4bc;
+  --color-outline: #000000;
+  --color-outline-variant: #D1D0CC;
 
-  --color-on-background: #1c1c17;
-  --color-on-surface: #1c1c17;
-  --color-on-surface-variant: #4f453f;
+  --color-on-background: #000000;
+  --color-on-surface: #000000;
+  --color-on-surface-variant: #444444;
 
-  --color-inverse-surface: #31302b;
-  --color-inverse-on-surface: #f4f0e8;
+  --color-inverse-surface: #000000;
+  --color-inverse-on-surface: #F3F2EF;
 
   /* Extra surface / border tokens */
-  --color-surface-card:    #ffffff;
-  --color-table-border:    #e5e1d9;
+  --color-surface-card: #FFFFFF;
+  --color-table-border: #E4E3DF;
 
   /* Status colours */
-  --color-status-placed:     #6B7280;
-  --color-status-confirmed:  #3B82F6;
-  --color-status-packed:     #F59E0B;
-  --color-status-shipping:   #8B5CF6;
-  --color-status-delivered:  #0C831F;
+  --color-status-placed: #6B7280;
+  --color-status-confirmed: #3B82F6;
+  --color-status-packed: #F59E0B;
+  --color-status-shipping: #8B5CF6;
+  --color-status-delivered: #0C831F;
 
   /* Font families */
   --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
@@ -108,8 +108,8 @@
   --radius-pill: 9999px;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.12);
 
   /* Success / Add-to-cart green */
   --color-success: #16a34a;
@@ -118,13 +118,21 @@
 }
 
 /* Remove default disclosure triangle from <details> */
-details > summary { list-style: none; }
-details > summary::-webkit-details-marker { display: none; }
+details>summary {
+  list-style: none;
+}
+
+details>summary::-webkit-details-marker {
+  display: none;
+}
 
 /* Admin dashboard chart animation */
 @keyframes chart-draw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
+
 @utility animate-chart {
   stroke-dasharray: 1500;
   stroke-dashoffset: 1500;
@@ -132,8 +140,13 @@ details > summary::-webkit-details-marker { display: none; }
 }
 
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @utility animate-marquee {
@@ -143,7 +156,10 @@ details > summary::-webkit-details-marker { display: none; }
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility font-odia {
@@ -157,8 +173,11 @@ body {
 }
 
 @media print {
+
   /* Hide all site chrome — only the order detail content prints */
-  header, nav, footer,
+  header,
+  nav,
+  footer,
   [data-print-hide],
   .print\:hidden {
     display: none !important;
@@ -171,14 +190,16 @@ body {
   }
 
   /* Expand the order detail to fill the page */
-  main, .max-w-4xl {
+  main,
+  .max-w-4xl {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
   /* Ensure cards print with visible borders */
-  .border, [class*="border-"] {
+  .border,
+  [class*="border-"] {
     border-color: #ccc !important;
   }
 

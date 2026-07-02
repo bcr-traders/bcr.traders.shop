@@ -3,6 +3,7 @@ import AnnouncementBar from '@/components/home/AnnouncementBar'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import BottomNav from '@/components/layout/BottomNav'
+import SmoothScroll from '@/components/layout/SmoothScroll'
 import type { SiteAnnouncement } from '@/types/database.types'
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
@@ -19,21 +20,21 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
     rawAnn?.is_active === true && typeof rawAnn?.text === 'string'
       ? {
           text: rawAnn.text as string,
-          background_color: (rawAnn.background_color as string) ?? '#3d2b1f',
+          background_color: (rawAnn.background_color as string) ?? '#000000',
           text_color: (rawAnn.text_color as string) ?? '#ffffff',
           link_url: rawAnn.link_url as string | undefined,
         }
       : null
 
   return (
-    <>
+    <SmoothScroll>
       <Header />
-      <main className="min-h-screen pb-20 md:pb-0">
+      <main className="min-h-screen pb-20 md:pb-0 selection:bg-black selection:text-white">
         {announcement && <AnnouncementBar data={announcement} />}
         {children}
       </main>
       <Footer />
       <BottomNav />
-    </>
+    </SmoothScroll>
   )
 }

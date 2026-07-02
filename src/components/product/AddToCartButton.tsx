@@ -52,7 +52,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   if (variant === 'full') {
     return (
       <div
-        className={cn('relative h-9', className)}
+        className={cn('relative h-10', className)}
         onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -60,52 +60,51 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
             // Stepper
             <motion.div
               key="stepper"
-              initial={{ scale: 0.85, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1,    opacity: 1 }}
-              exit={{    scale: 0.85, opacity: 0 }}
-              transition={{ duration: 0.14, ease: 'easeOut' }}
-              className="absolute inset-0 flex items-center justify-between rounded-[var(--radius-btn)] bg-success-subtle border border-success/30 px-1"
+              exit={{    scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="absolute inset-0 flex items-center justify-between border-2 border-primary bg-primary text-white"
             >
               <button
                 onClick={(e) => handleChange(e, -1)}
-                className="w-7 h-7 flex items-center justify-center rounded-md bg-white text-success shadow-sm hover:bg-success hover:text-on-success transition-colors active:scale-90"
+                className="w-10 h-full flex items-center justify-center bg-transparent hover:bg-white/20 transition-colors active:scale-95"
                 aria-label="Remove one"
               >
-                <Minus size={13} />
+                <Minus size={16} strokeWidth={3} />
               </button>
-              <span className="text-[14px] font-bold text-success min-w-6 text-center">
+              <span className="text-[14px] font-black min-w-6 text-center tracking-widest">
                 {cartItem.quantity}
               </span>
               <button
                 onClick={(e) => handleChange(e, 1)}
-                className="w-7 h-7 flex items-center justify-center rounded-md bg-success text-on-success shadow-sm hover:opacity-90 transition-opacity active:scale-90"
+                className="w-10 h-full flex items-center justify-center bg-transparent hover:bg-white/20 transition-colors active:scale-95"
                 aria-label="Add one more"
               >
-                <Plus size={13} />
+                <Plus size={16} strokeWidth={3} />
               </button>
             </motion.div>
           ) : (
             // ADD button
             <motion.button
               key="add"
-              initial={{ scale: 0.85, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1,    opacity: 1 }}
-              exit={{    scale: 0.85, opacity: 0 }}
-              transition={{ duration: 0.14, ease: 'easeOut' }}
+              exit={{    scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               onClick={handleAdd}
               disabled={disabled}
               className={cn(
-                'absolute inset-0 flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] font-bold text-[13px] transition-all duration-300 active:scale-95 group/btn overflow-hidden',
+                'absolute inset-0 flex items-center justify-center gap-2 border-2 border-primary font-black text-xs md:text-[13px] transition-all duration-300 active:scale-95 group/btn uppercase tracking-widest',
                 disabled
-                  ? 'bg-surface-container text-on-surface-variant cursor-not-allowed border border-table-border/60'
+                  ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-50'
                   : flash
-                  ? 'bg-success text-on-success shadow-[0_0_15px_rgba(34,197,94,0.5)] border border-success'
-                  : 'bg-gradient-to-br from-surface-container-low to-surface-card text-primary hover:from-primary hover:to-primary-container hover:text-white shadow-3xs hover:shadow-[0_4px_12px_rgba(38,23,12,0.15)] border border-table-border/80 hover:border-primary/50',
+                  ? 'bg-primary text-white shadow-none'
+                  : 'bg-background text-primary hover:bg-primary hover:text-white',
               )}
               aria-label={t('product.addToCart')}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-out pointer-events-none" />
-              <Plus size={15} strokeWidth={2.5} className="transition-transform duration-300 group-hover/btn:rotate-90" />
+              <Plus size={16} strokeWidth={3} className="transition-transform duration-300 group-hover/btn:rotate-90" />
               ADD
             </motion.button>
           )}
