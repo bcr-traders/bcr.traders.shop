@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 const MAX_ATTEMPTS = 5
 
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'delivery') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

@@ -1,11 +1,11 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 async function requireAdminAccess(): Promise<Response | null> {
   const { userId, sessionClaims } = await auth()
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }

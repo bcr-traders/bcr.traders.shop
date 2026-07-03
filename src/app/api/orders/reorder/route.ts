@@ -6,7 +6,7 @@
  * can add available items to the cart and warn about skipped ones.
  */
 import { createAdminClient } from '@/lib/supabase/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {

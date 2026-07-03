@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function PUT(req: NextRequest, { params }: Params) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (adminOnly(meta?.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (adminOnly(meta?.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (adminOnly(meta?.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params

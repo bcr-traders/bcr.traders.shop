@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { logError } from '@/lib/logger'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 export async function POST(req: NextRequest) {
   let body: { message?: string; stack?: string | null; digest?: string | null }
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { sessionClaims } = await auth()
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const userId = meta?.supabase_profile_id ?? null
 
   await logError({

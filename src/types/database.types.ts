@@ -199,7 +199,6 @@ export type Database = {
       profiles: {
         Row: {
           id: string
-          clerk_user_id: string
           phone: string | null
           email: string | null
           name: string | null
@@ -213,7 +212,7 @@ export type Database = {
       admin_profiles: {
         Row: {
           id: string
-          clerk_user_id: string
+          user_id: string
           name: string
           phone: string
           role: 'super_admin' | 'admin' | 'delivery'

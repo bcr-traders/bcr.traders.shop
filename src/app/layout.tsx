@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { ClerkProvider } from '@clerk/nextjs'
 import { Work_Sans, Manrope, JetBrains_Mono } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
+import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
@@ -80,20 +80,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${workSans.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
-        <head>
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
-          />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@400;500;700&display=swap"
-          />
-        </head>
-        <body>{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${workSans.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@400;500;700&display=swap"
+        />
+      </head>
+      <body>
+        <AuthTokenCatcher />
+        {children}
+      </body>
+    </html>
   )
 }

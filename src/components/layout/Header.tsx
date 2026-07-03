@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, Home, Grid, Truck } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, Home, Grid, Truck, User } from 'lucide-react'
 import { useState, useEffect, type FormEvent } from 'react'
-import { UserButton, SignInButton, useAuth } from '@clerk/nextjs'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { useCartStore } from '@/store/cartStore'
 import { useT } from '@/hooks/useT'
 import LanguageToggle from './LanguageToggle'
@@ -23,7 +23,7 @@ export default function Header() {
   const totalItems = useCartStore((s) => s.totalItems())
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const { isSignedIn, isLoaded } = useAuth()
+  const { isSignedIn, isLoaded } = useSupabaseUser()
   const { t } = useT()
 
   // Close the drawer on route change
@@ -81,17 +81,23 @@ export default function Header() {
             </button>
 
             {isLoaded && isSignedIn && (
-              <div className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-surface-container-low transition-colors cursor-pointer">
-                <UserButton />
+              <Link
+                href="/profile"
+                className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-surface-container-low transition-colors"
+              >
+                <span className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center">
+                  <User size={14} strokeWidth={2.5} />
+                </span>
                 <span className="text-sm font-black text-primary">{t('nav.account')}</span>
-              </div>
+              </Link>
             )}
             {isLoaded && !isSignedIn && (
-              <SignInButton mode="redirect">
-                <button className="flex items-center gap-1 px-4 py-2.5 rounded-xl hover:bg-surface-container-low text-sm font-black text-primary transition-colors">
-                  {t('nav.signIn')}
-                </button>
-              </SignInButton>
+              <Link
+                href="/login"
+                className="flex items-center gap-1 px-4 py-2.5 rounded-xl hover:bg-surface-container-low text-sm font-black text-primary transition-colors"
+              >
+                {t('nav.signIn')}
+              </Link>
             )}
 
             <Link
@@ -213,20 +219,21 @@ export default function Header() {
                   <LanguageToggle />
 
                   {isLoaded && isSignedIn && (
-                    <div className="flex items-center gap-3">
-                      <UserButton />
+                    <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                        <User size={16} strokeWidth={2.5} />
+                      </span>
                       <span className="text-sm font-black text-primary tracking-wide uppercase">{t('nav.account')}</span>
-                    </div>
+                    </Link>
                   )}
                   {isLoaded && !isSignedIn && (
-                    <SignInButton mode="redirect">
-                      <button
-                        className="px-6 py-3 bg-primary text-white text-sm font-black uppercase tracking-[0.1em] rounded-full active:scale-95 transition-transform"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        {t('nav.signIn')}
-                      </button>
-                    </SignInButton>
+                    <Link
+                      href="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="px-6 py-3 bg-primary text-white text-sm font-black uppercase tracking-[0.1em] rounded-full active:scale-95 transition-transform"
+                    >
+                      {t('nav.signIn')}
+                    </Link>
                   )}
                 </div>
               </div>

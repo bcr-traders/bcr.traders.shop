@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) return NextResponse.json({ error: 'Profile not configured' }, { status: 400 })
 

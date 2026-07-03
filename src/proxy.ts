@@ -1,58 +1,88 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
-import type { ClerkPublicMetadata } from '@/types'
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+import type { AuthMetadata } from '@/types'
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/login(.*)',
-  '/admin/login(.*)',
-  '/delivery/login(.*)',
-  '/category/(.*)',
-  '/product/(.*)',
-  '/search(.*)',
-  '/api/products(.*)',
-  '/api/categories(.*)',
-  '/api/banners(.*)',
-  '/api/cms(.*)',
-  '/api/search(.*)',
-  '/api/pincodes/check(.*)',
-  '/api/merchant-feed(.*)',
-  '/api/webhooks/(.*)',
-  '/api/errors(.*)',
-  '/api/translations(.*)',
-])
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/admin/login',
+  '/delivery/login',
+  '/category/',
+  '/product/',
+  '/search',
+  '/api/products',
+  '/api/categories',
+  '/api/banners',
+  '/api/cms',
+  '/api/search',
+  '/api/pincodes/check',
+  '/api/merchant-feed',
+  '/api/webhooks/',
+  '/api/errors',
+  '/api/translations',
+  '/api/auth/',
+]
 
-const isAdminRoute    = createRouteMatcher(['/admin(.+)'])
-const isDeliveryRoute = createRouteMatcher(['/delivery/dashboard(.*)', '/delivery/orders(.*)'])
+function isPublicRoute(pathname: string): boolean {
+  if (pathname === '/') return true
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
+}
 
-export const proxy = clerkMiddleware(async (auth, request) => {
-  if (isPublicRoute(request)) return
+function isAdminRoute(pathname: string): boolean {
+  return pathname.startsWith('/admin') && pathname !== '/admin/login'
+}
 
-  const { userId, sessionClaims } = await auth()
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+function isDeliveryRoute(pathname: string): boolean {
+  return pathname.startsWith('/delivery/dashboard') || pathname.startsWith('/delivery/orders')
+}
 
-  if (!userId) {
-    if (isAdminRoute(request)) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
-    if (isDeliveryRoute(request)) {
-      return NextResponse.redirect(new URL('/delivery/login', request.url))
-    }
+export async function proxy(request: NextRequest) {
+  const response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
+      },
+    },
+  )
+
+  // Refreshes the session cookie if the access token is near expiry.
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+
+  if (isPublicRoute(pathname)) return response
+
+  if (!user) {
+    if (isAdminRoute(pathname)) return NextResponse.redirect(new URL('/admin/login', request.url))
+    if (isDeliveryRoute(pathname)) return NextResponse.redirect(new URL('/delivery/login', request.url))
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (isAdminRoute(request)) {
-    if (meta?.role !== 'admin' && meta?.role !== 'super_admin') {
+  const meta = (user.app_metadata ?? {}) as Partial<AuthMetadata>
+
+  if (isAdminRoute(pathname)) {
+    if (meta.role !== 'admin' && meta.role !== 'super_admin') {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  if (isDeliveryRoute(request)) {
-    if (meta?.role !== 'delivery') {
+  if (isDeliveryRoute(pathname)) {
+    if (meta.role !== 'delivery') {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
-})
+
+  return response
+}
 
 export const config = {
   matcher: [

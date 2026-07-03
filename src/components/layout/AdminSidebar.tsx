@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useUser, useClerk } from '@clerk/nextjs'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import type { AdminBadges } from './AdminShell'
@@ -31,9 +32,12 @@ interface Props {
 export default function AdminSidebar({ role, onClose, className, badges }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
-  const { user } = useUser()
-  const { signOut } = useClerk()
+  const { user } = useSupabaseUser()
   const { can, isSuperAdmin } = useAdminPermissions()
+
+  const signOut = async () => {
+    await createClient().auth.signOut()
+  }
 
   const nav: NavGroup[] = [
     {
@@ -169,12 +173,12 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-10 h-10 rounded-xl bg-white/10 border-2 border-white/20 flex items-center justify-center flex-shrink-0">
             <span className="font-black text-lg text-white">
-              {user?.firstName?.[0]?.toUpperCase() ?? 'A'}
+              {(user?.user_metadata as { name?: string })?.name?.[0]?.toUpperCase() ?? 'A'}
             </span>
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm text-white font-black truncate leading-tight mb-0.5">
-              {user?.firstName ?? 'Admin'}
+              {(user?.user_metadata as { name?: string })?.name ?? 'Admin'}
             </p>
             <p className="text-[10px] font-black text-white/50 uppercase tracking-widest flex items-center gap-1">
               <ShieldAlert size={10} />

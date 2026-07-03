@@ -18,7 +18,7 @@ export interface AdminPermissions {
 
 export interface AdminProfile {
   id: string
-  clerk_user_id: string | null
+  user_id: string | null
   phone: string
   name: string
   email: string | null

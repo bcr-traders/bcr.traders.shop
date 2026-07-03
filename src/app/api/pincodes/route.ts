@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 
 export async function GET() {
   const supabase = createAdminClient()

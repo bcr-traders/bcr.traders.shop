@@ -1,6 +1,6 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import type { CartItem, Address, OrderItem } from '@/types/database.types'
 import type { OrderEmailData } from '@/lib/resend'
 
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 

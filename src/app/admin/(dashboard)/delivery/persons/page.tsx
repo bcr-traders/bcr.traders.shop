@@ -8,7 +8,7 @@ type DeliveryPerson = {
   id: string
   name: string
   phone: string
-  clerk_user_id: string
+  user_id: string
   role: string
   created_at: string
 }
@@ -20,7 +20,7 @@ export default async function DeliveryPersonsPage() {
 
   const { data } = await db
     .from('admin_profiles')
-    .select('id, name, phone, clerk_user_id, role, created_at')
+    .select('id, name, phone, user_id, role, created_at')
     .eq('role', 'delivery')
     .order('created_at', { ascending: false })
 

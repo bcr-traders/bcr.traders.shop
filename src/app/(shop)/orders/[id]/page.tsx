@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
 import OrderDetailClient from './OrderDetailClient'
 
@@ -14,7 +14,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const { userId, sessionClaims } = await auth()
   if (!userId) redirect('/login')
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) redirect('/login')
 

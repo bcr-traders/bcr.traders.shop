@@ -1,6 +1,5 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { redirect } from 'next/navigation'
-import type { ClerkPublicMetadata } from '@/types'
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminShell from '@/components/layout/AdminShell'
 
@@ -28,8 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { userId, sessionClaims } = await auth()
   if (!userId) redirect('/admin/login')
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
-  const role = meta?.role
+  const role = sessionClaims?.publicMetadata.role
 
   if (role !== 'super_admin' && role !== 'admin') redirect('/admin/login')
 

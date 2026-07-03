@@ -180,15 +180,15 @@ export default function ProfilesClient({ initialProfiles }: { initialProfiles: A
                   {/* Right side actions */}
                   <div className="flex flex-col items-start md:items-end gap-4 flex-shrink-0 mt-4 md:mt-0">
 
-                    {/* Clerk status */}
+                    {/* Account link status */}
                     <div className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest',
-                      profile.clerk_user_id
+                      profile.user_id
                         ? 'bg-green-50 text-green-700 border-green-200'
                         : 'bg-amber-50 text-amber-700 border-amber-200',
                     )}>
-                      {profile.clerk_user_id ? <CheckCircle size={14} strokeWidth={3} /> : <Clock size={14} strokeWidth={3} />}
-                      {profile.clerk_user_id ? 'Linked' : 'Pending'}
+                      {profile.user_id ? <CheckCircle size={14} strokeWidth={3} /> : <Clock size={14} strokeWidth={3} />}
+                      {profile.user_id ? 'Linked' : 'Pending'}
                     </div>
 
                     <div className="flex items-center gap-3">

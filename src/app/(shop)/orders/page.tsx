@@ -1,9 +1,9 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
 import { Package, ArrowRight, ShoppingBag, Clock, CheckCircle, XCircle, Truck } from 'lucide-react'
 
@@ -36,7 +36,7 @@ export default async function OrdersPage() {
   const { userId, sessionClaims } = await auth()
   if (!userId) redirect('/login')
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) redirect('/')
 

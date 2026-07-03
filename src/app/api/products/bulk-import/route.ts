@@ -8,11 +8,11 @@
  *   { created, failed, errors: [{ row, reason }], error_csv: base64 }
  * The error_csv is a base64-encoded CSV of failed rows for the admin to download.
  */
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 const RowSchema = z.object({
   name:          z.string().min(1, 'name required'),
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

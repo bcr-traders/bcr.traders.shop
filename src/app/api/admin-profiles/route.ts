@@ -1,14 +1,14 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { DEFAULT_PERMISSIONS } from '@/types/admin.types'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import type { AdminPermissions } from '@/types/admin.types'
 
 async function requireManageAdminProfiles(): Promise<Response | null> {
   const { userId, sessionClaims } = await auth()
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role === 'super_admin') return null
 
   if (meta?.role !== 'admin') {
@@ -20,7 +20,7 @@ async function requireManageAdminProfiles(): Promise<Response | null> {
   const { data: profile } = await supabase
     .from('admin_profiles')
     .select('permissions')
-    .eq('clerk_user_id', userId)
+    .eq('user_id', userId)
     .maybeSingle()
 
   const perms = (profile as unknown as { permissions: AdminPermissions } | null)?.permissions

@@ -271,7 +271,7 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       </Section>
 
       {/* ── Notifications ── */}
-      <Section title="Notifications" sub="Where admin order alerts are sent — separate from your Clerk login email">
+      <Section title="Notifications" sub="Where admin order alerts are sent — separate from your login phone number">
         <Field label="Admin Notification Email">
           <input
             type="email"

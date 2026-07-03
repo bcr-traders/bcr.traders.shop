@@ -1,8 +1,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { ProductReview } from '@/types/database.types'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 
 export async function GET(
   req: NextRequest,
@@ -14,7 +14,7 @@ export async function GET(
   if (isAdmin) {
     const { userId, sessionClaims } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+    const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
     if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
@@ -53,7 +53,7 @@ export async function POST(
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Sign in to leave a review' }, { status: 401 })
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) return NextResponse.json({ error: 'Profile not configured' }, { status: 400 })
 

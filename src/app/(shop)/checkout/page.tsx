@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import type { ClerkPublicMetadata } from '@/types'
+import type { AuthMetadata } from '@/types'
 import CheckoutClient from './CheckoutClient'
 
 export const metadata: Metadata = {
@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage() {
   const { userId, sessionClaims } = await auth()
-  if (!userId) redirect('/sign-in?redirect_url=/checkout')
+  if (!userId) redirect('/login?next=/checkout')
 
-  const meta = sessionClaims?.publicMetadata as ClerkPublicMetadata | undefined
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id ?? ''
 
   if (!profileId) redirect('/')

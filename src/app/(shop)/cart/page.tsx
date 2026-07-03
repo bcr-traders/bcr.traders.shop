@@ -10,7 +10,7 @@ import {
   Package, ChevronRight, BadgeCheck,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import { useAuth } from '@clerk/nextjs'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import type { CartItem } from '@/types/database.types'
 
 interface CouponData {
@@ -281,7 +281,7 @@ function EmptyCart() {
 // ── Main CartPage ─────────────────────────────────────────────────────────────
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useSupabaseUser()
   const router = useRouter()
 
   const [couponInput, setCouponInput] = useState('')

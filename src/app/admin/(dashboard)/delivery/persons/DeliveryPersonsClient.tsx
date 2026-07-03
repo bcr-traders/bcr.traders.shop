@@ -9,7 +9,7 @@ type DeliveryPerson = {
   id: string
   name: string
   phone: string
-  clerk_user_id: string
+  user_id: string
   role: string
   created_at: string
 }
@@ -213,15 +213,15 @@ export default function DeliveryPersonsClient({
                     Delivery
                   </span>
                   
-                  {/* Clerk status */}
+                  {/* Account link status */}
                   <div className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 font-black text-[10px] uppercase tracking-widest',
-                    p.clerk_user_id
+                    p.user_id
                       ? 'bg-green-50 text-green-700 border-green-200'
                       : 'bg-amber-50 text-amber-700 border-amber-200',
                   )}>
-                    {p.clerk_user_id ? <CheckCircle size={12} strokeWidth={3} /> : <Clock size={12} strokeWidth={3} />}
-                    {p.clerk_user_id ? 'Linked' : 'Pending'}
+                    {p.user_id ? <CheckCircle size={12} strokeWidth={3} /> : <Clock size={12} strokeWidth={3} />}
+                    {p.user_id ? 'Linked' : 'Pending'}
                   </div>
                 </div>
 

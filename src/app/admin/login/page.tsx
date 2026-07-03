@@ -1,4 +1,5 @@
-import { SignIn } from '@clerk/nextjs'
+import { Suspense } from 'react'
+import PhoneAuthForm from '@/components/auth/PhoneAuthForm'
 
 export default function AdminLoginPage() {
   return (
@@ -13,24 +14,14 @@ export default function AdminLoginPage() {
           </p>
         </div>
         <div className="flex justify-center">
-           <SignIn 
-            fallbackRedirectUrl="/admin/dashboard" 
-            signUpUrl={false as never} 
-            appearance={{
-              elements: {
-                card: "bg-transparent shadow-none border-0 p-0 w-full",
-                headerTitle: "hidden",
-                headerSubtitle: "hidden",
-                formButtonPrimary: "bg-black hover:bg-black/80 text-white rounded-none border-2 border-black font-bold uppercase tracking-widest text-xs py-3 transition-colors",
-                formFieldInput: "bg-white border-2 border-black rounded-none font-bold text-sm px-4 py-3 focus:ring-0 focus:border-black text-black",
-                formFieldLabel: "font-black uppercase text-[10px] tracking-widest text-black mb-1.5",
-                footerAction: "hidden",
-                dividerLine: "bg-black/20",
-                dividerText: "font-black uppercase text-[10px] tracking-widest text-black/60 bg-white px-2",
-                socialButtonsBlockButton: "bg-white border-2 border-black rounded-none hover:bg-gray-50 transition-colors font-bold text-xs text-black py-3",
-              }
-            }}
-          />
+          <Suspense fallback={null}>
+            <PhoneAuthForm
+              portal="admin"
+              allowSignup={false}
+              title="Staff Sign In"
+              subtitle="Enter your registered mobile number"
+            />
+          </Suspense>
         </div>
       </div>
     </main>
