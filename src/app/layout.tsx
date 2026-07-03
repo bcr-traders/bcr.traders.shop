@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Work_Sans, Manrope, JetBrains_Mono } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
 import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
+import AdminShortcut from '@/components/auth/AdminShortcut'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
@@ -93,6 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AuthTokenCatcher />
+        <AdminShortcut />
         {children}
       </body>
     </html>
