@@ -9,7 +9,7 @@ import { useT } from '@/hooks/useT'
 import type { Banner } from '@/types/database.types'
 
 const INTERVAL_MS = 5000
-const DEFAULT_BG = '#0C831F'
+const DEFAULT_BG = '#1C130A'
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
@@ -60,13 +60,13 @@ export default function HeroBanner({ banners }: Props) {
             </p>
             <Link
               href="/search"
-              className="inline-flex items-center mt-6 px-6 py-3 rounded-xl bg-white text-primary font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 shadow-lg"
+              className="inline-flex items-center mt-6 px-6 py-3 rounded-xl bg-secondary text-on-secondary font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 shadow-lg"
             >
               Shop Now
             </Link>
           </div>
-          <div className="absolute -bottom-10 -right-10 w-56 h-56 rounded-full bg-white/10 pointer-events-none" />
-          <div className="absolute top-1/2 -translate-y-1/2 -right-4 w-32 h-32 rounded-full bg-white/5 pointer-events-none hidden sm:block" />
+          <div className="absolute -bottom-10 -right-10 w-56 h-56 rounded-full bg-secondary/10 pointer-events-none" />
+          <div className="absolute top-1/2 -translate-y-1/2 -right-4 w-32 h-32 rounded-full bg-secondary/5 pointer-events-none hidden sm:block" />
         </div>
       </section>
     )

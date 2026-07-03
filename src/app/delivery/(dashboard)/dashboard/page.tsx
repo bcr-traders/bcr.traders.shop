@@ -47,7 +47,7 @@ export default function DeliveryDashboardPage() {
   return (
     <div className="max-w-lg mx-auto">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#f5f0e8] px-4 pt-6 pb-3 border-b border-outline-variant/20">
+      <div className="sticky top-0 z-10 bg-background px-4 pt-6 pb-3 border-b border-outline-variant/20">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-headline-lg text-headline-lg text-primary">My Orders</h1>

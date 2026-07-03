@@ -262,7 +262,7 @@ export default async function ProductPage({ params }: PageProps) {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <span
                       key={i}
-                      className={`text-sm ${i < Math.round(stats.avg) ? 'text-primary' : 'text-on-surface-variant/20'}`}
+                      className={`text-sm ${i < Math.round(stats.avg) ? 'text-secondary' : 'text-on-surface-variant/20'}`}
                     >
                       ★
                     </span>

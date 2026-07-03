@@ -9,7 +9,7 @@ export default async function DeliveryLayout({ children }: { children: React.Rea
   if (sessionClaims?.publicMetadata.role !== 'delivery') redirect('/delivery/login')
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className="min-h-screen bg-background">
       {children}
     </div>
   )

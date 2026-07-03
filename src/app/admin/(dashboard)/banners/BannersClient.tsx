@@ -389,7 +389,7 @@ function BannerFormModal({
     link_url: banner?.link_url ?? '',
     cta_text: banner?.cta_text ?? '',
     cta_text_or: banner?.cta_text_or ?? '',
-    background_color: banner?.background_color || '#0C831F',
+    background_color: banner?.background_color || '#1C130A',
     text_color: banner?.text_color || '#FFFFFF',
     placement: banner?.placement ?? defaultPlacement,
     is_active: banner?.is_active ?? true,

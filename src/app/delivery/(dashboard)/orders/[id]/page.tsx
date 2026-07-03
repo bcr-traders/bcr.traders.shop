@@ -169,7 +169,7 @@ export default function DeliveryOrderDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="max-w-lg mx-auto pb-40">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#f5f0e8] px-4 pt-5 pb-3 flex items-center gap-3 border-b border-outline-variant/20">
+      <div className="sticky top-0 z-10 bg-background px-4 pt-5 pb-3 flex items-center gap-3 border-b border-outline-variant/20">
         <button
           onClick={() => router.back()}
           className="p-2 -ml-2 rounded-full hover:bg-surface-container transition-colors"
@@ -322,7 +322,7 @@ export default function DeliveryOrderDetailPage({ params }: { params: Promise<{ 
 
       {/* ── Bottom Action Sheet ── */}
       {!isDelivered && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 bg-[#f5f0e8]/95 backdrop-blur-sm border-t border-outline-variant/20 p-4 space-y-2 max-w-lg mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-sm border-t border-outline-variant/20 p-4 space-y-2 max-w-lg mx-auto">
 
           {/* Assigned → Out for Delivery */}
           {isAssigned && (

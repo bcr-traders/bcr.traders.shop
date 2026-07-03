@@ -1,65 +1,70 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brutalist / Minimalist Awwwards Palette */
-  --color-background: #F3F2EF;
-  --color-surface: #F3F2EF;
+  /* Gold Heritage Palette — matches the BCR Traders crest (dark ink + antique
+     gold foil on a warm ivory ground). Same token names as before, so every
+     component using bg-primary/text-secondary/etc. re-themes automatically. */
+  --color-background: #FDF9F1;
+  --color-surface: #FDF9F1;
   --color-surface-bright: #FFFFFF;
-  --color-surface-dim: #E4E3DF;
-  --color-surface-variant: #D1D0CC;
+  --color-surface-dim: #EDE4D3;
+  --color-surface-variant: #DCCFB0;
   --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #FAFAFA;
-  --color-surface-container: #F3F2EF;
-  --color-surface-container-high: #EBEAE7;
-  --color-surface-container-highest: #E4E3DF;
-  --color-surface-tint: #000000;
+  --color-surface-container-low: #FAF5E9;
+  --color-surface-container: #F5EEDD;
+  --color-surface-container-high: #EFE6D1;
+  --color-surface-container-highest: #E8DEC8;
+  --color-surface-tint: #1C130A;
 
-  --color-primary: #000000;
-  --color-on-primary: #FFFFFF;
-  --color-primary-container: #111111;
-  --color-on-primary-container: #FFFFFF;
-  --color-primary-fixed: #222222;
-  --color-primary-fixed-dim: #333333;
-  --color-on-primary-fixed: #FFFFFF;
-  --color-on-primary-fixed-variant: #E4E3DF;
-  --color-inverse-primary: #FFFFFF;
+  /* Primary — the dark ink tone from the crest's lettering/arch outline */
+  --color-primary: #1C130A;
+  --color-on-primary: #FDF9F1;
+  --color-primary-container: #2E2011;
+  --color-on-primary-container: #FDF9F1;
+  --color-primary-fixed: #2E2011;
+  --color-primary-fixed-dim: #3D2C18;
+  --color-on-primary-fixed: #FDF9F1;
+  --color-on-primary-fixed-variant: #EFE6D1;
+  --color-inverse-primary: #C9A227;
 
-  --color-secondary: #000000;
-  --color-on-secondary: #FFFFFF;
-  --color-secondary-container: #222222;
-  --color-on-secondary-container: #FFFFFF;
-  --color-secondary-fixed: #333333;
-  --color-secondary-fixed-dim: #444444;
-  --color-on-secondary-fixed: #FFFFFF;
-  --color-on-secondary-fixed-variant: #E4E3DF;
+  /* Secondary — antique gold foil accent */
+  --color-secondary: #C9A227;
+  --color-on-secondary: #1C130A;
+  --color-secondary-container: #F0DFA4;
+  --color-on-secondary-container: #1C130A;
+  --color-secondary-fixed: #E4C567;
+  --color-secondary-fixed-dim: #C9A227;
+  --color-on-secondary-fixed: #1C130A;
+  --color-on-secondary-fixed-variant: #3D2C18;
 
-  --color-tertiary: #111111;
-  --color-on-tertiary: #FFFFFF;
-  --color-tertiary-container: #333333;
-  --color-on-tertiary-container: #FFFFFF;
-  --color-tertiary-fixed: #444444;
-  --color-tertiary-fixed-dim: #555555;
-  --color-on-tertiary-fixed: #FFFFFF;
-  --color-on-tertiary-fixed-variant: #D1D0CC;
+  /* Tertiary — warm bronze/copper for variety alongside the gold */
+  --color-tertiary: #8B5E34;
+  --color-on-tertiary: #FDF9F1;
+  --color-tertiary-container: #E8DEC8;
+  --color-on-tertiary-container: #3D2C18;
+  --color-tertiary-fixed: #8B5E34;
+  --color-tertiary-fixed-dim: #6E4A28;
+  --color-on-tertiary-fixed: #FDF9F1;
+  --color-on-tertiary-fixed-variant: #EFE6D1;
 
-  --color-error: #FF0000;
+  --color-error: #B3261E;
   --color-on-error: #FFFFFF;
-  --color-error-container: #FFEEEE;
-  --color-on-error-container: #990000;
+  --color-error-container: #FBE9E7;
+  --color-on-error-container: #7A1912;
 
-  --color-outline: #000000;
-  --color-outline-variant: #D1D0CC;
+  --color-outline: #3D2C18;
+  --color-outline-variant: #DCCFB0;
 
-  --color-on-background: #000000;
-  --color-on-surface: #000000;
-  --color-on-surface-variant: #444444;
+  --color-on-background: #1C130A;
+  --color-on-surface: #1C130A;
+  --color-on-surface-variant: #5C4A32;
 
-  --color-inverse-surface: #000000;
-  --color-inverse-on-surface: #F3F2EF;
+  --color-inverse-surface: #1C130A;
+  --color-inverse-on-surface: #FDF9F1;
 
   /* Extra surface / border tokens */
   --color-surface-card: #FFFFFF;
-  --color-table-border: #E4E3DF;
+  --color-table-border: #E8DEC8;
 
   /* Status colours */
   --color-status-placed: #6B7280;
@@ -167,8 +172,8 @@ details>summary::-webkit-details-marker {
 }
 
 body {
-  background-color: #fdf9f1;
-  color: #1c1c17;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
   -webkit-font-smoothing: antialiased;
 }
 

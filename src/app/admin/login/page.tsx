@@ -1,15 +1,17 @@
 import { Suspense } from 'react'
 import PhoneAuthForm from '@/components/auth/PhoneAuthForm'
+import Logo from '@/components/layout/Logo'
 
 export default function AdminLoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#E5E5E5] p-4 font-sans">
-      <div className="w-full max-w-md bg-white border-4 border-black rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
-        <div className="mb-8 text-center border-b-4 border-black pb-6">
-          <h1 className="text-3xl font-black uppercase tracking-tight text-black">
+    <main className="flex min-h-screen items-center justify-center bg-surface-dim p-4 font-sans">
+      <div className="w-full max-w-md bg-surface-card border-2 border-primary rounded-2xl shadow-modal p-8">
+        <div className="mb-8 text-center border-b-2 border-outline-variant pb-6 flex flex-col items-center">
+          <Logo className="h-16 w-auto mb-4" />
+          <h1 className="text-3xl font-black uppercase tracking-tight text-primary">
             Admin Portal.
           </h1>
-          <p className="font-bold text-xs uppercase tracking-widest mt-2 text-black/60">
+          <p className="font-bold text-xs uppercase tracking-widest mt-2 text-on-surface-variant">
             BCR Traders Management
           </p>
         </div>

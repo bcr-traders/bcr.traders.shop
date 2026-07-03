@@ -82,7 +82,7 @@ export default async function Footer() {
                 </h5>
                 <Link
                   href="/search"
-                  className="text-sm font-bold text-success hover:text-success/80 transition-colors"
+                  className="text-sm font-bold text-secondary hover:text-secondary/80 transition-colors"
                 >
                   see all
                 </Link>

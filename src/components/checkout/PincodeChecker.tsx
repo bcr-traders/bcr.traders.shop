@@ -73,8 +73,8 @@ export default function PincodeChecker({ pincode, onResult, isBulkSelected, onBu
   if (result.serviceable) {
     return (
       <div className="flex items-center gap-2 mt-2">
-        <CheckCircle2 size={15} className="text-[#0C831F] flex-shrink-0" />
-        <span className="font-label-sm text-label-sm text-[#0C831F]">
+        <CheckCircle2 size={15} className="text-success flex-shrink-0" />
+        <span className="font-label-sm text-label-sm text-success">
           Delivery available
           {result.city ? ` to ${result.city}${result.state ? `, ${result.state}` : ''}` : ''}
           {result.delivery_days ? ` (${result.delivery_days} day${result.delivery_days > 1 ? 's' : ''})` : ''}

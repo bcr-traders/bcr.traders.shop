@@ -114,19 +114,13 @@ export default async function HomePage() {
         {/* 3. Coupon marquee ticker */}
         {coupons.length > 0 && <CouponMarquee coupons={coupons} />}
 
-        {/* 4. Trust badges (animated, scrollable) */}
-        <TrustBadges />
-
-        {/* 5. Business stats with counting animation */}
-        <AnimatedStats />
-
-        {/* 6. Category bento grid (staggered entry) */}
+        {/* 4. Category bento grid (staggered entry) — straight to shopping */}
         <CategoryGrid categories={categories} />
 
-        {/* 7. Active coupon offers (premium coupon design) */}
+        {/* 5. Active coupon offers (premium coupon design) */}
         <CouponCards coupons={coupons} />
 
-        {/* 8. Best Sellers */}
+        {/* 6. Best Sellers */}
         <ProductSection
           title="Best Sellers"
           titleOr="ସବୁଠୁ ଅଧିକ ବିକ୍ରି"
@@ -134,7 +128,7 @@ export default async function HomePage() {
           viewAllHref="/search?featured=true"
         />
 
-        {/* 9. Per-Category sections */}
+        {/* 7. Per-Category sections */}
         {categories.map((cat) => {
           const products = categoryProducts[cat.id] ?? []
           if (products.length === 0) return null
@@ -149,8 +143,14 @@ export default async function HomePage() {
           )
         })}
 
-        {/* 10. Mid-page offer banner */}
+        {/* 8. Mid-page offer banner */}
         {offerBanner && <OfferBanner data={offerBanner} />}
+
+        {/* 9. Trust badges (animated, scrollable) */}
+        <TrustBadges />
+
+        {/* 10. Business stats with counting animation */}
+        <AnimatedStats />
       </div>
 
       {/* Floating WhatsApp order button */}

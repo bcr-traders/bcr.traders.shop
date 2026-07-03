@@ -12,7 +12,7 @@ interface Props {
 const accentMap = {
   primary: 'text-primary bg-primary/10',
   secondary: 'text-secondary bg-secondary/10',
-  success: 'text-[#0C831F] bg-[#0C831F]/10',
+  success: 'text-success bg-success/10',
   warning: 'text-secondary-fixed-dim bg-secondary/10',
 }
 
@@ -40,7 +40,7 @@ export default function StatsCard({ title, value, icon, trend, accent = 'primary
           <span
             className={cn(
               'material-symbols-outlined text-[14px]',
-              trend.value >= 0 ? 'text-[#0C831F]' : 'text-error',
+              trend.value >= 0 ? 'text-success' : 'text-error',
             )}
           >
             {trend.value >= 0 ? 'trending_up' : 'trending_down'}

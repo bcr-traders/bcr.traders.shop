@@ -40,7 +40,7 @@ export default function NotFound() {
         <div className="mt-12 flex flex-col sm:flex-row gap-4 items-center justify-center">
           <Link
             href="/"
-            className="bg-primary hover:bg-[#523a2a] text-on-primary px-8 py-4 rounded-full font-label-sm text-label-sm uppercase tracking-wider transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md flex items-center gap-2"
+            className="bg-primary hover:bg-primary-container text-on-primary px-8 py-4 rounded-full font-label-sm text-label-sm uppercase tracking-wider transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">home</span>
             Go Back to Home
