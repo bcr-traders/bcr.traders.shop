@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ShieldCheck, Zap, Package, Truck } from 'lucide-react'
 import PhoneAuthForm from '@/components/auth/PhoneAuthForm'
+import Logo from '@/components/layout/Logo'
 
 export const metadata: Metadata = {
   title: 'Sign In — BCR TRADERS',
@@ -28,9 +29,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 p-10 pb-0">
           <Link href="/" className="inline-block group">
-            <span className="text-3xl font-black tracking-tighter text-white lowercase group-hover:opacity-80 transition-opacity duration-300">
-              bcr traders.
-            </span>
+            <Logo className="h-16 w-auto group-hover:opacity-80 transition-opacity duration-300" />
           </Link>
         </div>
 
@@ -79,10 +78,8 @@ export default function LoginPage() {
       {/* ── RIGHT — Phone OTP sign-in ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative">
         <div className="lg:hidden mb-10 text-center">
-          <Link href="/" className="inline-block">
-            <span className="text-2xl font-black tracking-tighter text-primary lowercase">
-              bcr traders.
-            </span>
+          <Link href="/" className="inline-flex">
+            <Logo className="h-14 w-auto" />
           </Link>
           <p className="text-xs text-on-surface-variant font-medium mt-1 tracking-wide">
             Wholesale · Odisha

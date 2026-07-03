@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useT } from '@/hooks/useT'
 import LanguageToggle from './LanguageToggle'
 import HeaderLocation from './HeaderLocation'
+import Logo from './Logo'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const NAV = [
@@ -44,9 +45,7 @@ export default function Header() {
 
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center flex-shrink-0 group">
-            <span className="text-2xl md:text-3xl font-black tracking-tighter text-primary leading-none lowercase group-hover:tracking-tight transition-all duration-300">
-              bcr traders.
-            </span>
+            <Logo className="h-11 md:h-12 w-auto group-hover:scale-105 transition-transform duration-300" priority />
           </Link>
 
           {/* ── Delivery location (desktop) ── */}

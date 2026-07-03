@@ -21,7 +21,7 @@ type LowStockProduct = {
   name: string
   sku: string | null
   images: string[]
-  stock_quantity: number
+  stock_qty: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -65,10 +65,10 @@ export default async function DashboardPage() {
       .eq('is_active', true),
 
     supabase.from('products')
-      .select('id, name, sku, images, stock_quantity')
+      .select('id, name, sku, images, stock_qty')
       .eq('is_active', true)
-      .lt('stock_quantity', 10)
-      .order('stock_quantity', { ascending: true })
+      .lt('stock_qty', 10)
+      .order('stock_qty', { ascending: true })
       .limit(8),
 
     supabase.from('products').select('id, category_id'),
@@ -286,7 +286,7 @@ export default async function DashboardPage() {
                     <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant/70">{product.sku}</p>
                   )}
                   <p className="font-black text-xs text-error mt-0.5">
-                    {product.stock_quantity} left
+                    {product.stock_qty} left
                   </p>
                 </div>
               </Link>

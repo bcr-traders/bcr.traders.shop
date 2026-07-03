@@ -9,7 +9,7 @@ import {
   ArrowUp, ArrowDown, ChevronsUpDown, Edit3, MessageCircleQuestion, MessageSquare, Image as ImageIcon
 } from 'lucide-react'
 
-type SortField = 'name' | 'price' | 'stock_quantity' | 'created_at'
+type SortField = 'name' | 'price' | 'stock_qty' | 'created_at'
 type SortDir = 'asc' | 'desc'
 type StatusFilter = 'all' | 'active' | 'inactive'
 type StockFilter = 'all' | 'in_stock' | 'out_of_stock'
@@ -53,8 +53,8 @@ export default function ProductsClient({
     if (categoryFilter !== 'all') list = list.filter(p => p.category_id === categoryFilter)
     if (statusFilter === 'active') list = list.filter(p => p.is_active)
     if (statusFilter === 'inactive') list = list.filter(p => !p.is_active)
-    if (stockFilter === 'in_stock') list = list.filter(p => p.stock_quantity > 0)
-    if (stockFilter === 'out_of_stock') list = list.filter(p => p.stock_quantity === 0)
+    if (stockFilter === 'in_stock') list = list.filter(p => p.stock_qty > 0)
+    if (stockFilter === 'out_of_stock') list = list.filter(p => p.stock_qty === 0)
     if (featuredOnly) list = list.filter(p => p.is_featured)
 
     list.sort((a, b) => {
@@ -98,7 +98,7 @@ export default function ProductsClient({
 
   async function saveStock(id: string) {
     const qty = parseInt(stockDraft, 10)
-    if (!isNaN(qty) && qty >= 0) await patchProduct(id, { stock_quantity: qty })
+    if (!isNaN(qty) && qty >= 0) await patchProduct(id, { stock_qty: qty })
     setEditingStockId(null)
   }
 
@@ -134,7 +134,7 @@ export default function ProductsClient({
       p.price,
       p.mrp ?? '',
       p.unit,
-      p.stock_quantity,
+      p.stock_qty,
       p.is_featured ? 'Yes' : 'No',
       p.is_active ? 'Yes' : 'No',
       new Date(p.created_at).toLocaleDateString('en-IN'),
@@ -341,7 +341,7 @@ export default function ProductsClient({
                   Unit
                 </th>
                 <th className="py-4 px-5 border-r border-white/10">
-                  <SortBtn label="Stock" field="stock_quantity" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortBtn label="Stock" field="stock_qty" current={sortField} dir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="py-4 px-5 font-black text-[10px] uppercase tracking-[0.2em] text-white/70 border-r border-white/10">
                   Featured
@@ -449,19 +449,19 @@ export default function ProductsClient({
                       <button
                         onClick={() => {
                           setEditingStockId(product.id)
-                          setStockDraft(product.stock_quantity.toString())
+                          setStockDraft(product.stock_qty.toString())
                         }}
                         title="Click to edit stock"
                         className={cn(
                           'font-black text-sm px-3 py-1.5 rounded-lg border-2 transition-colors active:scale-95',
-                          product.stock_quantity === 0
+                          product.stock_qty === 0
                             ? 'bg-error/10 border-error/30 text-error hover:border-error'
-                            : product.stock_quantity < 10
+                            : product.stock_qty < 10
                               ? 'bg-amber-100/50 border-amber-300 text-amber-700 hover:border-amber-500'
                               : 'bg-surface border-table-border text-primary hover:border-primary/40',
                         )}
                       >
-                        {saving[product.id] ? '…' : product.stock_quantity}
+                        {saving[product.id] ? '…' : product.stock_qty}
                       </button>
                     )}
                   </td>

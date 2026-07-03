@@ -6,6 +6,7 @@ const PUBLIC_PREFIXES = [
   '/login',
   '/admin/login',
   '/delivery/login',
+  '/auth/callback',
   '/category/',
   '/product/',
   '/search',

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import AdminSidebar from './AdminSidebar'
+import Logo from './Logo'
 import { Menu, Bell } from 'lucide-react'
 
 export interface AdminBadges {
@@ -64,7 +65,7 @@ export default function AdminShell({ role, children, badges }: Props) {
             >
               <Menu size={24} />
             </button>
-            <span className="font-black text-xl text-white tracking-tight lowercase">bcr traders.</span>
+            <Logo className="h-9 w-auto" />
           </div>
           <button className="relative p-2 text-white/70 hover:text-white transition-colors">
             <Bell size={20} />

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import type { AdminBadges } from './AdminShell'
+import Logo from './Logo'
 import { X, LogOut, ShieldAlert } from 'lucide-react'
 
 interface NavItem {
@@ -98,18 +99,10 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
 
       {/* ── Brand ── */}
       <div className="px-6 py-6 flex items-center gap-3 flex-shrink-0 relative z-10 border-b-2 border-white/10">
-        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
-          <span
-            className="material-symbols-outlined text-primary text-[24px]"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            warehouse
-          </span>
+        <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0 p-1.5">
+          <Logo className="h-full w-auto" />
         </div>
-        <div>
-          <h1 className="text-xl font-black text-white tracking-tight leading-none mb-1 lowercase">bcr traders.</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Admin Panel</p>
-        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Admin Panel</p>
         {onClose && (
           <button
             onClick={onClose}

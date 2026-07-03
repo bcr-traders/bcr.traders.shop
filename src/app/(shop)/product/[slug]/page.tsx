@@ -106,7 +106,7 @@ export default async function ProductPage({ params }: PageProps) {
     image: product.images,
     description: product.description ?? undefined,
     sku: product.sku ?? undefined,
-    brand: { '@type': 'Brand', name: 'BCR Traders' },
+    brand: { '@type': 'Brand', name: product.brand ?? 'BCR Traders' },
     offers: {
       '@type': 'Offer',
       url: `${appUrl}/product/${product.slug}`,
@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: PageProps) {
       price: product.price.toString(),
       priceValidUntil: new Date(Date.now() + 7 * 86_400_000).toISOString().split('T')[0],
       availability:
-        product.stock_quantity > 0
+        product.stock_qty > 0
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
       seller: { '@type': 'Organization', name: 'BCR Traders' },
@@ -233,6 +233,13 @@ export default async function ProductPage({ params }: PageProps) {
               </Link>
             )}
 
+            {/* Brand */}
+            {product.brand && (
+              <p className="text-[11px] font-black uppercase tracking-[0.15em] text-on-surface-variant/60 mb-1">
+                {product.brand}
+              </p>
+            )}
+
             {/* Product name */}
             <h1 className="text-2xl lg:text-3xl font-black text-primary leading-tight tracking-tight mb-2">
               {product.name}
@@ -297,7 +304,7 @@ export default async function ProductPage({ params }: PageProps) {
 
                 {/* Stock status */}
                 <div className="mt-3 pt-3 border-t border-table-border">
-                  {product.stock_quantity === 0 ? (
+                  {product.stock_qty === 0 ? (
                     <p className="text-[11px] font-black uppercase tracking-widest text-error flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-error" />
                       Out of Stock
@@ -306,8 +313,8 @@ export default async function ProductPage({ params }: PageProps) {
                     <p className="text-[11px] font-black uppercase tracking-widest text-success flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-success" />
                       In Stock
-                      {product.stock_quantity <= 10 && (
-                        <span className="text-error font-black ml-1">— only {product.stock_quantity} left</span>
+                      {product.stock_qty <= 10 && (
+                        <span className="text-error font-black ml-1">— only {product.stock_qty} left</span>
                       )}
                     </p>
                   )}
@@ -316,7 +323,7 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
 
             {/* Unit + Featured badges */}
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-2 flex-wrap mb-5">
               <span className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
                 {product.unit}
                 {product.unit_or && ` / ${product.unit_or}`}
@@ -324,6 +331,12 @@ export default async function ProductPage({ params }: PageProps) {
               {product.is_featured && (
                 <span className="px-3 py-1.5 bg-primary text-white border-2 border-primary rounded-xl font-black text-[11px] uppercase tracking-wider">
                   Featured
+                </span>
+              )}
+              {product.units_per_pack && product.pack_type && (
+                <span className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
+                  {product.pack_type} of {product.units_per_pack} {product.unit_type ?? 'Units'}
+                  {product.price_per_pack && ` — ₹${product.price_per_pack}/pack`}
                 </span>
               )}
             </div>

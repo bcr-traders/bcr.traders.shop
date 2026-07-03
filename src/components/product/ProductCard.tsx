@@ -23,7 +23,7 @@ export default function ProductCard({ product, className }: ProductCardProps) {
       ? Math.round((1 - product.price / product.mrp) * 100)
       : null
 
-  const outOfStock = product.stock_quantity === 0
+  const outOfStock = product.stock_qty === 0
 
   return (
     <div
@@ -69,6 +69,13 @@ export default function ProductCard({ product, className }: ProductCardProps) {
 
         {/* ── Info ── */}
         <div className="px-4 pt-4 pb-2 flex flex-col gap-1 bg-background group-hover:bg-primary transition-colors duration-300">
+          {/* Brand — small muted label above the name */}
+          {product.brand && (
+            <p className="text-[10px] font-bold text-on-surface-variant/70 group-hover:text-white/60 uppercase tracking-widest truncate">
+              {product.brand}
+            </p>
+          )}
+
           {/* Product name — bold weight, 13px, 2-line clamp */}
           <h4 className="text-[13px] md:text-sm font-black text-primary group-hover:text-white leading-snug line-clamp-2 min-h-[38px] uppercase tracking-wider">
             {name}

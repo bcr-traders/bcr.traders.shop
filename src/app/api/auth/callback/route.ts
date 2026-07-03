@@ -14,7 +14,15 @@ export async function GET(request: Request) {
   const next = isSafeInternalPath(requestedNext) ? requestedNext : '/'
 
   if (!code) {
-    return NextResponse.redirect(new URL('/', requestUrl.origin))
+    // No `?code=` means this Supabase project issued an implicit-flow link
+    // instead of PKCE — the tokens live in the URL fragment, which never
+    // reaches the server. Redirecting straight to `next` would bounce off
+    // the middleware (it can't see the fragment either, so a protected page
+    // looks unauthenticated and redirects to login before the client JS
+    // ever runs). Land on the public /auth/callback page instead, which
+    // reads the fragment client-side, establishes the session, then
+    // navigates to `next` itself.
+    return NextResponse.redirect(new URL(`/auth/callback?next=${encodeURIComponent(next)}`, requestUrl.origin))
   }
 
   const cookieStore = await cookies()

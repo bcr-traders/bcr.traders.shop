@@ -32,7 +32,7 @@ function buildItem(p: Record<string, any>): string {
   const cat = p.categories as { slug: string } | null
   const catSlug = cat?.slug ?? ''
 
-  const stockQty: number = p.stock_qty ?? p.stock_quantity ?? 0
+  const stockQty: number = p.stock_qty ?? p.stock_qty ?? 0
   const availability = stockQty > 0 ? 'in stock' : 'out of stock'
 
   const price: number = p.price ?? 0

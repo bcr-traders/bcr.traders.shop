@@ -3,13 +3,12 @@
  *
  * Required env vars:
  *   MESSAGE_CENTRAL_CUSTOMER_ID — Customer ID from the MC dashboard
- *   MESSAGE_CENTRAL_PASSWORD    — Account password (base64-encoded to fetch a token)
+ *   MESSAGE_CENTRAL_AUTH_TOKEN  — Static long-lived token from the MC dashboard
+ *                                 (preferred — used directly, no extra request)
+ *   MESSAGE_CENTRAL_PASSWORD    — Fallback only, used to fetch a token
+ *                                 dynamically if AUTH_TOKEN isn't set
  *   MESSAGE_CENTRAL_SENDER_ID   — Registered SMS sender id (default: BCRTRD)
  *   MESSAGE_CENTRAL_BASE_URL    — API base (default: https://cpaas.messagecentral.com)
- *
- * MC's auth model is a short-lived token fetched with customerId + a
- * base64'd password, not a static long-lived key — so it's generated here
- * on demand and cached in memory until it expires.
  */
 
 const DEFAULT_BASE_URL = 'https://cpaas.messagecentral.com'
@@ -20,12 +19,12 @@ function baseUrl(): string {
 
 let cachedToken: { token: string; expiresAt: number } | null = null
 
-async function fetchAuthToken(): Promise<string | null> {
+async function fetchDynamicAuthToken(): Promise<string | null> {
   const customerId = process.env.MESSAGE_CENTRAL_CUSTOMER_ID
   const password = process.env.MESSAGE_CENTRAL_PASSWORD
 
   if (!customerId || !password) {
-    console.error('[Message Central] Missing MESSAGE_CENTRAL_CUSTOMER_ID or MESSAGE_CENTRAL_PASSWORD.')
+    console.error('[Message Central] Missing MESSAGE_CENTRAL_CUSTOMER_ID or MESSAGE_CENTRAL_PASSWORD (and no static MESSAGE_CENTRAL_AUTH_TOKEN set).')
     return null
   }
 
@@ -61,10 +60,15 @@ async function fetchAuthToken(): Promise<string | null> {
 }
 
 async function getAuthToken(forceRefresh = false): Promise<string | null> {
+  // A static dashboard-issued token, if configured, is always preferred —
+  // no network round-trip, no expiry bookkeeping.
+  const staticToken = process.env.MESSAGE_CENTRAL_AUTH_TOKEN
+  if (staticToken) return staticToken
+
   if (!forceRefresh && cachedToken && cachedToken.expiresAt > Date.now()) {
     return cachedToken.token
   }
-  return fetchAuthToken()
+  return fetchDynamicAuthToken()
 }
 
 function digitsOnly(phone: string): string {

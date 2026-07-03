@@ -13,6 +13,7 @@ import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
+import Logo from '@/components/layout/Logo'
 import type { Address } from '@/types/database.types'
 
 interface Props { profileId: string }
@@ -124,8 +125,8 @@ export default function CheckoutClient({ profileId }: Props) {
           <ArrowLeft size={20} />
         </button>
         <div className="relative z-10 absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <Link href="/" className="text-lg font-black tracking-tighter text-white lowercase">
-            bcr traders.
+          <Link href="/">
+            <Logo className="h-9 w-auto" />
           </Link>
         </div>
         <div className="relative z-10 ml-auto flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-white/35">

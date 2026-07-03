@@ -25,6 +25,7 @@ type FormState = {
   category_id: string
   name: string
   name_or: string
+  brand: string
   sku: string
   slug: string
   is_active: boolean
@@ -34,7 +35,12 @@ type FormState = {
   mrp: string
   unit: string
   unit_or: string
-  stock_quantity: string
+  stock_qty: string
+  packaging_form: string
+  pack_type: string
+  units_per_pack: string
+  unit_type: string
+  price_per_pack: string
   description: string
   description_or: string
   meta_title: string
@@ -97,6 +103,7 @@ export default function ProductForm({
     category_id: product?.category_id ?? '',
     name: product?.name ?? '',
     name_or: product?.name_or ?? '',
+    brand: product?.brand ?? '',
     sku: product?.sku ?? '',
     slug: product?.slug ?? '',
     is_active: product?.is_active ?? true,
@@ -106,7 +113,12 @@ export default function ProductForm({
     mrp: product?.mrp?.toString() ?? '',
     unit: product?.unit ?? '',
     unit_or: product?.unit_or ?? '',
-    stock_quantity: product?.stock_quantity?.toString() ?? '0',
+    stock_qty: product?.stock_qty?.toString() ?? '0',
+    packaging_form: product?.packaging_form ?? '',
+    pack_type: product?.pack_type ?? '',
+    units_per_pack: product?.units_per_pack?.toString() ?? '',
+    unit_type: product?.unit_type ?? '',
+    price_per_pack: product?.price_per_pack?.toString() ?? '',
     description: product?.description ?? '',
     description_or: product?.description_or ?? '',
     meta_title: product?.meta_title ?? '',
@@ -125,6 +137,16 @@ export default function ProductForm({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.name])
+
+  // Auto-calculate Selling Price from Price per Pack ÷ Units per Pack
+  useEffect(() => {
+    const pack = parseFloat(form.price_per_pack)
+    const units = parseInt(form.units_per_pack, 10)
+    if (pack > 0 && units > 0) {
+      set('price', (pack / units).toFixed(2))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.price_per_pack, form.units_per_pack])
 
   function showToast(msg: string) {
     setToast(msg)
@@ -185,6 +207,7 @@ export default function ProductForm({
       category_id: form.category_id,
       name: form.name.trim(),
       name_or: form.name_or.trim() || null,
+      brand: form.brand.trim() || null,
       sku: form.sku.trim() || null,
       slug: form.slug.trim() || toSlug(form.name),
       is_active: form.is_active,
@@ -194,7 +217,12 @@ export default function ProductForm({
       mrp: form.mrp ? parseFloat(form.mrp) : null,
       unit: form.unit.trim(),
       unit_or: form.unit_or.trim() || null,
-      stock_quantity: parseInt(form.stock_quantity, 10) || 0,
+      stock_qty: parseInt(form.stock_qty, 10) || 0,
+      packaging_form: form.packaging_form.trim() || null,
+      pack_type: form.pack_type || null,
+      units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
+      unit_type: form.unit_type || null,
+      price_per_pack: form.price_per_pack ? parseFloat(form.price_per_pack) : null,
       images: images.map(i => i.url),
       description: form.description || null,
       description_or: form.description_or || null,
@@ -377,6 +405,15 @@ export default function ProductForm({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Brand" hint="Manufacturer / brand label">
+                <input
+                  type="text"
+                  value={form.brand}
+                  onChange={e => set('brand', e.target.value)}
+                  placeholder="e.g. Ruchigold"
+                  className={inputCls}
+                />
+              </Field>
               <Field label="Display Order">
                 <input
                   type="number"
@@ -408,8 +445,73 @@ export default function ProductForm({
         {/* Tab 1: Pricing & Stock */}
         {tab === 1 && (
           <div className="space-y-6">
+            <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border space-y-6">
+              <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">
+                Wholesale Pack Details
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Packaging Form" hint='e.g. "Pouch", "Tin" — leave blank if N/A'>
+                  <input
+                    type="text"
+                    value={form.packaging_form}
+                    onChange={e => set('packaging_form', e.target.value)}
+                    placeholder="Pouch"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Pack Type" hint="Outer carton type">
+                  <select
+                    value={form.pack_type}
+                    onChange={e => set('pack_type', e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">—</option>
+                    <option value="Box">Box</option>
+                    <option value="Bag">Bag</option>
+                  </select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Units per Pack" hint="Number of individual units inside one box/bag">
+                  <input
+                    type="number"
+                    value={form.units_per_pack}
+                    min={1}
+                    onChange={e => set('units_per_pack', e.target.value)}
+                    placeholder="10"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Unit Type" hint="What each unit is called">
+                  <select
+                    value={form.unit_type}
+                    onChange={e => set('unit_type', e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">—</option>
+                    <option value="Pieces">Pieces</option>
+                    <option value="Packet">Packet</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Price per Pack (₹)" hint="MRP/cost for one full box or bag — auto-fills Selling Price below">
+                <input
+                  type="number"
+                  value={form.price_per_pack}
+                  min={0}
+                  step="0.01"
+                  onChange={e => set('price_per_pack', e.target.value)}
+                  placeholder="0.00"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Selling Price (₹)" required>
+              <Field label="Selling Price (₹)" required hint={form.price_per_pack && form.units_per_pack ? 'Auto-calculated from Price per Pack ÷ Units per Pack — you can still override' : undefined}>
                 <input
                   type="number"
                   value={form.price}
@@ -458,9 +560,9 @@ export default function ProductForm({
               <Field label="Stock Quantity" required>
                 <input
                   type="number"
-                  value={form.stock_quantity}
+                  value={form.stock_qty}
                   min={0}
-                  onChange={e => set('stock_quantity', e.target.value)}
+                  onChange={e => set('stock_qty', e.target.value)}
                   className={inputCls}
                 />
               </Field>
@@ -645,7 +747,7 @@ export default function ProductForm({
                   <p className="font-black text-2xl text-primary tracking-tight mt-1">
                     {form.price ? `₹${parseFloat(form.price).toFixed(2)}` : '—'}
                   </p>
-                  <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant mt-2">BCR Traders</p>
+                  <p className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant mt-2">{form.brand || 'BCR Traders'}</p>
                 </div>
               </div>
             </div>

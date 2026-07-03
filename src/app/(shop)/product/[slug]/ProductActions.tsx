@@ -27,7 +27,7 @@ export default function ProductActions({ product }: Props) {
     router.push('/checkout')
   }
 
-  const outOfStock = product.stock_quantity === 0
+  const outOfStock = product.stock_qty === 0
 
   return (
     <>

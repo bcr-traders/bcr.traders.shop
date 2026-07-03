@@ -50,6 +50,8 @@ const orgJsonLd = {
     {
       '@type': 'ContactPoint',
       contactType: 'customer service',
+      telephone: '+91-9040011053',
+      email: 'bcr.traders19@gmail.com',
       availableLanguage: ['English', 'Odia'],
     },
   ],
@@ -67,8 +69,11 @@ const localBizJsonLd = {
   url: APP_URL,
   image: `${APP_URL}/og-image.jpg`,
   priceRange: '₹₹',
+  telephone: '+91-9040011053',
+  email: 'bcr.traders19@gmail.com',
   address: {
     '@type': 'PostalAddress',
+    addressLocality: 'Cuttack',
     addressRegion: 'Odisha',
     addressCountry: 'IN',
   },

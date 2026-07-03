@@ -1,7 +1,17 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth/server'
+import type { AuthMetadata } from '@/types'
 import type { OrderItem } from '@/types/database.types'
 
 export async function GET() {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
+  if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)

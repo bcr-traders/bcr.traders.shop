@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919999999999'
+const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919040011053'
 const WA_MESSAGE = encodeURIComponent('Hi BCR TRADERS, I want to place a bulk order.')
 
 export default function WhatsAppFAB() {

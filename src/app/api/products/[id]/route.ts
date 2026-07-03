@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 
-const PATCHABLE = ['stock_quantity', 'is_active', 'is_featured', 'display_order'] as const
+const PATCHABLE = ['stock_qty', 'is_active', 'is_featured', 'display_order'] as const
 
 export async function GET() {
   return NextResponse.json({})

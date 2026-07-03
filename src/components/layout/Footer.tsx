@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Phone, Mail, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import Logo from './Logo'
 import type { Category } from '@/types/database.types'
 
 const USEFUL_LINKS = [
@@ -37,13 +38,18 @@ export default async function Footer() {
                   Malgodown, Cuttack<br />Odisha 753003
                 </span>
               </li>
-              <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-                <Phone size={24} strokeWidth={2.5} className="group-hover:-rotate-12 transition-transform duration-300" />
-                <span>+91 98765 43210</span>
+              <li className="flex items-center gap-4 group/item hover:text-white transition-colors">
+                <Phone size={24} strokeWidth={2.5} className="group-hover/item:-rotate-12 transition-transform duration-300 flex-shrink-0" />
+                <span className="flex flex-col gap-1">
+                  <a href="tel:+919040011053" className="hover:text-white transition-colors">+91 90400 11053</a>
+                  <a href="tel:+919019575211" className="hover:text-white transition-colors">+91 90195 75211</a>
+                </span>
               </li>
-              <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
-                <Mail size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
-                <span>wholesale@bcrtraders.in</span>
+              <li className="flex items-center gap-4 group/item hover:text-white transition-colors">
+                <Mail size={24} strokeWidth={2.5} className="group-hover/item:rotate-12 transition-transform duration-300 flex-shrink-0" />
+                <a href="mailto:bcr.traders19@gmail.com" className="hover:text-white transition-colors normal-case tracking-normal">
+                  bcr.traders19@gmail.com
+                </a>
               </li>
             </ul>
           </div>
@@ -97,12 +103,10 @@ export default async function Footer() {
         </div>
       </div>
 
-      {/* Massive Typography Logo */}
+      {/* Massive Logo */}
       <div className="w-full border-t border-white/20 pt-8 pb-32 md:pb-8 flex flex-col items-center justify-center overflow-hidden">
         <Link href="/" className="inline-block group hover:scale-[1.02] transition-transform duration-700">
-          <h4 className="font-black tracking-tighter text-white text-[5rem] sm:text-[8rem] md:text-[12rem] lg:text-[16rem] leading-[0.75] lowercase px-4 text-center">
-            bcr traders.
-          </h4>
+          <Logo className="h-40 sm:h-56 md:h-72 lg:h-80 w-auto" />
         </Link>
         <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-[10px] font-black tracking-[0.2em] text-white/50 uppercase">
           <span>© 2025 BCR Traders</span>

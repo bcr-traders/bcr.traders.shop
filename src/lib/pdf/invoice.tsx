@@ -178,7 +178,7 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Thank you for your business! · BCR Traders · Cuttack, Odisha · support@bcrtraders.in
+          Thank you for your business! · BCR Traders · Cuttack, Odisha · bcr.traders19@gmail.com · +91 90400 11053
         </Text>
       </Page>
     </Document>

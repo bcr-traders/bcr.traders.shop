@@ -37,7 +37,7 @@ async function fetchProducts(
     .eq('category_id', categoryId)
     .eq('is_active', true)
 
-  if (inStockOnly) query = query.gt('stock_quantity', 0)
+  if (inStockOnly) query = query.gt('stock_qty', 0)
 
   switch (sort) {
     case 'price_asc':

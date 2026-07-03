@@ -53,9 +53,9 @@ export async function POST(request: Request) {
     const lower = upstream.toLowerCase()
     const operatorHint =
       lower.includes('not configured')
-        ? 'MESSAGE_CENTRAL_CUSTOMER_ID / MESSAGE_CENTRAL_PASSWORD are missing. Add them to .env.local and restart.'
+        ? 'MESSAGE_CENTRAL_CUSTOMER_ID and either MESSAGE_CENTRAL_AUTH_TOKEN or MESSAGE_CENTRAL_PASSWORD are missing. Add them to .env.local and restart.'
         : lower.includes('token') || lower.includes('unauthor') || lower.includes('401')
-        ? 'Message Central auth failed. Check MESSAGE_CENTRAL_CUSTOMER_ID / MESSAGE_CENTRAL_PASSWORD are correct.'
+        ? 'Message Central auth failed. Check MESSAGE_CENTRAL_CUSTOMER_ID and MESSAGE_CENTRAL_AUTH_TOKEN / MESSAGE_CENTRAL_PASSWORD are correct.'
         : lower.includes('balance') || lower.includes('credit') || lower.includes('quota')
         ? 'Message Central account is out of SMS credits. Top up the account.'
         : null

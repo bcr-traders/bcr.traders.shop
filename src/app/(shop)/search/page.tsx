@@ -6,6 +6,7 @@ import SearchControls from '@/components/search/SearchControls'
 import type { Product, Category } from '@/types/database.types'
 import { PackageSearch, Sparkles, TrendingUp, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
+import Logo from '@/components/layout/Logo'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,9 +94,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           {/* Brand */}
           <div className="mb-8 hidden lg:block">
             <Link href="/" className="inline-block group">
-              <span className="text-2xl font-black tracking-tighter text-white lowercase group-hover:opacity-75 transition-opacity duration-300">
-                bcr traders.
-              </span>
+              <Logo className="h-12 w-auto group-hover:opacity-75 transition-opacity duration-300" />
             </Link>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35 mt-1">
               Wholesale Platform

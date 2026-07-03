@@ -36,6 +36,9 @@ export interface Category {
   created_at: string
 }
 
+export type PackType = 'Box' | 'Bag'
+export type UnitType = 'Pieces' | 'Packet'
+
 export interface Product {
   id: string
   name: string
@@ -52,11 +55,17 @@ export interface Product {
   is_featured: boolean
   is_active: boolean
   display_order: number
-  stock_quantity: number
+  stock_qty: number
   sku: string | null
   tags: string[] | null
   meta_title: string | null
   meta_description: string | null
+  brand: string | null
+  packaging_form: string | null
+  pack_type: PackType | null
+  units_per_pack: number | null
+  unit_type: UnitType | null
+  price_per_pack: number | null
   created_at: string
   updated_at: string
 }
