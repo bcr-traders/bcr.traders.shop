@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  MapPin, ChevronDown, CheckCircle2, XCircle, Loader2, X,
+  MapPin, ChevronDown, CheckCircle2, XCircle, Loader2, X, LocateFixed,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -41,12 +41,14 @@ export default function HeaderLocation({ className = '' }: { className?: string 
   const [input, setInput] = useState('')
   const [status, setStatus] = useState<'idle' | 'checking' | 'done'>('idle')
   const [result, setResult] = useState<PincodeResult | null>(null)
+  const [geoStatus, setGeoStatus] = useState<'idle' | 'locating'>('idle')
+  const [geoError, setGeoError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 80)
-    else { setInput(''); setStatus('idle'); setResult(null) }
+    else { setInput(''); setStatus('idle'); setResult(null); setGeoStatus('idle'); setGeoError(null) }
   }, [open])
 
   useEffect(() => {
@@ -80,11 +82,55 @@ export default function HeaderLocation({ className = '' }: { className?: string 
     }
   }, [save])
 
+  const detectLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoError('Location is not supported on this device. Please enter your pincode.')
+      return
+    }
+    setGeoStatus('locating')
+    setGeoError(null)
+    setStatus('idle')
+    setResult(null)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords
+          // Free, keyless reverse geocoding (no API key / signup required).
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          )
+          const data = await res.json()
+          const pin = String(data?.postcode ?? '').replace(/\D/g, '').slice(0, 6)
+          setGeoStatus('idle')
+          if (/^\d{6}$/.test(pin)) {
+            setInput(pin)
+            checkPincode(pin)
+          } else {
+            setGeoError("Couldn't detect your pincode. Please enter it manually.")
+          }
+        } catch {
+          setGeoStatus('idle')
+          setGeoError("Couldn't detect your location. Please enter your pincode manually.")
+        }
+      },
+      (err) => {
+        setGeoStatus('idle')
+        setGeoError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location access denied. Please enter your pincode manually.'
+            : "Couldn't get your location. Please enter your pincode manually."
+        )
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    )
+  }, [checkPincode])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6)
     setInput(val)
     setStatus('idle')
     setResult(null)
+    setGeoError(null)
     if (val.length === 6) checkPincode(val)
   }
 
@@ -159,6 +205,24 @@ export default function HeaderLocation({ className = '' }: { className?: string 
                 {status === 'done' && !result?.serviceable && <XCircle size={18} className="text-error" />}
               </div>
             </div>
+
+            {/* ── Auto-detect location ── */}
+            <button
+              onClick={detectLocation}
+              disabled={geoStatus === 'locating'}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary text-[12px] font-black tracking-wide transition-colors disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+            >
+              {geoStatus === 'locating' ? (
+                <Loader2 size={15} className="animate-spin" strokeWidth={2.5} />
+              ) : (
+                <LocateFixed size={15} strokeWidth={2.5} />
+              )}
+              {geoStatus === 'locating' ? 'Detecting your location…' : 'Use my current location'}
+            </button>
+
+            {geoError && (
+              <p className="text-[11px] font-medium text-error/80 leading-relaxed px-1 -mt-1">{geoError}</p>
+            )}
 
             {status === 'done' && result && (
               <div

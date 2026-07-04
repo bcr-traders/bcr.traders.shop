@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Work_Sans, Manrope, JetBrains_Mono } from 'next/font/google'
+import { Poppins, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
 import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
 import AdminShortcut from '@/components/auth/AdminShortcut'
@@ -8,16 +8,18 @@ import './globals.css'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
 const OG_IMAGE = '/og-image.jpg'
 
-const workSans = Work_Sans({
+// Main site font
+const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-work-sans',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
 })
 
-const manrope = Manrope({
+// Heading / sub-heading font — elegant high-contrast serif
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
-  variable: '--font-manrope',
+  weight: ['500', '600', '700', '800', '900'],
+  variable: '--font-playfair',
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -81,7 +83,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${workSans.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${poppins.variable} ${playfair.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link
           rel="stylesheet"

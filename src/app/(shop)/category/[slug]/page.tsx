@@ -138,7 +138,7 @@ export default async function CategoryPage({ params }: PageProps) {
       </section>
 
       {/* ── Breadcrumb ── */}
-      <div className="max-w-7xl mx-auto mt-4 px-4 lg:px-0">
+      <div className="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
         <ProductBreadcrumb
           items={[
             { label: 'Home', href: '/' },
@@ -155,8 +155,8 @@ export default async function CategoryPage({ params }: PageProps) {
       />
 
       {/* ── SEO description ── */}
-      <section className="mt-8 border-t-2 border-table-border bg-surface-container-low">
-        <div className="max-w-7xl mx-auto px-5 lg:px-0 py-10">
+      <section className="mt-8 border-t border-table-border bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px flex-1 bg-table-border" />
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">

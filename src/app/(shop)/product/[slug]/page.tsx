@@ -198,8 +198,8 @@ export default async function ProductPage({ params }: PageProps) {
       />
 
       {/* ── Top strip (breadcrumb + back) ── */}
-      <div className="border-b-2 border-table-border bg-surface-container-low/60">
-        <div className="max-w-7xl mx-auto px-4 lg:px-0 py-2">
+      <div className="border-b border-table-border bg-surface-container-low/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <ProductBreadcrumb
             items={[
               { label: 'Home', href: '/' },
@@ -212,7 +212,7 @@ export default async function ProductPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 lg:px-0 mt-6 pb-32 lg:pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 pb-32 lg:pb-16">
 
         {/* ── Two-column layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
@@ -257,7 +257,7 @@ export default async function ProductPage({ params }: PageProps) {
 
             {/* Rating */}
             {stats.count > 0 && (
-              <div className="flex items-center gap-2 mb-4 pb-4 border-b-2 border-table-border">
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-table-border">
                 <div className="flex items-center gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <span
@@ -276,7 +276,7 @@ export default async function ProductPage({ params }: PageProps) {
             )}
 
             {/* ── Pricing box ── */}
-            <div className="border-2 border-primary rounded-2xl p-5 mb-5 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-surface-container-low to-surface-container border border-table-border/70 rounded-2xl p-5 mb-5 relative overflow-hidden shadow-[0_2px_14px_rgba(38,23,12,0.06)]">
               {/* Subtle dot texture */}
               <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle,#000_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
 
@@ -324,17 +324,17 @@ export default async function ProductPage({ params }: PageProps) {
 
             {/* Unit + Featured badges */}
             <div className="flex items-center gap-2 flex-wrap mb-5">
-              <span className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
+              <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
                 {product.unit}
                 {product.unit_or && ` / ${product.unit_or}`}
               </span>
               {product.is_featured && (
-                <span className="px-3 py-1.5 bg-primary text-white border-2 border-primary rounded-xl font-black text-[11px] uppercase tracking-wider">
+                <span className="px-3 py-1.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider">
                   Featured
                 </span>
               )}
               {product.units_per_pack && product.pack_type && (
-                <span className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
+                <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
                   {product.pack_type} of {product.units_per_pack} {product.unit_type ?? 'Units'}
                   {product.price_per_pack && ` — ₹${product.price_per_pack}/pack`}
                 </span>
@@ -345,9 +345,9 @@ export default async function ProductPage({ params }: PageProps) {
             <ProductActions product={product} />
 
             {/* Collapsible description + tags — desktop */}
-            <div className="mt-6 border-t-2 border-table-border hidden lg:block">
+            <div className="mt-6 border-t border-table-border hidden lg:block">
               {product.description && (
-                <details className="group border-b-2 border-table-border" open>
+                <details className="group border-b border-table-border" open>
                   <summary className="flex items-center justify-between cursor-pointer py-4 font-black text-sm uppercase tracking-widest text-primary hover:text-primary/70 transition-colors select-none">
                     Product Description
                     <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
@@ -361,7 +361,7 @@ export default async function ProductPage({ params }: PageProps) {
               )}
 
               {product.tags && product.tags.length > 0 && (
-                <details className="group border-b-2 border-table-border">
+                <details className="group border-b border-table-border">
                   <summary className="flex items-center justify-between cursor-pointer py-4 font-black text-sm uppercase tracking-widest text-primary hover:text-primary/70 transition-colors select-none">
                     Tags
                     <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
@@ -372,7 +372,7 @@ export default async function ProductPage({ params }: PageProps) {
                     {product.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1.5 border-2 border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant hover:border-primary hover:text-primary transition-colors duration-200 cursor-default"
+                        className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant hover:border-primary hover:text-primary transition-colors duration-200 cursor-default"
                       >
                         {tag}
                       </span>
@@ -387,14 +387,14 @@ export default async function ProductPage({ params }: PageProps) {
         {/* ── Mobile description ── */}
         {product.description && (
           <div className="mt-6 lg:hidden">
-            <details className="group border-2 border-table-border rounded-2xl overflow-hidden" open>
+            <details className="group border border-table-border rounded-2xl overflow-hidden" open>
               <summary className="flex items-center justify-between cursor-pointer p-4 font-black text-sm uppercase tracking-widest text-primary bg-surface-container-low select-none">
                 Product Description
                 <span className="material-symbols-outlined text-on-surface-variant/50 transition-transform group-open:rotate-180 text-[20px]">
                   expand_more
                 </span>
               </summary>
-              <div className="p-4 text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t-2 border-table-border">
+              <div className="p-4 text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t border-table-border">
                 {product.description}
               </div>
             </details>

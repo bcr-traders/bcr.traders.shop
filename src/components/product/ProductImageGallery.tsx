@@ -15,9 +15,9 @@ export default function ProductImageGallery({ images, productName }: Props) {
   const hasImages = images.length > 0
 
   return (
-    <div className="px-4 lg:px-0 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       {/* Main image */}
-      <div className="relative w-full aspect-square bg-surface-container-highest rounded-xl overflow-hidden shadow-sm border border-outline-variant/30 group cursor-zoom-in">
+      <div className="relative w-full aspect-square bg-gradient-to-br from-surface-container-low to-surface-container-highest rounded-2xl overflow-hidden shadow-[0_2px_14px_rgba(38,23,12,0.06)] border border-table-border/70 group cursor-zoom-in">
         {hasImages ? (
           <Image
             src={images[selected]}

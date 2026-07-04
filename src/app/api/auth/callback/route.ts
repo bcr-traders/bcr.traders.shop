@@ -2,28 +2,25 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { isSafeInternalPath } from '@/lib/validators'
+import type { EmailOtpType } from '@supabase/supabase-js'
 
 /**
- * Exchanges the magic-link `code` (from generateLink in /api/auth/otp/verify)
- * for a Supabase session, sets the session cookies, then redirects.
+ * Establishes a Supabase cookie session after phone-OTP verification, then
+ * redirects to `next`. Handles, in order of preference:
+ *   1. `token_hash` — from generateLink in /api/auth/otp/verify (primary path;
+ *      verified server-side, so the session lands in cookies with no Supabase
+ *      round-trip or URL-fragment loss).
+ *   2. `code` — PKCE magic-link exchange (legacy / other flows).
+ *   3. neither — implicit-flow fragment link; hand off to the client
+ *      /auth/callback page which reads the `#access_token` fragment.
  */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const tokenHash = requestUrl.searchParams.get('token_hash')
+  const type = (requestUrl.searchParams.get('type') ?? 'magiclink') as EmailOtpType
   const requestedNext = requestUrl.searchParams.get('next') ?? '/'
   const next = isSafeInternalPath(requestedNext) ? requestedNext : '/'
-
-  if (!code) {
-    // No `?code=` means this Supabase project issued an implicit-flow link
-    // instead of PKCE — the tokens live in the URL fragment, which never
-    // reaches the server. Redirecting straight to `next` would bounce off
-    // the middleware (it can't see the fragment either, so a protected page
-    // looks unauthenticated and redirects to login before the client JS
-    // ever runs). Land on the public /auth/callback page instead, which
-    // reads the fragment client-side, establishes the session, then
-    // navigates to `next` itself.
-    return NextResponse.redirect(new URL(`/auth/callback?next=${encodeURIComponent(next)}`, requestUrl.origin))
-  }
 
   const cookieStore = await cookies()
 
@@ -46,12 +43,26 @@ export async function GET(request: Request) {
     },
   )
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-  if (error) {
-    console.error('[auth/callback] Code exchange failed:', error.message)
-    return NextResponse.redirect(new URL('/login?error=session_failed', requestUrl.origin))
+  // 1. Primary path — token_hash from our OTP-verify step.
+  if (tokenHash) {
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
+    if (error) {
+      console.error('[auth/callback] verifyOtp(token_hash) failed:', error.message)
+      return NextResponse.redirect(new URL('/login?error=session_failed', requestUrl.origin))
+    }
+    return NextResponse.redirect(new URL(next, requestUrl.origin))
   }
 
-  return NextResponse.redirect(new URL(next, requestUrl.origin))
+  // 2. PKCE `?code=` exchange.
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      console.error('[auth/callback] Code exchange failed:', error.message)
+      return NextResponse.redirect(new URL('/login?error=session_failed', requestUrl.origin))
+    }
+    return NextResponse.redirect(new URL(next, requestUrl.origin))
+  }
+
+  // 3. Implicit-flow fragment — client page reads it and sets the session.
+  return NextResponse.redirect(new URL(`/auth/callback?next=${encodeURIComponent(next)}`, requestUrl.origin))
 }

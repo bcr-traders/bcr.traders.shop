@@ -216,33 +216,36 @@ export async function POST(request: Request) {
       console.error('[OTP Verify] app_metadata update failed:', err)
     })
 
-    // 5. Generate magic link with a validated redirect target
-    const protocol = request.headers.get('x-forwarded-proto') || 'https'
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000'
-    const siteUrl = host.includes('localhost') ? `http://${host}` : `${protocol}://${host}`
-
+    // 5. Create a login session via a server-verifiable token_hash.
+    //    We generate a magic-link token but DON'T use its action_link — that
+    //    round-trips through Supabase and drops the session into a URL
+    //    fragment which is lost across the redirect (why the user landed on
+    //    home still logged-out). Instead we hand the hashed_token to our own
+    //    /api/auth/callback, which exchanges it for a cookie session
+    //    server-side — reliable, and independent of Supabase URL-config / PKCE
+    //    verifier state.
     const requestedNext = typeof body?.next === 'string' ? body.next : DEFAULT_NEXT[portal]
     const safeNext = isSafeInternalPath(requestedNext) ? requestedNext : DEFAULT_NEXT[portal]
-    const redirectTo = `${siteUrl}/api/auth/callback?next=${encodeURIComponent(safeNext)}`
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: userEmail,
-      options: { redirectTo },
     })
 
-    if (linkError) {
-      console.error('[OTP Verify] generateLink failed:', linkError.message, '| redirectTo:', redirectTo, '| email:', userEmail)
+    if (linkError || !linkData?.properties?.hashed_token) {
+      console.error('[OTP Verify] generateLink failed:', linkError?.message, '| email:', userEmail)
       return NextResponse.json({
         error: 'Could not create your login session.',
-        detail: linkError.message,
-        hint: `Check Supabase → Authentication → URL Configuration: Site URL / Redirect URLs must include ${siteUrl}/api/auth/callback.`,
+        detail: linkError?.message ?? 'No login token returned.',
       }, { status: 500 })
     }
 
+    const tokenHash = linkData.properties.hashed_token
+    const loginUrl = `/api/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink&next=${encodeURIComponent(safeNext)}`
+
     return NextResponse.json({
       success: true,
-      loginUrl: linkData.properties.action_link,
+      loginUrl,
       needs_name: mode === 'signup' ? needsName : false,
       user_id: userId,
       role: appMetadata.role,

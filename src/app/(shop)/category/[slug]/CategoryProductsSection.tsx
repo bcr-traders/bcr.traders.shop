@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { SlidersHorizontal, Loader2 } from 'lucide-react'
+import { SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import ProductGrid from '@/components/product/ProductGrid'
@@ -104,28 +104,52 @@ export default function CategoryProductsSection({ categoryId, initialProducts, i
     <div>
       {/* ── Sort & Filter bar ── */}
       <div className="bg-surface-container-low border-b border-outline-variant py-3">
-        <div className="max-w-7xl mx-auto px-4 lg:px-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-3">
-            {/* Sort pills */}
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
+            {/* Sort — dropdown on mobile, pills on desktop */}
+            <div className="flex items-center gap-2 min-w-0">
               <span className="flex-shrink-0 flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
                 <SlidersHorizontal size={13} />
                 Sort
               </span>
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSortChange(opt.value)}
-                  className={cn(
-                    'flex-shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-colors',
-                    sort === opt.value
-                      ? 'bg-primary text-on-primary'
-                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
-                  )}
+
+              {/* Mobile: native dropdown (keeps the bar tidy on small screens) */}
+              <div className="relative sm:hidden flex-shrink-0">
+                <select
+                  value={sort}
+                  onChange={(e) => handleSortChange(e.target.value as SortOption)}
+                  aria-label="Sort products"
+                  className="appearance-none pl-3.5 pr-8 py-1.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm outline-none cursor-pointer"
                 >
-                  {opt.label}
-                </button>
-              ))}
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-surface-card text-on-surface">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={13}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-primary pointer-events-none"
+                />
+              </div>
+
+              {/* Desktop: pills */}
+              <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSortChange(opt.value)}
+                    className={cn(
+                      'flex-shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-colors',
+                      sort === opt.value
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* In-Stock toggle */}
@@ -161,7 +185,7 @@ export default function CategoryProductsSection({ categoryId, initialProducts, i
       </div>
 
       {/* ── Product grid ── */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-0 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isPending ? (
           <div className="flex justify-center py-24">
             <Loader2 size={32} className="animate-spin text-primary" />

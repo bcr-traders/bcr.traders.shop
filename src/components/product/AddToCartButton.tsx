@@ -64,7 +64,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               animate={{ scale: 1,    opacity: 1 }}
               exit={{    scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute inset-0 flex items-center justify-between border-2 border-primary bg-primary text-white"
+              className="absolute inset-0 flex items-center justify-between rounded-xl bg-primary text-white overflow-hidden"
             >
               <button
                 onClick={(e) => handleChange(e, -1)}
@@ -95,12 +95,12 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               onClick={handleAdd}
               disabled={disabled}
               className={cn(
-                'absolute inset-0 flex items-center justify-center gap-2 border-2 border-primary font-black text-xs md:text-[13px] transition-all duration-300 active:scale-95 group/btn uppercase tracking-widest',
+                'absolute inset-0 flex items-center justify-center gap-2 rounded-xl font-black text-xs md:text-[13px] transition-all duration-300 active:scale-95 group/btn uppercase tracking-widest',
                 disabled
                   ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-50'
                   : flash
-                  ? 'bg-primary text-white shadow-none'
-                  : 'bg-background text-primary hover:bg-primary hover:text-white',
+                  ? 'bg-success text-white'
+                  : 'bg-primary text-white hover:bg-primary-container shadow-sm hover:shadow-md',
               )}
               aria-label={t('product.addToCart')}
             >

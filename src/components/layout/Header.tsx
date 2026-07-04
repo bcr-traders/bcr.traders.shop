@@ -10,6 +10,7 @@ import { useT } from '@/hooks/useT'
 import LanguageToggle from './LanguageToggle'
 import HeaderLocation from './HeaderLocation'
 import Logo from './Logo'
+import AnimatedSearchPlaceholder from './AnimatedSearchPlaceholder'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const NAV = [
@@ -18,7 +19,11 @@ const NAV = [
   { key: 'nav.orders' as const, href: '/orders', icon: Truck },
 ]
 
-export default function Header() {
+/** Fallback rotating terms when no category names are supplied. */
+const DEFAULT_TERMS = ['sugar', 'atta', 'edible oil', 'pulses', 'spices', 'water']
+
+export default function Header({ searchTerms }: { searchTerms?: string[] }) {
+  const terms = searchTerms && searchTerms.length > 0 ? searchTerms : DEFAULT_TERMS
   const pathname = usePathname()
   const router = useRouter()
   const totalItems = useCartStore((s) => s.totalItems())
@@ -39,7 +44,7 @@ export default function Header() {
   }
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-white border-b border-outline-variant/50 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="sticky top-0 z-50 w-full bg-white border-b border-outline-variant/50 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transform-gpu backface-hidden will-change-transform">
       <header className="w-full">
         <div className="mx-auto max-w-7xl flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
 
@@ -61,9 +66,10 @@ export default function Header() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('nav.searchPlaceholder')}
+                placeholder=""
                 className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-surface-container-low border border-transparent focus:border-primary/30 focus:bg-white text-sm font-medium text-primary placeholder:text-on-surface-variant/50 outline-none transition-colors"
               />
+              {query === '' && <AnimatedSearchPlaceholder terms={terms} />}
             </div>
           </form>
 
@@ -123,6 +129,7 @@ export default function Header() {
 
           {/* ── Mobile right controls ── */}
           <div className="flex lg:hidden items-center gap-2 ml-auto flex-shrink-0">
+            <LanguageToggle />
             <Link
               href="/cart"
               className="relative w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary transition-colors"
@@ -177,9 +184,10 @@ export default function Header() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('nav.searchPlaceholder')}
+                placeholder=""
                 className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-surface-container-low border border-transparent focus:border-primary/30 focus:bg-white text-sm font-medium text-primary placeholder:text-on-surface-variant/50 outline-none transition-colors"
               />
+              {query === '' && <AnimatedSearchPlaceholder terms={terms} />}
             </div>
           </form>
         </div>
@@ -214,9 +222,7 @@ export default function Header() {
 
                 <div className="my-2 h-px bg-outline-variant/20" />
 
-                <div className="flex items-center justify-between">
-                  <LanguageToggle />
-
+                <div className="flex items-center justify-end">
                   {isLoaded && isSignedIn && (
                     <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3">
                       <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">

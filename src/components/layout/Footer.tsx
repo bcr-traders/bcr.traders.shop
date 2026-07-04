@@ -103,12 +103,12 @@ export default async function Footer() {
         </div>
       </div>
 
-      {/* Massive Logo */}
-      <div className="w-full border-t border-white/20 pt-8 pb-32 md:pb-8 flex flex-col items-center justify-center overflow-hidden">
+      {/* Massive Logo — cream section matching the site background */}
+      <div className="w-full bg-background text-primary pt-10 pb-32 md:pb-10 flex flex-col items-center justify-center overflow-hidden">
         <Link href="/" className="inline-block group hover:scale-[1.02] transition-transform duration-700">
           <Logo className="h-40 sm:h-56 md:h-72 lg:h-80 w-auto" />
         </Link>
-        <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-[10px] font-black tracking-[0.2em] text-white/50 uppercase">
+        <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-[10px] font-black tracking-[0.2em] text-on-surface-variant/70 uppercase">
           <span>© 2025 BCR Traders</span>
           <span className="hidden md:inline">·</span>
           <span>Wholesale Distributor</span>

@@ -74,12 +74,16 @@
   --color-status-delivered: #0C831F;
 
   /* Font families */
-  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
-  --font-body-lg: var(--font-manrope), 'Manrope', sans-serif;
-  --font-body-md: var(--font-manrope), 'Manrope', sans-serif;
-  --font-headline-lg: var(--font-manrope), 'Manrope', sans-serif;
-  --font-headline-md: var(--font-manrope), 'Manrope', sans-serif;
-  --font-headline-lg-mobile: var(--font-manrope), 'Manrope', sans-serif;
+  /* Main site font — Poppins */
+  --font-sans: var(--font-poppins), 'Poppins', ui-sans-serif, sans-serif;
+  --font-body-lg: var(--font-poppins), 'Poppins', sans-serif;
+  --font-body-md: var(--font-poppins), 'Poppins', sans-serif;
+  /* Heading / sub-heading font — Playfair Display */
+  --font-heading: var(--font-playfair), 'Playfair Display', ui-serif, Georgia, serif;
+  --font-headline-lg: var(--font-heading);
+  --font-headline-md: var(--font-heading);
+  --font-headline-sm: var(--font-heading);
+  --font-headline-lg-mobile: var(--font-heading);
   --font-label-sm: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
 
   /* Font sizes */
@@ -175,6 +179,14 @@ body {
   background-color: var(--color-background);
   color: var(--color-on-background);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headings / sub-headings use the Playfair Display serif by default.
+   Product names (h4) intentionally stay on the main Poppins font. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
 }
 
 @media print {

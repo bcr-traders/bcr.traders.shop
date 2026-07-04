@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Loader2, ChevronLeft, ShieldCheck } from 'lucide-react'
+import { Loader2, ChevronLeft, ShieldCheck, Phone, User, Mail, ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import OtpInput from './OtpInput'
 
 type Portal = 'customer' | 'admin' | 'delivery'
 
@@ -31,6 +33,29 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
   const [notRegistered, setNotRegistered] = useState(false)
 
   const digits = phone.replace(/\D/g, '')
+
+  // Sign-up mode gets its own copy; login keeps the portal-supplied title/subtitle.
+  const heading = allowSignup && mode === 'signup' ? 'Create your account' : title
+  const subheading =
+    allowSignup && mode === 'signup'
+      ? 'Register with your mobile number to get started'
+      : subtitle
+
+  // Auto-fetch the SMS OTP via the Web OTP API (Android Chrome, HTTPS only).
+  // Progressive enhancement — silently no-ops where unsupported.
+  useEffect(() => {
+    if (step !== 'otp') return
+    if (typeof window === 'undefined' || !('OTPCredential' in window)) return
+    const ac = new AbortController()
+    navigator.credentials
+      .get({ otp: { transport: ['sms'] }, signal: ac.signal } as unknown as CredentialRequestOptions)
+      .then((cred) => {
+        const code = (cred as { code?: string } | null)?.code
+        if (code) setOtp(code.replace(/\D/g, '').slice(0, 4))
+      })
+      .catch(() => {})
+    return () => ac.abort()
+  }, [step])
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -170,68 +195,79 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8">
-        <h1 className="text-2xl font-black tracking-tight text-primary">{title}</h1>
-        <p className="text-sm text-on-surface-variant font-medium mt-1.5">{subtitle}</p>
+        <h1 className="text-2xl font-black tracking-tight text-primary">{heading}</h1>
+        <p className="text-sm text-on-surface-variant font-medium mt-1.5">{subheading}</p>
       </div>
 
       {step === 'phone' && (
         <form onSubmit={sendOtp} className="flex flex-col gap-4">
           {allowSignup && (
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-container-low mb-1">
-              <button
-                type="button"
-                onClick={() => setMode('login')}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-primary text-white' : 'text-on-surface-variant'}`}
-              >
-                Log In
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('signup')}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${mode === 'signup' ? 'bg-primary text-white' : 'text-on-surface-variant'}`}
-              >
-                Sign Up
-              </button>
+            <div className="relative flex items-center p-1.5 rounded-2xl bg-surface-container-low border border-table-border/60 mb-1">
+              {(['login', 'signup'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`relative z-10 flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-200 ${mode === m ? 'text-white' : 'text-on-surface-variant hover:text-primary'}`}
+                >
+                  {mode === m && (
+                    <motion.span
+                      layoutId="authTabIndicator"
+                      className="absolute inset-0 -z-10 rounded-xl bg-primary shadow-sm shadow-primary/25"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  {m === 'login' ? 'Log In' : 'Sign Up'}
+                </button>
+              ))}
             </div>
           )}
 
           {mode === 'signup' && (
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your full name"
-                className="w-full mt-1.5 px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary outline-none transition-colors"
-              />
+              <div className="relative mt-1.5">
+                <User size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 pointer-events-none" strokeWidth={2.5} />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary placeholder:text-on-surface-variant/40 outline-none transition-all duration-200 focus:shadow-[0_0_0_4px_rgba(28,19,10,0.06)]"
+                />
+              </div>
             </div>
           )}
 
           {mode === 'signup' && (
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Email (optional)</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full mt-1.5 px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary outline-none transition-colors"
-              />
+              <div className="relative mt-1.5">
+                <Mail size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 pointer-events-none" strokeWidth={2.5} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary placeholder:text-on-surface-variant/40 outline-none transition-all duration-200 focus:shadow-[0_0_0_4px_rgba(28,19,10,0.06)]"
+                />
+              </div>
             </div>
           )}
 
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Mobile Number</label>
-            <div className="flex items-center mt-1.5 rounded-xl border-2 border-table-border focus-within:border-primary bg-surface-card transition-colors">
-              <span className="pl-4 pr-2 py-3 font-bold text-primary">+91</span>
+            <div className="flex items-center mt-1.5 rounded-2xl border-2 border-table-border focus-within:border-primary bg-surface-card transition-all duration-200 focus-within:shadow-[0_0_0_4px_rgba(28,19,10,0.06)] overflow-hidden">
+              <span className="flex items-center gap-2 pl-4 pr-3 py-3.5 font-black text-primary border-r-2 border-table-border bg-surface-container-low/50">
+                <Phone size={15} strokeWidth={2.5} /> +91
+              </span>
               <input
                 type="tel"
                 inputMode="numeric"
                 value={digits}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder="Your phone number"
-                className="flex-1 py-3 pr-4 bg-transparent font-medium text-primary outline-none"
+                className="flex-1 py-3.5 px-4 bg-transparent font-medium text-primary placeholder:text-on-surface-variant/40 outline-none"
               />
             </div>
           </div>
@@ -241,10 +277,16 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full py-3.5 rounded-xl bg-primary text-white font-black text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+            className="group mt-2 w-full py-4 rounded-2xl bg-primary text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            Send OTP
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <>
+                Send OTP
+                <ArrowRight size={16} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform duration-200" />
+              </>
+            )}
           </button>
         </form>
       )}
@@ -267,33 +309,40 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
 
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Enter OTP</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="4-digit code"
-              autoFocus
-              className="w-full mt-1.5 px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-surface-card font-black text-lg tracking-[0.4em] text-primary outline-none transition-colors text-center"
-            />
+            <div className="mt-2.5">
+              <OtpInput
+                value={otp}
+                onChange={setOtp}
+                length={4}
+                autoFocus
+                onComplete={() => { if (!loading) (document.getElementById('otp-verify-btn') as HTMLButtonElement)?.focus() }}
+              />
+            </div>
           </div>
 
           {error && <p className="text-sm font-medium text-error">{error}</p>}
 
           <button
+            id="otp-verify-btn"
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-primary text-white font-black text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+            className="group w-full py-4 rounded-2xl bg-primary text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            Verify &amp; Continue
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <>
+                Verify &amp; Continue
+                <ArrowRight size={16} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform duration-200" />
+              </>
+            )}
           </button>
 
           <button
             type="button"
             onClick={sendOtp as unknown as () => void}
             disabled={loading}
-            className="text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors"
+            className="text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors self-center"
           >
             Resend OTP
           </button>
@@ -305,22 +354,26 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
           <p className="text-sm font-medium text-on-surface-variant">One last thing — what should we call you?</p>
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your full name"
-              autoFocus
-              className="w-full mt-1.5 px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary outline-none transition-colors"
-            />
+            <div className="relative mt-1.5">
+              <User size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 pointer-events-none" strokeWidth={2.5} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
+                autoFocus
+                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-table-border focus:border-primary bg-surface-card font-medium text-primary placeholder:text-on-surface-variant/40 outline-none transition-all duration-200 focus:shadow-[0_0_0_4px_rgba(28,19,10,0.06)]"
+              />
+            </div>
           </div>
           {error && <p className="text-sm font-medium text-error">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-primary text-white font-black text-sm uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-colors active:scale-[0.98]"
+            className="group w-full py-4 rounded-2xl bg-primary text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
           >
             Continue
+            <ArrowRight size={16} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform duration-200" />
           </button>
         </form>
       )}

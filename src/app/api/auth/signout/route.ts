@@ -7,8 +7,9 @@ async function signOutAndRedirect(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) await supabase.auth.signOut()
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-  return NextResponse.redirect(new URL('/', origin), { status: 302 })
+  // Redirect to the home page of whatever origin the user is actually on
+  // (localhost / Vercel preview / production) — never a hardcoded domain.
+  return NextResponse.redirect(new URL('/', request.nextUrl.origin), { status: 302 })
 }
 
 export async function POST(request: NextRequest) {

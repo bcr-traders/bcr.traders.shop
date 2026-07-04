@@ -117,7 +117,8 @@ export async function sendOtp(phone: string): Promise<{
 
   const mobile = digitsOnly(phone)
   const doSend = async (authToken: string) => {
-    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=300`
+    // otpExpiry is in seconds — 600 = 10 minutes.
+    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=600`
     return fetch(url, { method: 'POST', headers: { authToken, 'Content-Type': 'application/json' } })
   }
 
