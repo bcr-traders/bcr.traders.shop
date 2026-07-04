@@ -2,18 +2,22 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useCartStore } from '@/store/cartStore'
 
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919040011053'
 const WA_MESSAGE = encodeURIComponent('Hi BCR TRADERS, I want to place a bulk order.')
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGE}`
 
 export default function WhatsAppFAB() {
+  // Ride above the floating "View Cart" bar when the cart has items.
+  const hasCart = useCartStore((s) => s.items.length > 0)
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 1, type: 'spring', stiffness: 220, damping: 14 }}
-      className="fixed bottom-24 right-4 md:bottom-6 z-50"
+      className={`fixed right-4 z-50 transition-all duration-300 ${hasCart ? 'bottom-40 md:bottom-28' : 'bottom-24 md:bottom-6'}`}
     >
       <Link
         href={WA_LINK}

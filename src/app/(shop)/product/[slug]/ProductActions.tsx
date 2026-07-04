@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { useAuthPromptStore } from '@/store/authPromptStore'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import AddToCartButton from '@/components/product/AddToCartButton'
 import type { Product } from '@/types/database.types'
 
@@ -13,8 +15,15 @@ interface Props {
 export default function ProductActions({ product }: Props) {
   const router = useRouter()
   const addItem = useCartStore((s) => s.addItem)
+  const showAuthPrompt = useAuthPromptStore((s) => s.show)
+  const { isSignedIn, isLoaded } = useSupabaseUser()
 
   const handleBuyNow = () => {
+    // Require login before adding to cart / buying.
+    if (isLoaded && !isSignedIn) {
+      showAuthPrompt()
+      return
+    }
     addItem({
       id: product.id,
       name: product.name,

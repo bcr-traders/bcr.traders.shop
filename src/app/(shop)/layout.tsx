@@ -4,6 +4,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import BottomNav from '@/components/layout/BottomNav'
 import SmoothScroll from '@/components/layout/SmoothScroll'
+import CartFloatingBar from '@/components/cart/CartFloatingBar'
+import LoginPromptModal from '@/components/auth/LoginPromptModal'
 import type { SiteAnnouncement } from '@/types/database.types'
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
@@ -47,6 +49,8 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
       </main>
       <Footer />
       <BottomNav />
+      <CartFloatingBar />
+      <LoginPromptModal />
     </SmoothScroll>
   )
 }

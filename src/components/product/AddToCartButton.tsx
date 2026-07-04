@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Plus, Minus } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
+import { useAuthPromptStore } from '@/store/authPromptStore'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { useT } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/types/database.types'
@@ -21,6 +23,8 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   const addItem       = useCartStore((s) => s.addItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const cartItem      = useCartStore((s) => s.items.find((i) => i.id === product.id))
+  const showAuthPrompt = useAuthPromptStore((s) => s.show)
+  const { isSignedIn, isLoaded } = useSupabaseUser()
   const [flash, setFlash] = useState(false)
   const { t } = useT()
 
@@ -28,6 +32,11 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
     e.preventDefault()
     e.stopPropagation()
     if (disabled) return
+    // Require login before adding to cart.
+    if (isLoaded && !isSignedIn) {
+      showAuthPrompt()
+      return
+    }
     addItem({
       id: product.id,
       name: product.name,
