@@ -87,6 +87,12 @@ export default function HeaderLocation({ className = '' }: { className?: string 
       setGeoError('Location is not supported on this device. Please enter your pincode.')
       return
     }
+    // Geolocation only works in a secure context (HTTPS or localhost). Over a
+    // plain-HTTP LAN address (e.g. 192.168.x.x) the browser blocks it outright.
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setGeoError('Auto-location needs a secure (https) connection. Open the site on https or localhost, or enter your pincode below.')
+      return
+    }
     setGeoStatus('locating')
     setGeoError(null)
     setStatus('idle')
@@ -115,11 +121,13 @@ export default function HeaderLocation({ className = '' }: { className?: string 
       },
       (err) => {
         setGeoStatus('idle')
-        setGeoError(
-          err.code === err.PERMISSION_DENIED
-            ? 'Location access denied. Please enter your pincode manually.'
-            : "Couldn't get your location. Please enter your pincode manually."
-        )
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeoError('Location is blocked. Tap the 🔒 / ⓘ icon in your browser address bar → allow Location, then try again — or just enter your pincode below.')
+        } else if (err.code === err.TIMEOUT) {
+          setGeoError('Location timed out. Please try again or enter your pincode below.')
+        } else {
+          setGeoError("Couldn't get your location. Please enter your pincode manually.")
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     )

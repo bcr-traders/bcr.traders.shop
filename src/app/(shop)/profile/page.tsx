@@ -8,6 +8,7 @@ import ProfileForm from './ProfileForm'
 
 export const metadata: Metadata = {
   title: 'My Profile — BCR Traders',
+  description: 'Manage your BCR Traders account details, saved delivery addresses and language preferences.',
   robots: { index: false },
 }
 

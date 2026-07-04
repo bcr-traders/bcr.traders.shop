@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth/server'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
 import OrderDetailClient from './OrderDetailClient'
+
+// Private, per-customer page — noindex, but a clean title/description for tabs & shares.
+export const metadata: Metadata = {
+  title: 'Order Details — BCR Traders',
+  description: 'View your BCR Traders wholesale order — items, delivery status, payment and invoice.',
+  robots: { index: false, follow: false },
+}
 
 interface PageProps {
   params: Promise<{ id: string }>

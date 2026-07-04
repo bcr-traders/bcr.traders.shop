@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next'
 export const revalidate = 21600 // rebuild at most every 6 hours
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
 
   const { createAdminClient } = await import('@/lib/supabase/server')
   const supabase = createAdminClient()
@@ -15,13 +15,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const now = new Date()
 
+  // Only indexable, public pages belong in the sitemap — private/utility
+  // routes (cart, orders, profile, login) are disallowed in robots.txt.
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: siteUrl,               lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
-    { url: `${siteUrl}/search`,   lastModified: now, changeFrequency: 'weekly',  priority: 0.5 },
-    { url: `${siteUrl}/cart`,     lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${siteUrl}/orders`,   lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${siteUrl}/profile`,  lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${siteUrl}/login`,    lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: siteUrl,             lastModified: now, changeFrequency: 'daily',  priority: 1.0 },
+    { url: `${siteUrl}/search`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
   ]
 
   const categoryRoutes: MetadataRoute.Sitemap = (categories ?? []).map((cat) => ({

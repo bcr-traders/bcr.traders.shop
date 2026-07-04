@@ -7,16 +7,29 @@ import type { Product, Category } from '@/types/database.types'
 import { PackageSearch, Sparkles, TrendingUp, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '@/components/layout/Logo'
+import { getSearchKeywords } from '@/lib/seo/generator'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Search Products — BCR TRADERS',
-  description: 'Search wholesale oil, pulses, atta, spices, sugar and water at best prices.',
-}
-
 interface PageProps {
   searchParams: Promise<{ q?: string; category?: string; featured?: string }>
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const { q } = await searchParams
+  const title = q
+    ? `${q} — Wholesale Price in Odisha | BCR Traders`
+    : 'Search Wholesale Grocery — Oil, Pulses, Atta, Spices, Sugar | BCR Traders'
+  const description = q
+    ? `Buy ${q} at wholesale price in Odisha. Bulk orders with Cash on Delivery and fast delivery across Cuttack, Bhubaneswar & all Odisha — BCR Traders.`
+    : 'Search wholesale oil, pulses, atta, spices, sugar and packaged water at the best bulk prices in Odisha. Cash on Delivery, fast delivery — BCR Traders.'
+  return {
+    title,
+    description,
+    keywords: getSearchKeywords(q),
+    alternates: { canonical: q ? `/search?q=${encodeURIComponent(q)}` : '/search' },
+    openGraph: { title, description, url: '/search', images: [{ url: '/og-image.jpg', width: 1200, height: 630 }] },
+  }
 }
 
 async function getSearchData(q: string, category: string, featured: boolean) {

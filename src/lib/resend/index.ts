@@ -4,8 +4,8 @@ import type { OrderItem, Address } from '@/types/database.types'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'BCR Traders <noreply@bcrtraders.in>'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
+const FROM = process.env.RESEND_FROM_EMAIL ?? 'BCR Traders <noreply@bcrtraders.com>'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

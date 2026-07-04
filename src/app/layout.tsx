@@ -1,11 +1,11 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Poppins, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
 import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
 import AdminShortcut from '@/components/auth/AdminShortcut'
 import './globals.css'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.in'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
 const OG_IMAGE = '/og-image.jpg'
 
 // Main site font
@@ -39,11 +39,18 @@ export const metadata: Metadata = {
   keywords: [
     ...MASTER_KEYWORDS.brand,
     ...MASTER_KEYWORDS.wholesale,
-    ...MASTER_KEYWORDS.longTail.slice(0, 5),
+    ...MASTER_KEYWORDS.cities.slice(0, 6),
+    ...MASTER_KEYWORDS.nearMe.slice(0, 4),
+    ...MASTER_KEYWORDS.longTail.slice(0, 6),
   ],
   authors: [{ name: 'BCR TRADERS', url: APP_URL }],
   creator: 'BCR TRADERS',
   publisher: 'BCR TRADERS',
+  applicationName: 'BCR TRADERS',
+  category: 'shopping',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'BCR Traders', statusBarStyle: 'default' },
+  formatDetection: { telephone: true, address: true, email: true },
   alternates: { canonical: APP_URL },
   robots: {
     index: true,
@@ -79,6 +86,12 @@ export const metadata: Metadata = {
     description: 'Wholesale prices on Edible Oil, Pulses, Atta, Spices, Sugar & Packaged Water. COD.',
     images: [OG_IMAGE],
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#1c130a',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

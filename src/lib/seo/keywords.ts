@@ -1,5 +1,14 @@
 export const MASTER_KEYWORDS = {
-  brand: ['BCR TRADERS', 'BCR traders online', 'BCR traders Odisha'],
+  brand: [
+    'BCR TRADERS',
+    'BCR traders online',
+    'BCR traders Odisha',
+    'BCR traders wholesale',
+    'BCR traders Cuttack',
+    'BCR traders price list',
+    'BCR traders bulk order',
+    'BCR wholesale distributor',
+  ],
 
   wholesale: [
     'wholesale commodities distributor Odisha',
@@ -12,6 +21,45 @@ export const MASTER_KEYWORDS = {
     'wholesale grocery online India',
     'bulk order grocery Odisha',
     'commercial food supplier India',
+    'kirana wholesale supplier Odisha',
+    'grocery wholesale price list Odisha',
+    'B2B grocery supplier India',
+    'wholesale ration supplier Odisha',
+    'wholesale provision store Odisha',
+    'bulk grocery for shops Odisha',
+    'wholesale rate grocery Odisha',
+    'retailer grocery supplier Odisha',
+    'monthly grocery bulk order',
+    'wholesale market online Odisha',
+  ],
+
+  // Cities / regions we serve — pairs with any commodity for local intent.
+  cities: [
+    'wholesale grocery Cuttack',
+    'wholesale distributor Bhubaneswar',
+    'grocery wholesale Puri',
+    'wholesale supplier Rourkela',
+    'bulk grocery Sambalpur',
+    'wholesale dealer Balasore',
+    'grocery distributor Berhampur',
+    'wholesale supplier Angul',
+    'bulk food supplier Jajpur',
+    'grocery wholesale Jagatsinghpur',
+    'wholesale grocery Kendrapara',
+    'distributor Dhenkanal Odisha',
+  ],
+
+  nearMe: [
+    'wholesale grocery near me',
+    'oil wholesale near me',
+    'dal wholesale near me',
+    'atta wholesale near me',
+    'spices wholesale near me',
+    'sugar wholesale near me',
+    'water bottle wholesale near me',
+    'bulk grocery shop near me',
+    'grocery distributor near me',
+    'cash and carry near me Odisha',
   ],
 
   oil: [
@@ -27,6 +75,11 @@ export const MASTER_KEYWORDS = {
     'palm oil wholesale supplier',
     'soya bean oil bulk order',
     'cold pressed oil wholesale India',
+    'refined sunflower oil 15 litre price',
+    'cooking oil tin wholesale rate',
+    'kachi ghani mustard oil wholesale',
+    'rice bran oil wholesale Odisha',
+    'oil dealer near me Odisha',
   ],
 
   pulses: [
@@ -40,6 +93,11 @@ export const MASTER_KEYWORDS = {
     'pulses and lentils wholesale',
     'protein rich dal bulk order',
     'best dal dealer Odisha',
+    'arhar dal wholesale price today',
+    'rajma wholesale supplier Odisha',
+    'kabuli chana wholesale India',
+    'dal 50 kg bag wholesale rate',
+    'lentils bulk supplier Odisha',
   ],
 
   atta: [
@@ -52,6 +110,10 @@ export const MASTER_KEYWORDS = {
     'maida wholesale price India',
     'besan wholesale supplier',
     'multigrain atta bulk purchase',
+    'atta 10 kg bag wholesale rate',
+    'sooji rava wholesale Odisha',
+    'wheat flour mill distributor Odisha',
+    'sharbati atta wholesale price',
   ],
 
   spices: [
@@ -67,6 +129,10 @@ export const MASTER_KEYWORDS = {
     'masala manufacturer dealer Odisha',
     'MDH spices wholesale price',
     'Everest masala wholesale Odisha',
+    'haldi powder wholesale rate',
+    'dhania jeera wholesale supplier',
+    'kitchen masala bulk order Odisha',
+    'spices 1 kg pack wholesale price',
   ],
 
   sugar: [
@@ -79,6 +145,10 @@ export const MASTER_KEYWORDS = {
     'brown sugar wholesale India',
     'sugar supplier near me',
     'bulk sugar purchase Odisha',
+    'sugar 50 kg bag wholesale rate',
+    'gud jaggery wholesale price Odisha',
+    'cheeni wholesale rate today',
+    'sulphurless sugar wholesale India',
   ],
 
   water: [
@@ -90,6 +160,34 @@ export const MASTER_KEYWORDS = {
     '20 litre water can wholesale',
     'water bottle case price India',
     'bulk mineral water purchase',
+    '1 litre water bottle wholesale rate',
+    'water can supplier near me Odisha',
+    'packaged drinking water dealer Cuttack',
+    'water bottle carton wholesale price',
+  ],
+
+  // Purchase-intent modifiers that combine with any commodity.
+  buyIntent: [
+    'buy wholesale grocery online Odisha',
+    'order grocery in bulk Odisha',
+    'wholesale price grocery cash on delivery',
+    'grocery COD wholesale Odisha',
+    'online bulk grocery delivery Odisha',
+    'wholesale grocery home delivery Odisha',
+    'grocery wholesale rate today Odisha',
+    'lowest wholesale grocery price Odisha',
+  ],
+
+  // Natural-language / voice-search style questions.
+  questions: [
+    'where to buy wholesale grocery in Odisha',
+    'which is the best wholesale distributor in Odisha',
+    'how to order grocery in bulk online Odisha',
+    'what is the wholesale price of oil in Odisha',
+    'who delivers wholesale grocery in Cuttack',
+    'best place to buy pulses in bulk Odisha',
+    'cheapest wholesale sugar dealer near me',
+    'how to become a retailer with BCR traders',
   ],
 
   longTail: [
@@ -101,7 +199,14 @@ export const MASTER_KEYWORDS = {
     'how to buy atta in bulk India',
     'commodity distributor Bhubaneswar',
     'wholesale market for pulses Odisha',
-    'best wholesale sugar price India 2025',
+    'best wholesale sugar price India',
     'oil pulses sugar wholesale online delivery Odisha',
+    'edible oil pulses atta spices sugar water wholesale Odisha',
+    'trusted wholesale grocery distributor Cuttack Odisha',
+    'bulk grocery supplier for hotels restaurants Odisha',
+    'monthly kirana store supply Odisha wholesale',
   ],
 }
+
+/** Flat list of every keyword — useful for broad meta coverage. */
+export const ALL_KEYWORDS: string[] = Object.values(MASTER_KEYWORDS).flat()

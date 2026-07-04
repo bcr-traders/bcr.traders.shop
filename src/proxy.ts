@@ -7,6 +7,10 @@ const PUBLIC_PREFIXES = [
   '/admin/login',
   '/delivery/login',
   '/auth/callback',
+  // SEO / crawler files — must never redirect to login.
+  '/robots.txt',
+  '/sitemap.xml',
+  '/manifest.webmanifest',
   '/category/',
   '/product/',
   '/search',

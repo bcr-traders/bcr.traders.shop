@@ -12,14 +12,18 @@ import CouponMarquee from '@/components/home/CouponMarquee'
 import AnimatedStats from '@/components/home/AnimatedStats'
 import WhatsAppFAB from '@/components/home/WhatsAppFAB'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.in'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'Wholesale Oil, Pulses, Atta, Spices & Sugar Distributor — Odisha',
+  // `absolute` bypasses the "%s | BCR TRADERS…" template so the tab/SERP title
+  // leads with the brand exactly as requested.
+  title: {
+    absolute: 'BCR TRADERS | Wholesale Oil, Pulses, Atta, Spices, Sugar & Water Distributor in Odisha',
+  },
   description:
-    "BCR TRADERS — Odisha's #1 wholesale grocery distributor. Buy edible oil, pulses, atta, spices, sugar, and packaged water in bulk. Best wholesale prices, cash on delivery, fast delivery across Odisha.",
+    "BCR TRADERS — Odisha's #1 wholesale grocery distributor. Buy edible oil, pulses, atta, spices, sugar & packaged water in bulk at the best wholesale prices. Cash on Delivery & fast delivery across Cuttack, Bhubaneswar, Puri & all Odisha.",
   keywords: HOMEPAGE_KEYWORDS,
   alternates: { canonical: '/' },
   openGraph: {
@@ -63,20 +67,38 @@ const orgJsonLd = {
 
 const localBizJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
+  '@type': ['LocalBusiness', 'GroceryStore', 'Store'],
   name: 'BCR TRADERS',
   '@id': APP_URL,
   url: APP_URL,
   image: `${APP_URL}/og-image.jpg`,
+  logo: `${APP_URL}/logo.svg`,
   priceRange: '₹₹',
   telephone: '+91-9040011053',
   email: 'bcr.traders19@gmail.com',
+  currenciesAccepted: 'INR',
+  paymentAccepted: 'Cash on Delivery, UPI, Card',
+  slogan: "Odisha's Trusted Wholesale Partner",
   address: {
     '@type': 'PostalAddress',
+    streetAddress: 'Malgodown',
     addressLocality: 'Cuttack',
     addressRegion: 'Odisha',
+    postalCode: '753003',
     addressCountry: 'IN',
   },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 20.4625,
+    longitude: 85.8828,
+  },
+  areaServed: [
+    { '@type': 'State', name: 'Odisha' },
+    ...['Cuttack', 'Bhubaneswar', 'Puri', 'Rourkela', 'Sambalpur', 'Balasore', 'Berhampur'].map(
+      (c) => ({ '@type': 'City', name: c }),
+    ),
+  ],
+  knowsAbout: ['Edible Oil', 'Pulses', 'Atta & Flour', 'Spices', 'Sugar & Jaggery', 'Packaged Water', 'Wholesale Grocery'],
   openingHoursSpecification: [
     {
       '@type': 'OpeningHoursSpecification',
@@ -85,6 +107,21 @@ const localBizJsonLd = {
       closes: '18:00',
     },
   ],
+}
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'BCR TRADERS',
+  url: APP_URL,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${APP_URL}/search?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
 }
 
 export default async function HomePage() {
@@ -102,6 +139,11 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBizJsonLd) }}
+      />
+      {/* WebSite + SearchAction JSON-LD (sitelinks search box) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
 
       <div className="flex flex-col gap-6 py-4">

@@ -5,8 +5,9 @@ import type { AuthMetadata } from '@/types'
 import CheckoutClient from './CheckoutClient'
 
 export const metadata: Metadata = {
-  title: 'Checkout | BCR Traders',
-  robots: { index: false },
+  title: 'Checkout — BCR Traders',
+  description: 'Securely complete your BCR Traders wholesale order with Cash on Delivery and fast delivery across Odisha.',
+  robots: { index: false, follow: false },
 }
 
 export default async function CheckoutPage() {

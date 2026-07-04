@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const category = await getCategoryBySlug(slug)
   if (!category) return { title: 'Category Not Found' }
 
-  const title = `${category.name} Wholesale Odisha — BCR Traders`
-  const description = `Buy ${category.name} in bulk at BCR Traders — best wholesale prices, cash on delivery, fast delivery across Odisha. Shop our full range of ${category.name.toLowerCase()} products.`
+  const title = `${category.name} Wholesale Price in Odisha — Bulk Order | BCR Traders`
+  const description = `Buy ${category.name} in bulk at BCR Traders — best wholesale prices with Cash on Delivery and fast delivery across Cuttack, Bhubaneswar, Puri & all of Odisha. Shop our full range of ${category.name.toLowerCase()} at wholesale rates.`
   const keywords = getCategoryKeywords(slug)
   const ogImage = category.image_url
     ? [{ url: category.image_url, width: 1200, height: 630, alt: category.name }]
@@ -91,6 +91,22 @@ export default async function CategoryPage({ params }: PageProps) {
     ],
   }
 
+  const itemListJsonLd =
+    products.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: `${category.name} — Wholesale Products in Odisha`,
+          numberOfItems: products.length,
+          itemListElement: products.map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `${appUrl}/product/${p.slug}`,
+            name: p.name,
+          })),
+        }
+      : null
+
   return (
     <>
       {/* JSON-LD */}
@@ -98,6 +114,12 @@ export default async function CategoryPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        />
+      )}
 
       {/* ── Category Banner ── */}
       <section className="relative w-full h-[200px] md:h-[280px] bg-primary overflow-hidden">

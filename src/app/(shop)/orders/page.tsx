@@ -9,6 +9,7 @@ import { Package, ArrowRight, ShoppingBag, Clock, CheckCircle, XCircle, Truck } 
 
 export const metadata: Metadata = {
   title: 'My Orders — BCR Traders',
+  description: 'Track your BCR Traders wholesale orders — view status, delivery updates, invoices and reorder in one tap.',
   robots: { index: false },
 }
 

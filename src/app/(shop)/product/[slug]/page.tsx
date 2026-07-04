@@ -28,12 +28,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const data = await getProductBySlug(slug)
   if (!data) return { title: 'Product Not Found' }
 
-  const { product } = data
-  const title = product.meta_title ?? `${product.name} — Wholesale Price | BCR Traders`
+  const { product, category } = data
+  const title = product.meta_title ?? `${product.name} — Wholesale Price in Odisha | BCR Traders`
   const description =
     product.meta_description ??
-    `Buy ${product.name} (${product.unit}) at ₹${product.price} — best wholesale price in Odisha. ${product.description ? product.description.slice(0, 100) : 'Cash on delivery, fast shipping.'}`
-  const keywords = getProductKeywords(product.tags ?? null)
+    `Buy ${product.name} (${product.unit}) at ₹${product.price} wholesale price in Odisha${product.brand ? ` — ${product.brand}` : ''}. Bulk order with Cash on Delivery & fast delivery across Cuttack, Bhubaneswar & all Odisha. ${product.description ? product.description.slice(0, 80) : ''}`.trim()
+  const keywords = getProductKeywords(product.tags ?? null, category?.slug)
   const ogImage = product.images?.[0]
 
   return {

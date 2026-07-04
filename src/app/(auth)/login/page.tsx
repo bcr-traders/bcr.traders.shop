@@ -7,8 +7,18 @@ import LoginImageMarquee from '@/components/auth/LoginImageMarquee'
 import Logo from '@/components/layout/Logo'
 
 export const metadata: Metadata = {
-  title: 'Sign In — BCR TRADERS',
-  description: 'Sign in to your BCR Traders wholesale account to manage orders and track deliveries.',
+  title: 'Login / Sign Up — BCR TRADERS Wholesale Account Odisha',
+  description:
+    'Log in or create your BCR Traders account to order wholesale oil, pulses, atta, spices, sugar & water in bulk. Manage orders, track deliveries and shop at wholesale prices across Odisha.',
+  keywords: [
+    'BCR traders login',
+    'BCR traders account',
+    'wholesale grocery account Odisha',
+    'bulk order login Odisha',
+    'wholesale distributor signup Odisha',
+    'BCR traders sign up',
+  ],
+  alternates: { canonical: '/login' },
 }
 
 const PERKS = [
