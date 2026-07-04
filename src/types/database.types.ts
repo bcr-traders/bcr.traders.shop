@@ -77,13 +77,13 @@ export interface Coupon {
   description_or: string | null
   discount_type: 'percentage' | 'flat'
   discount_value: number
-  min_order_amount: number | null
+  min_order_value: number | null
   max_discount: number | null
   is_active: boolean
   valid_from: string | null
   valid_until: string | null
-  usage_limit: number | null
-  usage_count: number
+  max_uses: number | null
+  uses_count: number
   created_at: string
 }
 
@@ -249,7 +249,7 @@ export type Database = {
       }
       coupons: {
         Row: Coupon
-        Insert: Omit<Coupon, 'id' | 'created_at' | 'usage_count'>
+        Insert: Omit<Coupon, 'id' | 'created_at' | 'uses_count'>
         Update: Partial<Omit<Coupon, 'id' | 'created_at'>>
       }
       cms_content: {

@@ -6,9 +6,11 @@ import type { CartItem } from '@/types/database.types'
 
 interface CartStore {
   items: CartItem[]
+  couponCode: string | null
   addItem: (item: Omit<CartItem, 'quantity'>) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
+  setCoupon: (code: string | null) => void
   clearCart: () => void
   totalItems: () => number
   totalPrice: () => number
@@ -18,6 +20,7 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      couponCode: null,
 
       addItem: (item) =>
         set((state) => {
@@ -41,7 +44,9 @@ export const useCartStore = create<CartStore>()(
           return { items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)) }
         }),
 
-      clearCart: () => set({ items: [] }),
+      setCoupon: (code) => set({ couponCode: code }),
+
+      clearCart: () => set({ items: [], couponCode: null }),
 
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 

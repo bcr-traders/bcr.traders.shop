@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('coupons')
-    .select('id, code, description, discount_type, discount_value, min_order_amount')
+    .select('id, code, description, description_or, discount_type, discount_value, min_order_value, max_discount, max_uses, uses_count, valid_from, valid_until')
     .eq('is_active', true)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

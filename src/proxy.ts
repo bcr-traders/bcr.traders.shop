@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   '/search',
   '/api/products',
   '/api/categories',
+  '/api/coupons',
   '/api/banners',
   '/api/cms',
   '/api/search',

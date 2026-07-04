@@ -20,11 +20,11 @@ type FormState = {
   description_or: string
   discount_type: 'percentage' | 'flat'
   discount_value: string
-  min_order_amount: string
+  min_order_value: string
   max_discount: string
   valid_from: string
   valid_until: string
-  usage_limit: string
+  max_uses: string
   is_active: boolean
 }
 
@@ -42,11 +42,11 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
     description_or: coupon?.description_or ?? '',
     discount_type: coupon?.discount_type ?? 'percentage',
     discount_value: coupon?.discount_value?.toString() ?? '',
-    min_order_amount: coupon?.min_order_amount?.toString() ?? '',
+    min_order_value: coupon?.min_order_value?.toString() ?? '',
     max_discount: coupon?.max_discount?.toString() ?? '',
     valid_from: toDateInput(coupon?.valid_from ?? null),
     valid_until: toDateInput(coupon?.valid_until ?? null),
-    usage_limit: coupon?.usage_limit?.toString() ?? '',
+    max_uses: coupon?.max_uses?.toString() ?? '',
     is_active: coupon?.is_active ?? true,
   })
 
@@ -64,7 +64,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
   function previewDiscount() {
     if (!form.discount_value) return null
     const val = parseFloat(form.discount_value)
-    const minOrder = form.min_order_amount ? parseFloat(form.min_order_amount) : 0
+    const minOrder = form.min_order_value ? parseFloat(form.min_order_value) : 0
     if (minOrder > previewAmount) return `Requires ₹${minOrder} min order`
     if (form.discount_type === 'percentage') {
       let disc = (previewAmount * val) / 100
@@ -92,11 +92,11 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
       description_or: form.description_or.trim() || null,
       discount_type: form.discount_type,
       discount_value: parseFloat(form.discount_value),
-      min_order_amount: form.min_order_amount ? parseFloat(form.min_order_amount) : null,
+      min_order_value: form.min_order_value ? parseFloat(form.min_order_value) : null,
       max_discount: form.max_discount ? parseFloat(form.max_discount) : null,
       valid_from: form.valid_from || null,
       valid_until: form.valid_until || null,
-      usage_limit: form.usage_limit ? parseInt(form.usage_limit, 10) : null,
+      max_uses: form.max_uses ? parseInt(form.max_uses, 10) : null,
       is_active: form.is_active,
     }
 
@@ -143,7 +143,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
             </h1>
             {isEdit && (
               <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
-                Used {coupon.usage_count} time{coupon.usage_count !== 1 ? 's' : ''}
+                Used {coupon.uses_count} time{coupon.uses_count !== 1 ? 's' : ''}
               </p>
             )}
           </div>
@@ -294,10 +294,10 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-primary">₹</span>
                   <input
                     type="number"
-                    value={form.min_order_amount}
+                    value={form.min_order_value}
                     min={0}
                     step="0.01"
-                    onChange={e => set('min_order_amount', e.target.value)}
+                    onChange={e => set('min_order_value', e.target.value)}
                     placeholder="500"
                     className={cn(inputCls, 'pl-9')}
                   />
@@ -339,9 +339,9 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
               <Field label="Usage Limit" hint="Total uses allowed — leave blank for unlimited">
                 <input
                   type="number"
-                  value={form.usage_limit}
+                  value={form.max_uses}
                   min={1}
-                  onChange={e => set('usage_limit', e.target.value)}
+                  onChange={e => set('max_uses', e.target.value)}
                   placeholder="Unlimited"
                   className={inputCls}
                 />

@@ -31,6 +31,7 @@ export default function CheckoutClient({ profileId }: Props) {
   const clearCart = useCartStore((s) => s.clearCart)
   const totalItems = useCartStore((s) => s.totalItems)
   const totalPrice = useCartStore((s) => s.totalPrice)
+  const couponCode = useCartStore((s) => s.couponCode)
 
   const [addresses, setAddresses] = useState<Address[]>([])
   const [loadingAddresses, setLoadingAddresses] = useState(true)
@@ -41,10 +42,48 @@ export default function CheckoutClient({ profileId }: Props) {
   const [notes, setNotes] = useState('')
   const [isPlacing, setIsPlacing] = useState(false)
   const [error, setError] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [validCouponCode, setValidCouponCode] = useState<string | null>(null)
 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
+  const grandTotal = Math.max(0, subtotal - couponDiscount)
   const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk)
+
+  // Re-validate the applied coupon here and compute the discount authoritatively
+  // for display (the order API re-checks it server-side too).
+  useEffect(() => {
+    if (!couponCode || subtotal <= 0) { setCouponDiscount(0); setValidCouponCode(null); return }
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/coupons')
+        if (!res.ok) return
+        const data: Array<{
+          code: string; discount_type: 'percentage' | 'flat'; discount_value: number
+          min_order_value: number | null; max_discount: number | null
+          max_uses: number | null; uses_count: number | null; valid_until: string | null
+        }> = await res.json()
+        const c = data.find((x) => x.code.toUpperCase() === couponCode.toUpperCase())
+        const expired = !!c?.valid_until && new Date(c.valid_until) < new Date()
+        const usedUp = c?.max_uses != null && (c.uses_count ?? 0) >= c.max_uses
+        const belowMin = c?.min_order_value != null && subtotal < c.min_order_value
+        if (!c || expired || usedUp || belowMin) {
+          if (!cancelled) { setCouponDiscount(0); setValidCouponCode(null) }
+          return
+        }
+        let d = c.discount_type === 'percentage'
+          ? Math.round((subtotal * c.discount_value) / 100)
+          : c.discount_value
+        if (c.max_discount != null && d > c.max_discount) d = c.max_discount
+        d = Math.min(d, subtotal)
+        if (!cancelled) { setCouponDiscount(d); setValidCouponCode(c.code) }
+      } catch {
+        if (!cancelled) { setCouponDiscount(0); setValidCouponCode(null) }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [couponCode, subtotal])
 
   // Load addresses
   useEffect(() => {
@@ -86,6 +125,7 @@ export default function CheckoutClient({ profileId }: Props) {
           items,
           notes: notes.trim() || undefined,
           is_bulk: isBulk,
+          coupon_code: validCouponCode || undefined,
         }),
       })
       const json = await res.json()
@@ -350,6 +390,14 @@ export default function CheckoutClient({ profileId }: Props) {
                   <span className="text-white/50 font-medium">Subtotal ({totalItems()} items)</span>
                   <span className="text-white font-black">₹{subtotal.toFixed(0)}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50 font-medium">
+                      Coupon {validCouponCode ? `(${validCouponCode})` : 'Discount'}
+                    </span>
+                    <span className="text-emerald-300 font-black">−₹{couponDiscount.toFixed(0)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm pb-3 border-b border-white/15">
                   <span className="text-white/50 font-medium">Delivery</span>
                   <span className="text-white font-black text-xs uppercase tracking-wider">Free</span>
@@ -358,7 +406,7 @@ export default function CheckoutClient({ profileId }: Props) {
 
               <div className="flex items-end justify-between mb-5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Total</span>
-                <span className="text-2xl font-black text-white">₹{subtotal.toFixed(0)}</span>
+                <span className="text-2xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
               </div>
 
               {/* Notes — desktop */}
@@ -412,8 +460,10 @@ export default function CheckoutClient({ profileId }: Props) {
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
         <div className="flex justify-between items-center mb-2.5">
-          <span className="text-[9px] font-black uppercase tracking-widest text-white/35">Total</span>
-          <span className="text-xl font-black text-white">₹{subtotal.toFixed(0)}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/35">
+            Total{couponDiscount > 0 ? ` · −₹${couponDiscount.toFixed(0)}` : ''}
+          </span>
+          <span className="text-xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
         </div>
         {error && <p className="text-xs font-bold text-error mb-2">{error}</p>}
         <button

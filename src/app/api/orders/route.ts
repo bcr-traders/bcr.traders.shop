@@ -16,14 +16,14 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; discount?: number }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string }
   try {
     body = await request.json()
   } catch {
     return Response.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { address_id, items, notes, is_bulk, coupon_code, discount } = body
+  const { address_id, items, notes, is_bulk, coupon_code } = body
 
   if (!address_id || !Array.isArray(items) || items.length === 0) {
     return Response.json({ error: 'address_id and items are required' }, { status: 400 })
@@ -88,7 +88,47 @@ export async function POST(request: Request) {
 
   const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
   const deliveryFee = 0
-  const discountAmt = discount ?? 0
+
+  // ── Authoritative coupon validation — never trust a client-sent discount ──
+  let discountAmt = 0
+  let appliedCouponCode: string | null = null
+  let appliedCoupon: { id: string; uses_count: number | null } | null = null
+  const adminDb = createAdminClient()
+
+  if (coupon_code && coupon_code.trim()) {
+    const { data: coupon } = await adminDb
+      .from('coupons')
+      .select('id, code, discount_type, discount_value, min_order_value, max_discount, max_uses, uses_count, valid_until, is_active')
+      .ilike('code', coupon_code.trim())
+      .maybeSingle()
+
+    const c = coupon as null | {
+      id: string; code: string; discount_type: 'percentage' | 'flat'; discount_value: number
+      min_order_value: number | null; max_discount: number | null; max_uses: number | null
+      uses_count: number | null; valid_until: string | null; is_active: boolean
+    }
+
+    const invalid =
+      !c ||
+      !c.is_active ||
+      (c.valid_until != null && new Date(c.valid_until) < new Date()) ||
+      (c.max_uses != null && (c.uses_count ?? 0) >= c.max_uses) ||
+      (c.min_order_value != null && subtotal < c.min_order_value)
+
+    if (invalid) {
+      return Response.json({ error: 'This coupon is not valid for your order.' }, { status: 400 })
+    }
+
+    let d =
+      c!.discount_type === 'percentage'
+        ? Math.round((subtotal * c!.discount_value) / 100)
+        : c!.discount_value
+    if (c!.max_discount != null && d > c!.max_discount) d = c!.max_discount
+    discountAmt = Math.min(d, subtotal)
+    appliedCouponCode = c!.code
+    appliedCoupon = { id: c!.id, uses_count: c!.uses_count }
+  }
+
   const total = subtotal + deliveryFee - discountAmt
 
   const { data: order, error } = await db
@@ -100,7 +140,7 @@ export async function POST(request: Request) {
       subtotal,
       delivery_fee: deliveryFee,
       discount: discountAmt,
-      coupon_code: coupon_code ?? null,
+      coupon_code: appliedCouponCode,
       total,
       payment_method: 'cod',
       status: 'placed',
@@ -121,8 +161,16 @@ export async function POST(request: Request) {
   // Decrement stock immediately to prevent overselling
   void decrementStock(orderItems)
 
+  // Record coupon usage
+  if (appliedCoupon) {
+    void adminDb
+      .from('coupons')
+      .update({ uses_count: (appliedCoupon.uses_count ?? 0) + 1 })
+      .eq('id', appliedCoupon.id)
+  }
+
   // Fire-and-forget: emails + low stock check
-  void sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, coupon_code ?? null, total, profileId)
+  void sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, appliedCouponCode, total, profileId)
 
   return Response.json({ order_id: orderId }, { status: 201 })
 }

@@ -19,7 +19,11 @@ interface CouponData {
   description: string | null
   discount_type: 'percentage' | 'flat'
   discount_value: number
-  min_order_amount: number | null
+  min_order_value: number | null
+  max_discount: number | null
+  max_uses: number | null
+  uses_count: number | null
+  valid_until: string | null
 }
 
 // ── CartItemRow ───────────────────────────────────────────────────────────────
@@ -280,7 +284,7 @@ function EmptyCart() {
 
 // ── Main CartPage ─────────────────────────────────────────────────────────────
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
+  const { items, updateQuantity, removeItem, totalPrice, setCoupon } = useCartStore()
   const { isSignedIn } = useSupabaseUser()
   const router = useRouter()
 
@@ -289,12 +293,25 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
 
+  // Persist the applied coupon so checkout can send it with the order.
+  useEffect(() => {
+    setCoupon(appliedCoupon?.code ?? null)
+  }, [appliedCoupon, setCoupon])
+
   const subtotal = totalPrice()
-  const discount = appliedCoupon
-    ? appliedCoupon.discount_type === 'percentage'
-      ? Math.round((subtotal * appliedCoupon.discount_value) / 100)
-      : appliedCoupon.discount_value
-    : 0
+  const discount = (() => {
+    if (!appliedCoupon) return 0
+    let d =
+      appliedCoupon.discount_type === 'percentage'
+        ? Math.round((subtotal * appliedCoupon.discount_value) / 100)
+        : appliedCoupon.discount_value
+    // Cap percentage discounts at max_discount when set.
+    if (appliedCoupon.max_discount && d > appliedCoupon.max_discount) {
+      d = appliedCoupon.max_discount
+    }
+    // Never discount more than the subtotal.
+    return Math.min(d, subtotal)
+  })()
   const FREE_DELIVERY_MIN = 1000
   const deliveryFee = subtotal >= FREE_DELIVERY_MIN ? 0 : 50
   const total = Math.max(0, subtotal - discount) + deliveryFee
@@ -324,10 +341,17 @@ export default function CartPage() {
       if (!res.ok) throw new Error('fetch failed')
       const data: CouponData[] = await res.json()
       const found = data.find((c) => c.code.toUpperCase() === code.toUpperCase())
+      const expired = found?.valid_until && new Date(found.valid_until) < new Date()
+      const usedUp =
+        found?.max_uses != null && (found.uses_count ?? 0) >= found.max_uses
       if (!found) {
         setCouponError('Invalid coupon code')
-      } else if (found.min_order_amount && subtotal < found.min_order_amount) {
-        setCouponError(`Min. order ₹${found.min_order_amount} required for this coupon`)
+      } else if (expired) {
+        setCouponError('This coupon has expired')
+      } else if (usedUp) {
+        setCouponError('This coupon is no longer available')
+      } else if (found.min_order_value && subtotal < found.min_order_value) {
+        setCouponError(`Min. order ₹${found.min_order_value} required for this coupon`)
       } else {
         setAppliedCoupon(found)
         setCouponInput('')

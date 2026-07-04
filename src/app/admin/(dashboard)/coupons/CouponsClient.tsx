@@ -17,8 +17,8 @@ function isExpired(coupon: Coupon) {
 }
 
 function usagePercent(coupon: Coupon) {
-  if (!coupon.usage_limit) return null
-  return Math.min(100, Math.round((coupon.usage_count / coupon.usage_limit) * 100))
+  if (!coupon.max_uses) return null
+  return Math.min(100, Math.round((coupon.uses_count / coupon.max_uses) * 100))
 }
 
 export default function CouponsClient({ initialCoupons }: { initialCoupons: Coupon[] }) {
@@ -148,7 +148,7 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
 
                       {/* Min order */}
                       <td className="py-4 px-5 border-r border-table-border font-bold text-sm text-on-surface-variant">
-                        {coupon.min_order_amount ? `₹${coupon.min_order_amount}` : '—'}
+                        {coupon.min_order_value ? `₹${coupon.min_order_value}` : '—'}
                       </td>
 
                       {/* Cap */}
@@ -160,8 +160,8 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
                       <td className="py-4 px-5 border-r border-table-border">
                         <div className="space-y-2">
                           <p className="font-black text-xs text-primary">
-                            {coupon.usage_count}
-                            {coupon.usage_limit ? ` / ${coupon.usage_limit}` : ''}
+                            {coupon.uses_count}
+                            {coupon.max_uses ? ` / ${coupon.max_uses}` : ''}
                           </p>
                           {pct !== null && (
                             <div className="w-20 h-2 border-2 border-table-border bg-surface rounded-full overflow-hidden">

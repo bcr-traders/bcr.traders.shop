@@ -64,9 +64,9 @@ export default async function AnalyticsPage() {
 
     supabase
       .from('coupons')
-      .select('code, usage_count, discount_type, discount_value')
-      .gt('usage_count', 0)
-      .order('usage_count', { ascending: false })
+      .select('code, uses_count, discount_type, discount_value')
+      .gt('uses_count', 0)
+      .order('uses_count', { ascending: false })
       .limit(10),
 
     db.from('unserviceable_attempts')
@@ -199,10 +199,10 @@ export default async function AnalyticsPage() {
 
   // ── Coupons ──────────────────────────────────────────────────────────────────
   const couponUsage: CouponPoint[] = (couponsRes.data ?? []).map((c: {
-    code: string; usage_count: number; discount_type: string; discount_value: number
+    code: string; uses_count: number; discount_type: string; discount_value: number
   }) => ({
     code: c.code,
-    count: c.usage_count,
+    count: c.uses_count,
     type: c.discount_type,
     value: c.discount_value,
   }))
