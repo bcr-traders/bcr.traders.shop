@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import PincodeChecker from './PincodeChecker'
 import type { Address, AddressLabel } from '@/types/database.types'
@@ -17,9 +17,9 @@ interface Props {
 }
 
 const inputCls =
-  'w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
-const errorCls = 'font-label-sm text-label-sm text-error mt-1'
-const labelCls = 'font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block mb-1.5'
+  'w-full px-4 py-3 rounded-xl border-2 border-table-border bg-surface-card text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:shadow-[0_0_0_4px_rgba(28,19,10,0.06)] transition-all duration-200'
+const errorCls = 'text-[11px] font-bold text-error mt-1'
+const labelCls = 'text-[11px] font-black text-on-surface-variant/70 uppercase tracking-[0.1em] block mb-1.5'
 
 export default function AddressForm({ profileId, onSaved, onClose }: Props) {
   const [isSaving, setIsSaving] = useState(false)
@@ -68,37 +68,45 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full sm:max-w-lg bg-surface rounded-t-xl sm:rounded-xl shadow-xl overflow-hidden max-h-[90dvh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full sm:max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant flex-shrink-0">
-          <h3 className="font-headline-md text-headline-md text-on-surface">Add New Address</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container transition-colors">
-            <X size={18} className="text-on-surface-variant" />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-table-border flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <MapPin size={18} className="text-primary" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="font-sans text-lg font-black text-primary tracking-tight leading-none">Add New Address</h3>
+              <p className="text-[11px] font-medium text-on-surface-variant/60 mt-1">Where should we deliver your order?</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low text-on-surface-variant/60 hover:text-primary transition-colors"
+          >
+            <X size={18} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 px-5 py-4 overflow-y-auto"
+          className="flex flex-col gap-5 px-6 py-5 overflow-y-auto"
         >
           {/* Label picker */}
           <div>
             <span className={labelCls}>Address Label</span>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-4 gap-2">
               {LABELS.map((lbl) => (
-                <label
-                  key={lbl}
-                  className="cursor-pointer"
-                >
+                <label key={lbl} className="cursor-pointer">
                   <input type="radio" {...register('label')} value={lbl} className="sr-only" />
                   <span
                     className={cn(
-                      'px-3 py-1.5 rounded-full font-label-sm text-label-sm border transition-colors',
+                      'flex items-center justify-center px-2 py-2.5 rounded-xl text-[13px] font-bold border-2 transition-all duration-200 active:scale-95',
                       watch('label') === lbl
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-surface-container text-on-surface-variant border-outline-variant',
+                        ? 'bg-primary text-on-primary border-primary shadow-sm shadow-primary/20'
+                        : 'bg-surface-card text-on-surface-variant border-table-border hover:border-primary/40 hover:text-primary',
                     )}
                   >
                     {lbl}
@@ -222,18 +230,18 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
           </label>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1 pb-2">
+          <div className="flex gap-3 pt-2 pb-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-full border-[1.5px] border-outline-variant text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider hover:bg-surface-container transition-colors"
+              className="px-6 py-3.5 rounded-xl border-2 border-table-border text-on-surface-variant font-black text-xs uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 py-3 rounded-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-60 disabled:hover:translate-y-0 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isSaving && <Loader2 size={14} className="animate-spin" />}
               {isSaving ? 'Saving…' : 'Save Address'}

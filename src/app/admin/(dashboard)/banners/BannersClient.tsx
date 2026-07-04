@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Banner, CmsContent, Json } from '@/types/database.types'
 import { Plus, Image as ImageIcon, GripVertical, Edit3, Trash2, X, CloudUpload, Loader2, Save } from 'lucide-react'
 
@@ -57,12 +58,7 @@ export default function BannersClient({
   cmsContent: CmsContent[]
 }) {
   const [tab, setTab] = useState(0)
-  const [toast, setToast] = useState<string | null>(null)
-
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
+  const showToast = useToastStore((s) => s.show)
 
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8 pb-12">
@@ -101,11 +97,6 @@ export default function BannersClient({
       {tab === 2 && <FooterTab cmsContent={cmsContent} onToast={showToast} />}
       {tab === 3 && <AnnouncementsTab cmsContent={cmsContent} onToast={showToast} />}
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
-          {toast}
-        </div>
-      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Category } from '@/types/database.types'
 import { ArrowLeft, Loader2, AlertCircle, X, CloudUpload, Bold, Italic, List, ListOrdered } from 'lucide-react'
 
@@ -42,7 +43,7 @@ export default function CategoryForm({
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
   const [uploadingImage, setUploadingImage] = useState(false)
 
   const [form, setForm] = useState<FormState>({
@@ -69,10 +70,6 @@ export default function CategoryForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.name])
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
 
   async function uploadImage(file: File, field: 'image_url') {
     setUploadingImage(true)
@@ -120,7 +117,7 @@ export default function CategoryForm({
       if (!isEdit) {
         router.push('/admin/categories')
       } else {
-        showToast('Category saved!')
+        showToast('Changes saved successfully')
       }
     } else {
       const data = await res.json() as { error?: string }
@@ -351,12 +348,6 @@ export default function CategoryForm({
         </div>
       </div>
 
-      {/* ── Toast ── */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
-          {toast}
-        </div>
-      )}
     </div>
   )
 }

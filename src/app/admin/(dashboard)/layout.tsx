@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth/server'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminShell from '@/components/layout/AdminShell'
+import AdminToaster from '@/components/admin/AdminToaster'
 
 async function fetchBadges() {
   try {
@@ -33,5 +34,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const badges = await fetchBadges()
 
-  return <AdminShell role={role} badges={badges}>{children}</AdminShell>
+  return (
+    <>
+      <AdminShell role={role} badges={badges}>{children}</AdminShell>
+      <AdminToaster />
+    </>
+  )
 }

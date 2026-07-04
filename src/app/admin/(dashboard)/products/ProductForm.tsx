@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Product, Category } from '@/types/database.types'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ export default function ProductForm({
   const [tab, setTab] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
   const [generatingSeo, setGeneratingSeo] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [images, setImages] = useState<ImageItem[]>(
@@ -148,10 +149,6 @@ export default function ProductForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.price_per_pack, form.units_per_pack])
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
 
   // ── Image Upload ─────────────────────────────────────────────────────────────
 
@@ -216,7 +213,6 @@ export default function ProductForm({
       price: parseFloat(form.price),
       mrp: form.mrp ? parseFloat(form.mrp) : null,
       unit: form.unit.trim(),
-      unit_or: form.unit_or.trim() || null,
       stock_qty: parseInt(form.stock_qty, 10) || 0,
       packaging_form: form.packaging_form.trim() || null,
       pack_type: form.pack_type || null,
@@ -245,7 +241,7 @@ export default function ProductForm({
         const data = await res.json() as { id: string }
         router.push(`/admin/products/${data.id}`)
       } else {
-        showToast('Product saved!')
+        showToast('Changes saved successfully')
       }
     } else {
       const data = await res.json() as { error?: string }
@@ -545,15 +541,6 @@ export default function ProductForm({
                   className={inputCls}
                 />
               </Field>
-              <Field label="Unit (Odia)">
-                <input
-                  type="text"
-                  value={form.unit_or}
-                  onChange={e => set('unit_or', e.target.value)}
-                  placeholder="Odia unit…"
-                  className={inputCls}
-                />
-              </Field>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -818,11 +805,6 @@ export default function ProductForm({
       </div>
 
       {/* ── Toast ── */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
-          {toast}
-        </div>
-      )}
     </div>
   )
 }

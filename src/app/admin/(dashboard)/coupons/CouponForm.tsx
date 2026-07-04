@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Coupon } from '@/types/database.types'
 import { ArrowLeft, Loader2, AlertCircle, X, Percent, IndianRupee, Info } from 'lucide-react'
 
@@ -34,7 +35,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   const [form, setForm] = useState<FormState>({
     code: coupon?.code ?? '',
@@ -54,10 +55,6 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
     setForm(prev => ({ ...prev, [key]: value }))
   }, [])
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
 
   // Live discount preview
   const previewAmount = 500 // demo order amount
@@ -113,7 +110,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
       if (!isEdit) {
         router.push('/admin/coupons')
       } else {
-        showToast('Coupon saved!')
+        showToast('Changes saved successfully')
       }
     } else {
       const data = await res.json() as { error?: string }
@@ -379,11 +376,6 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
         </div>
       </div>
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-primary text-white border-2 border-primary rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_8px_30px_rgba(44,24,16,0.3)]">
-          {toast}
-        </div>
-      )}
     </div>
   )
 }
