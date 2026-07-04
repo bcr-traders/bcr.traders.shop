@@ -38,6 +38,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Self sign-up is not available for this portal.' }, { status: 403 })
   }
 
+  if (mode === 'signup' && portal === 'customer') {
+    const admin = createAdminClient()
+    const cleanPhone = `+91${digits}`
+
+    try {
+      // Already a customer → tell them to log in instead of re-registering.
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('id')
+        .or(`phone.eq.${cleanPhone},phone.eq.${digits}`)
+        .maybeSingle()
+
+      if (profile) {
+        return NextResponse.json(
+          { error: 'This number is already registered. Please log in instead.', error_code: 'already_registered' },
+          { status: 409 },
+        )
+      }
+
+      // Registered as staff → wrong portal for a customer sign-up.
+      const { data: staff } = await admin
+        .from('admin_profiles')
+        .select('id')
+        .or(`phone.eq.${cleanPhone},phone.eq.${digits}`)
+        .maybeSingle()
+
+      if (staff) {
+        return NextResponse.json(
+          { error: 'This number is registered as staff. Please use the staff login.', error_code: 'wrong_portal' },
+          { status: 400 },
+        )
+      }
+    } catch (err) {
+      console.error('[otp/precheck] signup DB check failed:', err)
+      // fail open — /verify performs the authoritative dedup check
+    }
+  }
+
   if (mode === 'login') {
     const admin = createAdminClient()
     const cleanPhone = `+91${digits}`

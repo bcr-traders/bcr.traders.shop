@@ -31,6 +31,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [notRegistered, setNotRegistered] = useState(false)
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
 
   const digits = phone.replace(/\D/g, '')
 
@@ -61,6 +62,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
     e.preventDefault()
     setError(null)
     setNotRegistered(false)
+    setAlreadyRegistered(false)
 
     if (digits.length !== 10) {
       setError('Please enter a valid 10-digit mobile number.')
@@ -83,6 +85,11 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
       const preData = await pre.json().catch(() => ({}))
 
       if (!pre.ok) {
+        if (preData?.error_code === 'already_registered') {
+          setAlreadyRegistered(true)
+          setLoading(false)
+          return
+        }
         if (preData?.error_code === 'user_not_found') {
           setNotRegistered(true)
           setLoading(false)
@@ -404,6 +411,31 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
                   Sign Up
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alreadyRegistered && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface-card rounded-2xl shadow-xl w-full max-w-sm p-6 border-2 border-table-border">
+            <h3 className="font-black text-lg text-primary">You already have an account</h3>
+            <p className="text-sm text-on-surface-variant font-medium mt-2">
+              This number is already registered. Please log in instead — no need to sign up again.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setAlreadyRegistered(false)}
+                className="flex-1 py-2.5 rounded-xl border-2 border-table-border font-black text-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => { setAlreadyRegistered(false); setError(null); setMode('login') }}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors"
+              >
+                Log In
+              </button>
             </div>
           </div>
         </div>
