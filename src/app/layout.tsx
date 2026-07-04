@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Poppins, Playfair_Display, JetBrains_Mono } from 'next/font/google'
+import { Poppins, Playfair_Display } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
 import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
 import AdminShortcut from '@/components/auth/AdminShortcut'
@@ -20,12 +20,6 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   weight: ['500', '600', '700', '800', '900'],
   variable: '--font-playfair',
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['500'],
-  variable: '--font-jetbrains-mono',
 })
 
 export const metadata: Metadata = {
@@ -96,7 +90,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${playfair.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${poppins.variable} ${playfair.variable}`}>
       <head>
         <link
           rel="stylesheet"

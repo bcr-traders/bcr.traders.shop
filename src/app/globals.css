@@ -84,7 +84,9 @@
   --font-headline-md: var(--font-heading);
   --font-headline-sm: var(--font-heading);
   --font-headline-lg-mobile: var(--font-heading);
-  --font-label-sm: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  /* Labels use the main Poppins font too — keeps the site visually consistent
+     (Playfair headings are the only secondary accent). */
+  --font-label-sm: var(--font-poppins), 'Poppins', ui-sans-serif, sans-serif;
 
   /* Font sizes */
   --text-body-lg: 18px;

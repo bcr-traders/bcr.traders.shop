@@ -36,10 +36,10 @@ export function DailyOrdersChart({ data }: { data: DailyPoint[] }) {
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.5} />
-          <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} interval={4} />
-          <YAxis tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} allowDecimals={false} />
+          <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'var(--font-poppins), sans-serif' }} tickLine={false} axisLine={false} interval={4} />
+          <YAxis tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'var(--font-poppins), sans-serif' }} tickLine={false} axisLine={false} allowDecimals={false} />
           <Tooltip
-            contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'JetBrains Mono' }}
+            contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'var(--font-poppins), sans-serif' }}
             formatter={(v: unknown) => [String(v ?? ''), 'Orders']}
           />
           <Line
@@ -70,10 +70,10 @@ export function CategoryRevenueChart({ data }: { data: CategoryPoint[] }) {
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#d2c4bc" strokeOpacity={0.5} vertical={false} />
-            <XAxis dataKey="category" tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} tickFormatter={rupee} />
+            <XAxis dataKey="category" tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'var(--font-poppins), sans-serif' }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#4f453f', fontFamily: 'var(--font-poppins), sans-serif' }} tickLine={false} axisLine={false} tickFormatter={rupee} />
             <Tooltip
-              contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'JetBrains Mono' }}
+              contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'var(--font-poppins), sans-serif' }}
               formatter={(v: unknown) => [rupee(Number(v)), 'Revenue']}
             />
             <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
@@ -118,10 +118,10 @@ export function StatusDonutChart({ data }: { data: StatusPoint[] }) {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'JetBrains Mono' }}
+                contentStyle={{ background: '#fdf9f1', border: '1px solid #d2c4bc', borderRadius: 8, fontSize: 12, fontFamily: 'var(--font-poppins), sans-serif' }}
                 formatter={(v: unknown, name: unknown) => [String(v ?? ''), String(name ?? '')]}
               />
-              <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#4f453f', textTransform: 'capitalize' }}>{v}</span>} />
+              <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11, fontFamily: 'var(--font-poppins), sans-serif', color: '#4f453f', textTransform: 'capitalize' }}>{v}</span>} />
             </PieChart>
           </ResponsiveContainer>
           {/* Center label */}
