@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ShieldCheck, Zap, Package, Truck } from 'lucide-react'
 import PhoneAuthForm from '@/components/auth/PhoneAuthForm'
+import LoginImageMarquee from '@/components/auth/LoginImageMarquee'
 import Logo from '@/components/layout/Logo'
 
 export const metadata: Metadata = {
@@ -76,32 +77,39 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT — Phone OTP sign-in ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative">
-        <div className="lg:hidden mb-10 text-center">
-          <Link href="/" className="inline-flex">
-            <Logo className="h-14 w-auto" />
-          </Link>
-          <p className="text-xs text-on-surface-variant font-medium mt-1 tracking-wide">
-            Wholesale · Odisha
-          </p>
+      <div className="flex-1 flex flex-col items-center justify-start lg:justify-center relative lg:px-5 lg:py-12">
+        {/* Mobile — Blinkit-style animated product wall at the top */}
+        <div className="lg:hidden w-full pt-3">
+          <LoginImageMarquee />
         </div>
 
-        <Suspense fallback={null}>
-          <PhoneAuthForm
-            portal="customer"
-            allowSignup
-            title="Welcome back"
-            subtitle="Sign in or create an account with your mobile number"
-          />
-        </Suspense>
+        <div className="w-full flex flex-col items-center px-5 pb-10 lg:px-0 lg:pb-0">
+          <div className="lg:hidden mt-2 mb-8 text-center">
+            <Link href="/" className="inline-flex">
+              <Logo className="h-14 w-auto" />
+            </Link>
+            <p className="text-xs text-on-surface-variant font-medium mt-1 tracking-wide">
+              Wholesale · Odisha
+            </p>
+          </div>
 
-        <div className="mt-6">
-          <Link
-            href="/"
-            className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50 hover:text-primary transition-colors duration-200"
-          >
-            ← Back to Home
-          </Link>
+          <Suspense fallback={null}>
+            <PhoneAuthForm
+              portal="customer"
+              allowSignup
+              title="Welcome back"
+              subtitle="Sign in or create an account with your mobile number"
+            />
+          </Suspense>
+
+          <div className="mt-6">
+            <Link
+              href="/"
+              className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50 hover:text-primary transition-colors duration-200"
+            >
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     </main>
