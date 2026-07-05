@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { AdminProfile, AdminPermissions } from '@/types/admin.types'
 import { Users, UserCog, Bike, Plus, Phone, Mail, CheckCircle, Clock, Edit3, Lock } from 'lucide-react'
 
@@ -29,6 +30,7 @@ function permissionCount(p: AdminPermissions | null | undefined): number {
 export default function ProfilesClient({ initialProfiles }: { initialProfiles: AdminProfile[] }) {
   const [profiles, setProfiles] = useState(initialProfiles)
   const [toggling, setToggling] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   async function toggleActive(id: string, current: boolean) {
     setToggling(id)
@@ -39,6 +41,9 @@ export default function ProfilesClient({ initialProfiles }: { initialProfiles: A
     })
     if (res.ok) {
       setProfiles(prev => prev.map(p => p.id === id ? { ...p, is_active: !current } : p))
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save changes', 'error')
     }
     setToggling(null)
   }

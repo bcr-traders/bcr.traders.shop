@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Product } from '@/types/database.types'
 import { 
   Upload, Download, Plus, Search, Star, X, CheckSquare, Square, 
@@ -35,6 +36,7 @@ export default function ProductsClient({
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [importing, setImporting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
+  const showToast = useToastStore((s) => s.show)
 
   const categoryMap = useMemo(
     () => Object.fromEntries(categories.map(c => [c.id, c.name])),
@@ -92,6 +94,9 @@ export default function ProductsClient({
     })
     if (res.ok) {
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...data } : p))
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save changes', 'error')
     }
     setSaving(prev => ({ ...prev, [id]: false }))
   }
@@ -115,13 +120,17 @@ export default function ProductsClient({
     if (res.ok) {
       if (action === 'delete') {
         setProducts(prev => prev.filter(p => !selectedIds.has(p.id)))
+        showToast(`${ids.length} product${ids.length !== 1 ? 's' : ''} deleted`, 'success')
       } else {
         const isActive = action === 'activate'
         setProducts(prev =>
           prev.map(p => selectedIds.has(p.id) ? { ...p, is_active: isActive } : p),
         )
+        showToast('Changes saved successfully', 'success')
       }
       setSelectedIds(new Set())
+    } else {
+      showToast('Bulk action failed', 'error')
     }
   }
 
@@ -153,7 +162,12 @@ export default function ProductsClient({
     const form = new FormData()
     form.append('file', file)
     const res = await fetch('/api/products/bulk-import', { method: 'POST', body: form })
-    if (res.ok) window.location.reload()
+    if (res.ok) {
+      showToast('Products imported successfully', 'success')
+      window.location.reload()
+    } else {
+      showToast('Failed to import products', 'error')
+    }
     setImporting(false)
     if (importRef.current) importRef.current.value = ''
   }

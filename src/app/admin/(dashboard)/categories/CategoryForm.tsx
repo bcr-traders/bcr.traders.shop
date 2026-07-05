@@ -115,6 +115,7 @@ export default function CategoryForm({
 
     if (res.ok) {
       if (!isEdit) {
+        showToast('Category created successfully')
         router.push('/admin/categories')
       } else {
         showToast('Changes saved successfully')

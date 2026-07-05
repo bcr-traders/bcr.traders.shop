@@ -1,8 +1,9 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useTransition, useRef, useEffect } from 'react'
+import { useCallback, useTransition, useRef, useEffect, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import AnimatedSearchPlaceholder from '@/components/layout/AnimatedSearchPlaceholder'
 import type { Category } from '@/types/database.types'
 
 interface Props {
@@ -12,14 +13,21 @@ interface Props {
   hideCategoriesOnDesktop?: boolean
 }
 
+/** Fallback rotating terms when no category names are available. */
+const DEFAULT_TERMS = ['sugar', 'atta', 'edible oil', 'pulses', 'spices', 'water']
+
 export default function SearchControls({ categories, initialQ, initialCategory, hideCategoriesOnDesktop }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [hasValue, setHasValue] = useState(!!initialQ)
+
+  const terms = categories.length > 0 ? categories.map((c) => c.name) : DEFAULT_TERMS
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.value = initialQ
+    setHasValue(!!initialQ)
   }, [initialQ])
 
   const push = useCallback(
@@ -36,6 +44,7 @@ export default function SearchControls({ categories, initialQ, initialCategory, 
 
   const handleInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      setHasValue(!!e.target.value)
       push(e.target.value, searchParams.get('category') ?? '')
     },
     [push, searchParams]
@@ -43,6 +52,7 @@ export default function SearchControls({ categories, initialQ, initialCategory, 
 
   const clearQ = () => {
     if (inputRef.current) inputRef.current.value = ''
+    setHasValue(false)
     push('', searchParams.get('category') ?? '')
     inputRef.current?.focus()
   }
@@ -65,9 +75,11 @@ export default function SearchControls({ categories, initialQ, initialCategory, 
           type="search"
           defaultValue={initialQ}
           onChange={handleInput}
-          placeholder="Search products, brands…"
+          placeholder=""
           className="w-full pl-11 pr-10 py-3.5 bg-surface-card border-2 border-table-border rounded-2xl text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-all duration-200 shadow-sm focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)]"
         />
+        {/* Animated rotating placeholder — only while empty */}
+        {!hasValue && <AnimatedSearchPlaceholder terms={terms} />}
         {/* Clear button */}
         {initialQ && (
           <button

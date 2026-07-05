@@ -60,14 +60,26 @@ export async function proxy(request: NextRequest) {
     },
   )
 
-  // Refreshes the session cookie if the access token is near expiry.
-  const { data: { user } } = await supabase.auth.getUser()
+  // Refreshes the session cookie if the access token is near expiry. Guarded so a
+  // transient Auth network blip can't crash the request into a 500.
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (err) {
+    if (process.env.AUTH_DEBUG) console.error('[proxy] getUser failed:', err)
+  }
 
   const { pathname } = request.nextUrl
+  const isApiRoute = pathname.startsWith('/api')
 
   if (isPublicRoute(pathname)) return response
 
   if (!user) {
+    // For API/fetch calls, answer with a clean JSON 401 instead of a 307 to an
+    // HTML login page — otherwise the client's fetch silently follows the
+    // redirect and chokes trying to JSON-parse an HTML document.
+    if (isApiRoute) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (isAdminRoute(pathname)) return NextResponse.redirect(new URL('/admin/login', request.url))
     if (isDeliveryRoute(pathname)) return NextResponse.redirect(new URL('/delivery/login', request.url))
     return NextResponse.redirect(new URL('/login', request.url))

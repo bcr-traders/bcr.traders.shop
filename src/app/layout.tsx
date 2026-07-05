@@ -3,6 +3,7 @@ import { Poppins, Playfair_Display } from 'next/font/google'
 import { MASTER_KEYWORDS } from '@/lib/seo/keywords'
 import AuthTokenCatcher from '@/components/auth/AuthTokenCatcher'
 import AdminShortcut from '@/components/auth/AdminShortcut'
+import SessionKeepAlive from '@/components/auth/SessionKeepAlive'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthTokenCatcher />
         <AdminShortcut />
+        <SessionKeepAlive />
         {children}
       </body>
     </html>

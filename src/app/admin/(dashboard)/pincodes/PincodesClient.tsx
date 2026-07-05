@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Loader2, Search, Download, Plus, Trash2, List, Map, Upload, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { PincodeRow } from './page'
 
 const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
@@ -19,6 +20,7 @@ export default function PincodesClient({ initialRows }: Props) {
   const [view, setView] = useState<'list' | 'map'>('list')
   const [openCities, setOpenCities] = useState<Set<string>>(new Set())
   const csvRef = useRef<HTMLInputElement>(null)
+  const showToast = useToastStore((s) => s.show)
 
   const filtered = rows.filter((r) =>
     r.pincode.includes(search) ||
@@ -61,8 +63,11 @@ export default function PincodesClient({ initialRows }: Props) {
       setRows((prev) => [data, ...prev])
       setForm({ pincode: '', area_name: '', city: '', state: '', delivery_days: '2' })
       setIsAdding(false)
+      showToast('Pincode added successfully', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add pincode')
+      const msg = err instanceof Error ? err.message : 'Failed to add pincode'
+      setError(msg)
+      showToast(msg, 'error')
     } finally { setIsSaving(false) }
   }
 
@@ -72,13 +77,23 @@ export default function PincodesClient({ initialRows }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_active: !row.is_active }),
     })
-    if (res.ok) setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, is_active: !r.is_active } : r))
+    if (res.ok) {
+      setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, is_active: !r.is_active } : r))
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save changes', 'error')
+    }
   }
 
   const handleDelete = async (row: PincodeRow) => {
     if (!confirm(`Delete pincode ${row.pincode}?`)) return
     const res = await fetch(`/api/pincodes/${row.id}`, { method: 'DELETE' })
-    if (res.ok) setRows((prev) => prev.filter((r) => r.id !== row.id))
+    if (res.ok) {
+      setRows((prev) => prev.filter((r) => r.id !== row.id))
+      showToast('Pincode deleted', 'success')
+    } else {
+      showToast('Failed to delete pincode', 'error')
+    }
   }
 
   const handleBulkCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +113,13 @@ export default function PincodesClient({ initialRows }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rows: toInsert }),
     })
-    if (res.ok) { const data = await res.json(); setRows((prev) => [...data.inserted, ...prev]) }
+    if (res.ok) {
+      const data = await res.json()
+      setRows((prev) => [...data.inserted, ...prev])
+      showToast(`${data.inserted?.length ?? 0} pincode(s) imported`, 'success')
+    } else {
+      showToast('Failed to import pincodes', 'error')
+    }
     e.target.value = ''
   }
 

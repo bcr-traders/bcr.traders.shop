@@ -1,7 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { auth } from '@/lib/auth/server'
+import { requireAdmin } from '@/lib/auth/guard'
 
 export async function GET() {
+  const denied = await requireAdmin(); if (denied) return denied
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).from('pincodes').select('*').order('created_at', { ascending: false })
@@ -10,8 +11,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId } = await auth()
-  if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const denied = await requireAdmin(); if (denied) return denied
 
   const body = await request.json()
   const { pincode, area_name, city, state, delivery_days } = body

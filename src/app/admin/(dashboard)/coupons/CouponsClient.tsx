@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Coupon } from '@/types/database.types'
 import { Plus, Tag, Edit3, Trash2, Loader2 } from 'lucide-react'
 
@@ -25,6 +26,7 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
   const [coupons, setCoupons] = useState(initialCoupons)
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   async function toggleActive(id: string, current: boolean) {
     setSaving(prev => ({ ...prev, [id]: true }))
@@ -35,6 +37,9 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
     })
     if (res.ok) {
       setCoupons(prev => prev.map(c => c.id === id ? { ...c, is_active: !current } : c))
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save changes', 'error')
     }
     setSaving(prev => ({ ...prev, [id]: false }))
   }
@@ -43,7 +48,12 @@ export default function CouponsClient({ initialCoupons }: { initialCoupons: Coup
     if (!confirm(`Delete coupon "${code}"?`)) return
     setDeleting(id)
     const res = await fetch(`/api/coupons/${id}`, { method: 'DELETE' })
-    if (res.ok) setCoupons(prev => prev.filter(c => c.id !== id))
+    if (res.ok) {
+      setCoupons(prev => prev.filter(c => c.id !== id))
+      showToast('Coupon deleted', 'success')
+    } else {
+      showToast('Failed to delete coupon', 'error')
+    }
     setDeleting(null)
   }
 

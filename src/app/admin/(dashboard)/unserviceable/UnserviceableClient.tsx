@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Download, Check, MessageSquare, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { UnserviceableAttempt } from './page'
 
 interface Props { initialRows: UnserviceableAttempt[] }
@@ -16,6 +17,7 @@ export default function UnserviceableClient({ initialRows }: Props) {
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [noteText, setNoteText] = useState('')
   const [filterContacted, setFilterContacted] = useState<'all' | 'yes' | 'no'>('all')
+  const showToast = useToastStore((s) => s.show)
 
   const filtered = rows.filter((r) => {
     if (filterContacted === 'yes' && !r.is_contacted) return false
@@ -29,7 +31,12 @@ export default function UnserviceableClient({ initialRows }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_contacted: true }),
     })
-    if (res.ok) setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, is_contacted: true } : r))
+    if (res.ok) {
+      setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, is_contacted: true } : r))
+      showToast('Marked as contacted', 'success')
+    } else {
+      showToast('Failed to update', 'error')
+    }
   }
 
   const saveNote = async (id: string) => {
@@ -41,6 +48,9 @@ export default function UnserviceableClient({ initialRows }: Props) {
     if (res.ok) {
       setRows((prev) => prev.map((r) => r.id === id ? { ...r, notes: noteText } : r))
       setEditingNote(null)
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save note', 'error')
     }
   }
 

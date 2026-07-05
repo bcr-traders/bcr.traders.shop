@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { OrderStatus } from '@/types/database.types'
 
 const ALL_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled', 'returned']
@@ -29,6 +30,7 @@ export type RecentOrderRow = {
 export default function RecentOrdersTable({ initialOrders }: { initialOrders: RecentOrderRow[] }) {
   const [orders, setOrders] = useState(initialOrders)
   const [updating, setUpdating] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   async function changeStatus(orderId: string, status: OrderStatus) {
     setUpdating(orderId)
@@ -39,6 +41,9 @@ export default function RecentOrdersTable({ initialOrders }: { initialOrders: Re
     })
     if (res.ok) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
+      showToast(`Order marked ${status}`, 'success')
+    } else {
+      showToast('Failed to update order', 'error')
     }
     setUpdating(null)
   }

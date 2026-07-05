@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import type { Category } from '@/types/database.types'
 import { Plus, Edit3, Trash2, Folder, Image as ImageIcon, Loader2 } from 'lucide-react'
 
@@ -18,6 +19,7 @@ export default function CategoriesClient({
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editOrderId, setEditOrderId] = useState<string | null>(null)
   const [orderDraft, setOrderDraft] = useState('')
+  const showToast = useToastStore((s) => s.show)
 
   async function patchCategory(id: string, data: Partial<Category>) {
     setSaving(prev => ({ ...prev, [id]: true }))
@@ -28,6 +30,9 @@ export default function CategoriesClient({
     })
     if (res.ok) {
       setCategories(prev => prev.map(c => c.id === id ? { ...c, ...data } : c))
+      showToast('Changes saved successfully', 'success')
+    } else {
+      showToast('Failed to save changes', 'error')
     }
     setSaving(prev => ({ ...prev, [id]: false }))
   }
@@ -43,6 +48,9 @@ export default function CategoriesClient({
     const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setCategories(prev => prev.filter(c => c.id !== id))
+      showToast('Category deleted', 'success')
+    } else {
+      showToast('Failed to delete category', 'error')
     }
     setDeleting(null)
   }

@@ -8,6 +8,12 @@ import type {
   OfferBannerConfig,
 } from '@/types/database.types'
 
+export interface TrustBadgeItem {
+  icon: string
+  text: string
+  text_or: string
+}
+
 export interface HomepageData {
   banners: Banner[]
   promoCards: Banner[]
@@ -17,6 +23,7 @@ export interface HomepageData {
   categoryProducts: Record<string, Product[]>
   announcement: SiteAnnouncement | null
   offerBanner: OfferBannerConfig | null
+  trustBadges: TrustBadgeItem[]
 }
 
 function parseCmsValue<T>(
@@ -95,6 +102,22 @@ export async function getHomepageData(): Promise<HomepageData> {
     (v) => typeof v['image_url'] === 'string'
   )
 
+  // Trust badges are authored in Banners & CMS → Homepage as an array of
+  // { icon, text, text_or }. Keep only entries that actually have label text.
+  const trustBadges: TrustBadgeItem[] = Array.isArray(cmsMap['trust_badges'])
+    ? (cmsMap['trust_badges'] as unknown[])
+        .filter(
+          (b): b is TrustBadgeItem =>
+            !!b && typeof b === 'object' && typeof (b as TrustBadgeItem).text === 'string'
+        )
+        .map((b) => ({
+          icon: typeof b.icon === 'string' ? b.icon : 'star',
+          text: b.text,
+          text_or: typeof b.text_or === 'string' ? b.text_or : '',
+        }))
+        .filter((b) => b.text.trim().length > 0)
+    : []
+
   return {
     banners,
     promoCards,
@@ -104,5 +127,6 @@ export async function getHomepageData(): Promise<HomepageData> {
     categoryProducts,
     announcement,
     offerBanner,
+    trustBadges,
   }
 }

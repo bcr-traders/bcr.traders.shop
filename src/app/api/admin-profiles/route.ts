@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { normalizeIndianPhone } from '@/lib/validators'
 import { DEFAULT_PERMISSIONS } from '@/types/admin.types'
 import type { AuthMetadata } from '@/types'
 import type { AdminPermissions } from '@/types/admin.types'
@@ -59,13 +60,33 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Role must be admin or delivery' }, { status: 400 })
   }
 
+  // Store the phone in the SAME canonical shape login looks it up by (+91XXXXXXXXXX).
+  // Previously the raw typed value ("+91 90400 11053", "9040011053", …) was saved,
+  // so the OTP login lookup never matched — staff were stuck "Pending" and got
+  // "no staff account found" when trying to log in.
+  const digits = normalizeIndianPhone(phone)
+  if (!digits) {
+    return Response.json({ error: 'Enter a valid 10-digit mobile number.' }, { status: 400 })
+  }
+  const cleanPhone = `+91${digits}`
+
   const supabase = createAdminClient()
+
+  // Block duplicates (same number in either legacy or canonical shape).
+  const { data: dupe } = await supabase
+    .from('admin_profiles')
+    .select('id')
+    .or(`phone.eq.${cleanPhone},phone.eq.${digits}`)
+    .maybeSingle()
+  if (dupe) {
+    return Response.json({ error: 'A staff profile with this phone number already exists.' }, { status: 409 })
+  }
 
   const { data, error } = await supabase
     .from('admin_profiles')
     .insert({
-      name,
-      phone,
+      name: String(name).trim(),
+      phone: cleanPhone,
       email: email || null,
       role,
       permissions: role === 'delivery' ? {} : (permissions ?? DEFAULT_PERMISSIONS),

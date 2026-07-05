@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 import PermissionsMatrix from './PermissionsMatrix'
 import type { AdminPermissions, AdminProfile } from '@/types/admin.types'
 import { DEFAULT_PERMISSIONS } from '@/types/admin.types'
@@ -31,6 +32,7 @@ export default function AdminProfileForm({ profile }: Props) {
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -50,7 +52,14 @@ export default function AdminProfileForm({ profile }: Props) {
     })
 
     setSubmitting(false)
-    if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Something went wrong'); return }
+    if (!res.ok) {
+      const d = await res.json()
+      const msg = d.error ?? 'Something went wrong'
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
+    showToast(isEdit ? 'Changes saved successfully' : 'Profile created successfully')
     router.push('/admin/profiles')
     router.refresh()
   }
@@ -61,8 +70,12 @@ export default function AdminProfileForm({ profile }: Props) {
     setSubmitting(true)
     const res = await fetch(`/api/admin-profiles/${profile.id}`, { method: 'DELETE' })
     setSubmitting(false)
-    if (res.ok) { router.push('/admin/profiles'); router.refresh() }
-    else { const d = await res.json(); setError(d.error ?? 'Failed to deactivate') }
+    if (res.ok) {
+      showToast(`${profile.name} deactivated`)
+      router.push('/admin/profiles')
+      router.refresh()
+    }
+    else { const d = await res.json(); const msg = d.error ?? 'Failed to deactivate'; setError(msg); showToast(msg, 'error') }
   }
 
   return (

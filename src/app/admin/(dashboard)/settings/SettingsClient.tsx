@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Loader2, AlertTriangle, Check, AlertCircle, Info, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToastStore } from '@/store/toastStore'
 
 const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
 
@@ -78,6 +79,7 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const showToast = useToastStore((s) => s.show)
 
   const set = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -118,10 +120,13 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
 
     if (res.ok) {
       setSaved(true)
+      showToast('Changes saved successfully', 'success')
       setTimeout(() => setSaved(false), 3000)
     } else {
       const d = await res.json() as { error?: string }
-      setError(d.error ?? 'Failed to save settings')
+      const msg = d.error ?? 'Failed to save settings'
+      setError(msg)
+      showToast(msg, 'error')
     }
 
     setSaving(false)

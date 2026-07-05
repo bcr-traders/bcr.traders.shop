@@ -17,6 +17,7 @@ interface Props {
   role: 'super_admin' | 'admin'
   children: React.ReactNode
   badges?: AdminBadges
+  name?: string | null
 }
 
 const BOTTOM_NAV = [
@@ -27,7 +28,7 @@ const BOTTOM_NAV = [
   { href: '/admin/profiles',   label: 'Team',    icon: 'group' },
 ]
 
-export default function AdminShell({ role, children, badges }: Props) {
+export default function AdminShell({ role, children, badges, name }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
@@ -40,6 +41,7 @@ export default function AdminShell({ role, children, badges }: Props) {
       <AdminSidebar
         role={role}
         badges={badges}
+        name={name}
         className="hidden lg:flex sticky top-0 self-start flex-shrink-0"
       />
 
@@ -48,7 +50,7 @@ export default function AdminShell({ role, children, badges }: Props) {
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="relative z-10 w-72 max-w-[80vw]">
-            <AdminSidebar role={role} badges={badges} onClose={() => setMobileOpen(false)} className="w-full h-full" />
+            <AdminSidebar role={role} badges={badges} name={name} onClose={() => setMobileOpen(false)} className="w-full h-full" />
           </div>
         </div>
       )}

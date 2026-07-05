@@ -103,9 +103,11 @@ export default function BannersClient({
 
 // ── Tab 1: Banners ─────────────────────────────────────────────────────────────
 
+type Toast = (msg: string, type?: 'success' | 'error' | 'info') => void
+
 function BannersTab({
   initialBanners, onToast,
-}: { initialBanners: Banner[]; onToast: (msg: string) => void }) {
+}: { initialBanners: Banner[]; onToast: Toast }) {
   const [banners, setBanners] = useState(initialBanners)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Banner | null>(null)
@@ -136,7 +138,12 @@ function BannersTab({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_active: !current }),
     })
-    if (res.ok) setBanners(prev => prev.map(b => b.id === id ? { ...b, is_active: !current } : b))
+    if (res.ok) {
+      setBanners(prev => prev.map(b => b.id === id ? { ...b, is_active: !current } : b))
+      onToast('Changes saved successfully')
+    } else {
+      onToast('Failed to update banner', 'error')
+    }
     setSaving(prev => ({ ...prev, [id]: false }))
   }
 
@@ -146,6 +153,8 @@ function BannersTab({
     if (res.ok) {
       setBanners(prev => prev.filter(b => b.id !== id))
       onToast('Banner deleted')
+    } else {
+      onToast('Failed to delete banner', 'error')
     }
   }
 
@@ -155,6 +164,8 @@ function BannersTab({
     const res = await fetch('/api/upload', { method: 'POST', body: fd })
     setUploading(false)
     if (res.ok) { const d = await res.json() as { url: string }; return d.url }
+    const d = await res.json().catch(() => ({})) as { error?: string }
+    onToast(d.error ?? 'Image upload failed', 'error')
     return ''
   }
 
@@ -168,6 +179,10 @@ function BannersTab({
       if (res.ok) {
         setBanners(prev => prev.map(b => b.id === editing.id ? { ...b, ...data } as Banner : b))
         onToast('Banner updated')
+      } else {
+        const d = await res.json().catch(() => ({})) as { error?: string }
+        onToast(d.error ?? 'Failed to save banner', 'error')
+        return
       }
     } else {
       const samePlacementCount = banners.filter(b => b.placement === data.placement).length
@@ -180,6 +195,10 @@ function BannersTab({
         const newBanner = await res.json() as { id: string }
         setBanners(prev => [...prev, { ...data, id: newBanner.id, display_order: samePlacementCount, created_at: new Date().toISOString() } as Banner])
         onToast('Banner created')
+      } else {
+        const d = await res.json().catch(() => ({})) as { error?: string }
+        onToast(d.error ?? 'Failed to create banner', 'error')
+        return
       }
     }
     setShowForm(false); setEditing(null)
@@ -577,7 +596,7 @@ function BannerFormModal({
 
 // ── Tab 2: Homepage ────────────────────────────────────────────────────────────
 
-function HomepageTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: (m: string) => void }) {
+function HomepageTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: Toast }) {
   const heroRaw = asObj(getCms(cmsContent, 'hero'))
   const trustRaw = asArr<TrustBadge>(getCms(cmsContent, 'trust_badges'))
 
@@ -598,12 +617,13 @@ function HomepageTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToas
 
   async function save() {
     setSaving(true)
-    await Promise.all([
+    const results = await Promise.all([
       fetch('/api/cms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'hero', value: hero }) }),
       fetch('/api/cms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trust_badges', value: badges }) }),
     ])
-    onToast('Homepage content saved!')
     setSaving(false)
+    const ok = results.every(r => r.ok)
+    onToast(ok ? 'Changes saved successfully' : 'Failed to save — please try again', ok ? 'success' : 'error')
   }
 
   return (
@@ -679,7 +699,7 @@ function HomepageTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToas
 
 // ── Tab 3: Footer ──────────────────────────────────────────────────────────────
 
-function FooterTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: (m: string) => void }) {
+function FooterTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: Toast }) {
   const footerRaw = asObj(getCms(cmsContent, 'footer'))
   const linksRaw = asArr<FooterLink>(getCms(cmsContent, 'footer_links'))
   const socialRaw = asObj(getCms(cmsContent, 'social_links'))
@@ -706,13 +726,14 @@ function FooterTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast:
 
   async function save() {
     setSaving(true)
-    await Promise.all([
+    const results = await Promise.all([
       fetch('/api/cms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'footer', value: footer }) }),
       fetch('/api/cms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'footer_links', value: links }) }),
       fetch('/api/cms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'social_links', value: social }) }),
     ])
-    onToast('Footer content saved!')
     setSaving(false)
+    const ok = results.every(r => r.ok)
+    onToast(ok ? 'Changes saved successfully' : 'Failed to save — please try again', ok ? 'success' : 'error')
   }
 
   return (
@@ -772,8 +793,11 @@ function FooterTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast:
 
 // ── Tab 4: Announcements ───────────────────────────────────────────────────────
 
-function AnnouncementsTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: (m: string) => void }) {
-  const raw = asObj(getCms(cmsContent, 'announcement'))
+function AnnouncementsTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast: Toast }) {
+  // The public site reads the `site_announcement` key (see homepage.ts and the
+  // shop layout), so the admin must read AND write that same key — writing to a
+  // plain `announcement` key saved fine but never showed up on the site.
+  const raw = asObj(getCms(cmsContent, 'site_announcement'))
   const [form, setForm] = useState({
     text: str(raw.text),
     background_color: str(raw.background_color) || '#000000',
@@ -785,13 +809,13 @@ function AnnouncementsTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; o
 
   async function save() {
     setSaving(true)
-    await fetch('/api/cms', {
+    const res = await fetch('/api/cms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'announcement', value: form }),
+      body: JSON.stringify({ key: 'site_announcement', value: form }),
     })
-    onToast('Announcement saved!')
     setSaving(false)
+    onToast(res.ok ? 'Changes saved successfully' : 'Failed to save — please try again', res.ok ? 'success' : 'error')
   }
 
   return (

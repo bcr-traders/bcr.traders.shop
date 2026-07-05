@@ -125,7 +125,7 @@ const websiteJsonLd = {
 }
 
 export default async function HomePage() {
-  const { banners, promoCards, categories, featuredProducts, categoryProducts, coupons, offerBanner } =
+  const { banners, promoCards, categories, featuredProducts, categoryProducts, coupons, offerBanner, trustBadges } =
     await getHomepageData()
 
   return (
@@ -188,8 +188,8 @@ export default async function HomePage() {
         {/* 8. Mid-page offer banner */}
         {offerBanner && <OfferBanner data={offerBanner} />}
 
-        {/* 9. Trust badges (animated, scrollable) */}
-        <TrustBadges />
+        {/* 9. Trust badges (animated, scrollable) — CMS-driven */}
+        <TrustBadges badges={trustBadges} />
 
         {/* 10. Business stats with counting animation */}
         <AnimatedStats />

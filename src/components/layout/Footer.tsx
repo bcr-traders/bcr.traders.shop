@@ -26,7 +26,7 @@ export default async function Footer() {
   const categories = await getFooterCategories()
 
   return (
-    <footer className="mt-24 relative overflow-hidden bg-primary text-white border-t-2 border-primary">
+    <footer className="mt-8 md:mt-24 relative overflow-hidden bg-primary text-white border-t-2 border-primary">
       <div className="relative z-10 px-6 md:px-12 py-16 md:py-20 max-w-[1400px] mx-auto flex flex-col gap-14">
         <div className="flex flex-col lg:flex-row gap-14 lg:gap-20">
           {/* Brand & Info */}

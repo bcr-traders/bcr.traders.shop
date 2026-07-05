@@ -43,7 +43,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   return (
     <SmoothScroll>
       <Header searchTerms={searchTerms} />
-      <main className="min-h-screen pb-20 md:pb-0 selection:bg-black selection:text-white">
+      <main className="min-h-screen selection:bg-black selection:text-white">
         {announcement && <AnnouncementBar data={announcement} />}
         {children}
       </main>

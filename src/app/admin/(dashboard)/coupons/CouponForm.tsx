@@ -108,6 +108,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
 
     if (res.ok) {
       if (!isEdit) {
+        showToast('Coupon created successfully')
         router.push('/admin/coupons')
       } else {
         showToast('Changes saved successfully')

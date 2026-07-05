@@ -28,13 +28,18 @@ interface Props {
   onClose?: () => void
   className?: string
   badges?: AdminBadges
+  /** Authoritative display name from admin_profiles (see admin layout). */
+  name?: string | null
 }
 
-export default function AdminSidebar({ role, onClose, className, badges }: Props) {
+export default function AdminSidebar({ role, onClose, className, badges, name }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const { user } = useSupabaseUser()
   const { can, isSuperAdmin } = useAdminPermissions()
+
+  // Prefer the live admin_profiles name; fall back to the Auth metadata copy.
+  const displayName = name || (user?.user_metadata as { name?: string })?.name || 'Admin'
 
   const signOut = async () => {
     await createClient().auth.signOut()
@@ -166,12 +171,12 @@ export default function AdminSidebar({ role, onClose, className, badges }: Props
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-10 h-10 rounded-xl bg-white/10 border-2 border-white/20 flex items-center justify-center flex-shrink-0">
             <span className="font-black text-lg text-white">
-              {(user?.user_metadata as { name?: string })?.name?.[0]?.toUpperCase() ?? 'A'}
+              {displayName[0]?.toUpperCase() ?? 'A'}
             </span>
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm text-white font-black truncate leading-tight mb-0.5">
-              {(user?.user_metadata as { name?: string })?.name ?? 'Admin'}
+              {displayName}
             </p>
             <p className="text-[10px] font-black text-white/50 uppercase tracking-widest flex items-center gap-1">
               <ShieldAlert size={10} />

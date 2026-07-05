@@ -224,7 +224,7 @@ export default function ProductForm({
       description_or: form.description_or || null,
       meta_title: form.meta_title.trim() || null,
       meta_description: form.meta_description.trim() || null,
-      tags: form.tags.length > 0 ? form.tags : null,
+      tags: form.tags,
     }
 
     const url = isEdit ? `/api/products/${product.id}` : '/api/products'
@@ -239,6 +239,7 @@ export default function ProductForm({
     if (res.ok) {
       if (!isEdit) {
         const data = await res.json() as { id: string }
+        showToast('Product created successfully')
         router.push(`/admin/products/${data.id}`)
       } else {
         showToast('Changes saved successfully')
