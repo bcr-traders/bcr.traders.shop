@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -41,8 +41,11 @@ export default async function OrdersPage() {
   const profileId = meta?.supabase_profile_id
   if (!profileId) redirect('/')
 
-  const supabase = await createClient()
-  const { data } = await supabase
+  // `orders` is a service-role-only table (no anon/authenticated grant), so read
+  // it via the admin client — scoped to the session's profileId for safety.
+  const supabase = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
     .from('orders')
     .select('*')
     .eq('user_id', profileId)

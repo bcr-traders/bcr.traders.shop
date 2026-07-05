@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
@@ -29,8 +29,11 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const { id } = await params
   const { new: isNew } = await searchParams
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  // `orders` is service-role-only — read via the admin client, scoped to the
+  // signed-in user's profileId so it can only ever return their own order.
+  const supabase = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('orders')
     .select('*')
     .eq('id', id)
