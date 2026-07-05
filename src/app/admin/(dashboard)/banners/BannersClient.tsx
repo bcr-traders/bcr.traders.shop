@@ -753,7 +753,7 @@ function FooterTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; onToast:
             <input type="email" value={footer.email} onChange={e => setFooter(p => ({ ...p, email: e.target.value }))} className={inputCls} placeholder="support@bcrtraders.com" />
           </CmsField>
           <CmsField label="Address" extraClass="md:col-span-2">
-            <input type="text" value={footer.address} onChange={e => setFooter(p => ({ ...p, address: e.target.value }))} className={inputCls} placeholder="Cuttack, Odisha" />
+            <input type="text" value={footer.address} onChange={e => setFooter(p => ({ ...p, address: e.target.value }))} className={inputCls} placeholder="Brahmapur, Odisha" />
           </CmsField>
         </div>
       </CmsSection>

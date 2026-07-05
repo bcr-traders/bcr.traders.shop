@@ -144,7 +144,7 @@ export default function OrderStatusUpdate({
           <Section style={footer}>
             <Link href={`${siteUrl}/orders/${orderId}`} style={trackLink}>View Order Details →</Link>
             <Text style={footerText}>
-              BCR Traders · Cuttack, Odisha · bcr.traders19@gmail.com · +91 90400 11053
+              BCR Traders · Brahmapur, Odisha · bcr.traders19@gmail.com · +91 90400 11053
             </Text>
           </Section>
         </Container>

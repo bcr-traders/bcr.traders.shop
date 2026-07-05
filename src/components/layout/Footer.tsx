@@ -35,7 +35,7 @@ export default async function Footer() {
               <li className="flex items-center gap-4 group cursor-pointer hover:text-white transition-colors">
                 <MapPin size={24} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform duration-300" />
                 <span className="max-w-[200px] leading-relaxed">
-                  Malgodown, Cuttack<br />Odisha 753003
+                  Brahmapur, Ganjam<br />Odisha 760001
                 </span>
               </li>
               <li className="flex items-center gap-4 group/item hover:text-white transition-colors">

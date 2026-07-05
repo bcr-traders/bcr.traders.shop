@@ -81,7 +81,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 px-10 py-6">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">
-            © 2025 BCR Traders · Malgodown, Cuttack, Odisha
+            © 2025 BCR Traders · Brahmapur, Ganjam, Odisha
           </p>
         </div>
       </div>

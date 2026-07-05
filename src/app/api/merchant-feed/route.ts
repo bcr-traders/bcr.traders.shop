@@ -110,7 +110,7 @@ export async function GET() {
   <channel>
     <title>BCR Traders</title>
     <link>${SITE_URL}</link>
-    <description>BCR Traders — Wholesale Grocery Products, Cuttack, Odisha</description>
+    <description>BCR Traders — Wholesale Grocery Products, Brahmapur, Odisha</description>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}
   </channel>

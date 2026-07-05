@@ -143,7 +143,7 @@ export default function OrderPlacedCustomer({
             </Text>
             <Link href={`${siteUrl}/orders`} style={footerLink}>View Your Orders</Link>
             <Text style={footerCopy}>
-              © {new Date().getFullYear()} BCR Traders · Cuttack, Odisha
+              © {new Date().getFullYear()} BCR Traders · Brahmapur, Odisha
             </Text>
           </Section>
         </Container>

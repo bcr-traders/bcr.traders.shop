@@ -81,16 +81,16 @@ const localBizJsonLd = {
   slogan: "Odisha's Trusted Wholesale Partner",
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Malgodown',
-    addressLocality: 'Cuttack',
+    streetAddress: 'Brahmapur, Ganjam',
+    addressLocality: 'Brahmapur',
     addressRegion: 'Odisha',
-    postalCode: '753003',
+    postalCode: '760001',
     addressCountry: 'IN',
   },
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: 20.4625,
-    longitude: 85.8828,
+    latitude: 19.3150,
+    longitude: 84.7941,
   },
   areaServed: [
     { '@type': 'State', name: 'Odisha' },

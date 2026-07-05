@@ -98,7 +98,7 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
         <View style={styles.header}>
           <View>
             <Text style={styles.brandName}>BCR TRADERS</Text>
-            <Text style={styles.brandSub}>Wholesale · Cuttack, Odisha</Text>
+            <Text style={styles.brandSub}>Wholesale · Brahmapur, Odisha</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.invoiceLabel}>Tax Invoice</Text>
@@ -178,7 +178,7 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Thank you for your business! · BCR Traders · Cuttack, Odisha · bcr.traders19@gmail.com · +91 90400 11053
+          Thank you for your business! · BCR Traders · Brahmapur, Odisha · bcr.traders19@gmail.com · +91 90400 11053
         </Text>
       </Page>
     </Document>

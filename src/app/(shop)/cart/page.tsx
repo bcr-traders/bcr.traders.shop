@@ -415,7 +415,7 @@ export default function CartPage() {
               <div>
                 <h2 className="font-black text-primary text-sm uppercase tracking-wide">Main Warehouse</h2>
                 <p className="text-xs text-on-surface-variant/60 font-medium mt-0.5 leading-snug">
-                  Malgodown, Cuttack, Odisha 753003
+                  Brahmapur, Ganjam, Odisha 760001
                 </p>
               </div>
             </div>

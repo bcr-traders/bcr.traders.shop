@@ -136,7 +136,7 @@ export default function OrderConfirmedCustomer({
           <Section style={footer}>
             <Link href={`${siteUrl}/orders`} style={trackLink}>Track Your Order →</Link>
             <Text style={footerText}>
-              Questions? Reply to this email · BCR Traders, Cuttack, Odisha
+              Questions? Reply to this email · BCR Traders, Brahmapur, Odisha
             </Text>
           </Section>
         </Container>
