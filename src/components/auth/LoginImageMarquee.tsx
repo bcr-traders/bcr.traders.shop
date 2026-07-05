@@ -25,7 +25,7 @@ const ROWS: { imgs: string[]; reverse: boolean; duration: number }[] = [
 
 function Tile({ src }: { src: string }) {
   return (
-    <div className="flex-shrink-0 w-[76px] h-[76px] rounded-2xl bg-[#eef7f2] flex items-center justify-center p-2.5">
+    <div className="flex-shrink-0 w-[60px] h-[60px] rounded-2xl bg-[#eef7f2] flex items-center justify-center p-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" aria-hidden="true" loading="eager" className="max-w-full max-h-full object-contain" />
     </div>
@@ -54,8 +54,8 @@ function Row({ imgs, reverse, duration }: { imgs: string[]; reverse: boolean; du
 
 export default function LoginImageMarquee() {
   return (
-    <div className="relative w-full overflow-hidden py-4">
-      <div className="flex flex-col gap-3">
+    <div className="relative w-full overflow-hidden py-2.5">
+      <div className="flex flex-col gap-2.5">
         {ROWS.map((row, i) => (
           <Row key={i} {...row} />
         ))}

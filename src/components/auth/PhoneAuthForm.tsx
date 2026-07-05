@@ -201,13 +201,13 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-8">
+      <div className="mb-5 lg:mb-8">
         <h1 className="text-2xl font-black tracking-tight text-primary">{heading}</h1>
         <p className="text-sm text-on-surface-variant font-medium mt-1.5">{subheading}</p>
       </div>
 
       {step === 'phone' && (
-        <form onSubmit={sendOtp} className="flex flex-col gap-4">
+        <form onSubmit={sendOtp} className="flex flex-col gap-3.5 lg:gap-4">
           {allowSignup && (
             <div className="relative flex items-center p-1.5 rounded-2xl bg-surface-container-low border border-table-border/60 mb-1">
               {(['login', 'signup'] as const).map((m) => (
@@ -299,7 +299,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
       )}
 
       {step === 'otp' && (
-        <form onSubmit={verifyOtp} className="flex flex-col gap-4">
+        <form onSubmit={verifyOtp} className="flex flex-col gap-3.5 lg:gap-4">
           <button
             type="button"
             onClick={() => { setStep('phone'); setOtp(''); setError(null) }}
@@ -357,7 +357,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
       )}
 
       {step === 'name' && (
-        <form onSubmit={handleSaveName} className="flex flex-col gap-4">
+        <form onSubmit={handleSaveName} className="flex flex-col gap-3.5 lg:gap-4">
           <p className="text-sm font-medium text-on-surface-variant">One last thing — what should we call you?</p>
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Name</label>

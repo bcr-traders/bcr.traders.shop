@@ -30,7 +30,7 @@ const PERKS = [
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex bg-background overflow-x-hidden selection:bg-primary selection:text-white">
+    <main className="h-[100dvh] lg:h-auto lg:min-h-screen flex bg-background overflow-hidden lg:overflow-x-hidden selection:bg-primary selection:text-white">
 
       {/* ── LEFT — Branded panel (hidden on mobile) ── */}
       <div className="hidden lg:flex lg:w-[48%] xl:w-[52%] flex-col relative overflow-hidden bg-primary">
@@ -87,16 +87,16 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT — Phone OTP sign-in ── */}
-      <div className="flex-1 min-w-0 flex flex-col items-center justify-start lg:justify-center relative lg:px-5 lg:py-12">
+      <div className="flex-1 min-w-0 flex flex-col items-center justify-start lg:justify-center relative h-full lg:h-auto lg:px-5 lg:py-12">
         {/* Mobile — Blinkit-style animated product wall at the top */}
-        <div className="lg:hidden w-full max-w-full overflow-hidden pt-3">
+        <div className="lg:hidden w-full max-w-full overflow-hidden shrink-0">
           <LoginImageMarquee />
         </div>
 
-        <div className="w-full max-w-full flex flex-col items-center px-5 pb-10 lg:px-0 lg:pb-0">
-          <div className="lg:hidden mt-2 mb-8 text-center">
+        <div className="w-full max-w-full flex-1 min-h-0 flex flex-col items-center justify-center px-5 pb-4 lg:flex-none lg:justify-start lg:px-0 lg:pb-0">
+          <div className="lg:hidden mb-5 text-center">
             <Link href="/" className="inline-flex">
-              <Logo className="h-14 w-auto" />
+              <Logo className="h-12 w-auto" />
             </Link>
             <p className="text-xs text-on-surface-variant font-medium mt-1 tracking-wide">
               Wholesale · Odisha
@@ -112,7 +112,7 @@ export default function LoginPage() {
             />
           </Suspense>
 
-          <div className="mt-6">
+          <div className="mt-4 lg:mt-6">
             <Link
               href="/"
               className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/50 hover:text-primary transition-colors duration-200"

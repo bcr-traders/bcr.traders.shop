@@ -108,7 +108,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
                 disabled
                   ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-50'
                   : flash
-                  ? 'bg-success text-white'
+                  ? 'bg-primary-fixed text-on-primary'
                   : 'bg-primary text-white hover:bg-primary-container shadow-sm hover:shadow-md',
               )}
               aria-label={t('product.addToCart')}
