@@ -20,7 +20,7 @@ export default async function ReviewsPage({
     (supabase as any).from('products').select('id, name').eq('id', id).maybeSingle(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase as any)
-      .from('product_reviews')
+      .from('reviews')
       .select('*')
       .eq('product_id', id)
       .order('created_at', { ascending: false }),

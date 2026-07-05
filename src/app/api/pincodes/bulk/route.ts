@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   // Upsert on the unique pincode so re-importing updates instead of erroring.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
-    .from('pincodes')
+    .from('serviceable_pincodes')
     .upsert(clean, { onConflict: 'pincode' })
     .select()
 

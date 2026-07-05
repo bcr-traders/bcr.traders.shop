@@ -20,7 +20,7 @@ export default async function PincodesPage() {
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
-    .from('pincodes')
+    .from('serviceable_pincodes')
     .select('*')
     .order('created_at', { ascending: false })
 

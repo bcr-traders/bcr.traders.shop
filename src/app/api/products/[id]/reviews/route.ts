@@ -21,7 +21,7 @@ export async function GET(
     const supabase = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
-      .from('product_reviews')
+      .from('reviews')
       .select('*')
       .eq('product_id', id)
       .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export async function GET(
 
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('product_reviews')
+    .from('reviews')
     .select('*')
     .eq('product_id', id)
     .eq('is_approved', true)
@@ -95,7 +95,7 @@ export async function POST(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
-    .from('product_reviews')
+    .from('reviews')
     .insert({
       product_id,
       user_id: profileId,

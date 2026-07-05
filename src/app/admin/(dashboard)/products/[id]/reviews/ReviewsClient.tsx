@@ -148,7 +148,7 @@ export default function ReviewsClient({
           <div>
             <p className="font-body-md text-body-md text-amber-800 font-medium">DB Migration Required</p>
             <p className="font-body-md text-body-md text-amber-700 mt-0.5">
-              The <code className="bg-amber-100 px-1 rounded">product_reviews</code> table does not exist yet. Run the migration to enable review management.
+              The <code className="bg-amber-100 px-1 rounded">reviews</code> table does not exist yet. Run the migration to enable review management.
             </p>
           </div>
         </div>

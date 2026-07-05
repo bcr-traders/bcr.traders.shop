@@ -9,9 +9,10 @@ export async function PATCH(request: Request, { params }: Params) {
   const { id } = await params
   const body = await request.json()
 
-  const allowed = ['is_contacted', 'notes']
+  // Client speaks is_contacted/notes; the live column is admin_contacted.
   const update: Record<string, unknown> = {}
-  for (const k of allowed) if (k in body) update[k] = body[k]
+  if ('is_contacted' in body) update.admin_contacted = body.is_contacted
+  if ('notes' in body) update.notes = body.notes
   if (!Object.keys(update).length) {
     return Response.json({ error: 'No valid fields to update' }, { status: 400 })
   }

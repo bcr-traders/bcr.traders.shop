@@ -5,7 +5,7 @@ export async function GET() {
   const denied = await requireAdmin(); if (denied) return denied
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).from('pincodes').select('*').order('created_at', { ascending: false })
+  const { data, error } = await (supabase as any).from('serviceable_pincodes').select('*').order('created_at', { ascending: false })
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
 }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
-    .from('pincodes')
+    .from('serviceable_pincodes')
     .insert({ pincode, area_name: area_name || null, city, state: state || 'Odisha', delivery_days: delivery_days || 2, is_active: true })
     .select()
     .single()

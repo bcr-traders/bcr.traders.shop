@@ -18,7 +18,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any).from('pincodes').update(update).eq('id', id)
+  const { error } = await (supabase as any).from('serviceable_pincodes').update(update).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }
@@ -30,7 +30,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any).from('pincodes').delete().eq('id', id)
+  const { error } = await (supabase as any).from('serviceable_pincodes').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }

@@ -26,5 +26,13 @@ export default async function AbandonedCartsPage() {
     .select('*')
     .order('last_activity', { ascending: false })
 
-  return <AbandonedCartsClient initialCarts={(data ?? []) as AbandonedCart[]} />
+  // Live table stores cart_items (not items) and has no customer_name column.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const carts = ((data ?? []) as any[]).map((c) => ({
+    ...c,
+    items: Array.isArray(c.cart_items) ? c.cart_items : [],
+    customer_name: c.customer_name ?? null,
+  })) as AbandonedCart[]
+
+  return <AbandonedCartsClient initialCarts={carts} />
 }

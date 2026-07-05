@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
-    .from('product_reviews')
+    .from('reviews')
     .update({ is_approved })
     .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -35,7 +35,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
-    .from('product_reviews')
+    .from('reviews')
     .delete()
     .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

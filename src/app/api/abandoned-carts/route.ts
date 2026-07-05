@@ -13,18 +13,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const items = (body as { items?: unknown }).items
+  const items = (body as { items?: unknown }).items as
+    | { price?: number; quantity?: number }[]
+    | undefined
   if (!Array.isArray(items)) {
     return NextResponse.json({ error: 'items must be an array' }, { status: 400 })
   }
 
+  const totalValue = items.reduce(
+    (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
+    0,
+  )
+  const itemCount = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
+
   const supabase = await createClient()
 
+  // Live columns: cart_items / last_activity / total_value / item_count.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('abandoned_carts')
     .upsert(
-      { user_id: userId, items, updated_at: new Date().toISOString() },
+      {
+        user_id: userId,
+        cart_items: items,
+        total_value: totalValue,
+        item_count: itemCount,
+        last_activity: new Date().toISOString(),
+      },
       { onConflict: 'user_id' },
     )
 

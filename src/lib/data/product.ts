@@ -54,7 +54,7 @@ export async function getProductReviews(
 ): Promise<{ reviews: ProductReview[]; stats: RatingStats }> {
   const supabase = await createClient()
   const { data } = await supabase
-    .from('product_reviews')
+    .from('reviews')
     .select('*')
     .eq('product_id', productId)
     .eq('is_approved', true)
