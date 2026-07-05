@@ -23,6 +23,7 @@ const labelCls = 'text-[11px] font-black text-on-surface-variant/70 uppercase tr
 
 export default function AddressForm({ profileId, onSaved, onClose }: Props) {
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [pincodeValue, setPincodeValue] = useState('')
   const [pincodeOk, setPincodeOk] = useState<boolean | null>(null)
 
@@ -37,14 +38,12 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
 
   const onSubmit = async (data: AddressFormData) => {
     setIsSaving(true)
+    setSaveError(null)
     try {
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-
-      const { data: saved, error } = await supabase
-        .from('addresses')
-        .insert({
-          user_id: profileId,
+      const res = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: data.name,
           phone: data.phone,
           line1: data.line1,
@@ -54,14 +53,13 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
           pincode: data.pincode,
           label: data.label ?? null,
           is_default: data.is_default ?? false,
-        })
-        .select()
-        .single()
-
-      if (error || !saved) throw new Error(error?.message ?? 'Failed to save')
-      onSaved(saved as unknown as Address)
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? 'Failed to save address.')
+      onSaved(json as Address)
     } catch (err) {
-      console.error(err)
+      setSaveError(err instanceof Error ? err.message : 'Failed to save address. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -228,6 +226,13 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
               Set as default address
             </span>
           </label>
+
+          {/* Save error */}
+          {saveError && (
+            <p className="text-[13px] font-bold text-error bg-error/10 border-2 border-error/20 rounded-xl px-4 py-3">
+              {saveError}
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2 pb-1">
