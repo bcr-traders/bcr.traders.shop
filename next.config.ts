@@ -21,7 +21,11 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // geolocation=(self) — the "Use my current location" delivery check needs
+          // geolocation for our OWN origin. An empty allowlist "geolocation=()"
+          // disables it site-wide, so the browser blocks getCurrentPosition and
+          // never even prompts (surfaces as PERMISSION_DENIED / "Location is blocked").
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
         ],
       },
       {
