@@ -185,20 +185,20 @@ export default async function SearchPage({ searchParams }: PageProps) {
       <div className="flex-1 flex flex-col">
 
         {/* Mobile hero strip */}
-        <div className="lg:hidden relative overflow-hidden bg-primary px-4 py-7">
-          <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
+        <div className="lg:hidden relative overflow-hidden bg-surface border-b border-table-border px-4 py-7">
+          <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle,#1C130A_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1">
               {isFeatured
-                ? <TrendingUp size={12} className="text-white/50" strokeWidth={2.5} />
-                : <Sparkles size={12} className="text-white/50" strokeWidth={2.5} />
+                ? <TrendingUp size={12} className="text-primary/50" strokeWidth={2.5} />
+                : <Sparkles size={12} className="text-primary/50" strokeWidth={2.5} />
               }
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
                 {isFeatured ? 'Curated Selection' : isFiltered ? 'Filtered Results' : 'Full Catalog'}
               </span>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">{heading}</h1>
-            <p className="text-xs text-white/45 font-medium mt-0.5">
+            <h1 className="text-2xl font-black text-primary tracking-tight">{heading}</h1>
+            <p className="text-xs text-on-surface-variant font-medium mt-0.5">
               {products.length} {products.length === 1 ? 'product' : 'products'} available
             </p>
           </div>
