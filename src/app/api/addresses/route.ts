@@ -10,6 +10,26 @@ import type { AuthMetadata } from '@/types'
  * browser access token or RLS timing: the user is taken from the cookie session
  * and user_id is forced to that profile, so the write is always correct & safe.
  */
+/** GET /api/addresses — list the signed-in customer's saved addresses. */
+export async function GET() {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
+  const profileId = meta?.supabase_profile_id ?? userId
+
+  const supabase = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('addresses')
+    .select('*')
+    .eq('user_id', profileId)
+    .order('is_default', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Your session expired. Please sign in again.' }, { status: 401 })

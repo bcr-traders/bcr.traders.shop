@@ -8,7 +8,6 @@ import {
   ArrowLeft, Loader2, Package, MapPin,
   Truck, Wallet, Plus, ShieldCheck,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
@@ -85,19 +84,14 @@ export default function CheckoutClient({ profileId }: Props) {
     return () => { cancelled = true }
   }, [couponCode, subtotal])
 
-  // Load addresses
+  // Load addresses via the server API — the `addresses` table is service-role
+  // only, so the browser client can't read it (permission denied).
   useEffect(() => {
     if (items.length === 0) { router.replace('/'); return }
-    const supabase = createClient()
     void (async () => {
       try {
-        const { data } = await supabase
-          .from('addresses')
-          .select('*')
-          .eq('user_id', profileId)
-          .order('is_default', { ascending: false })
-          .order('created_at', { ascending: false })
-        const rows = (data ?? []) as unknown as Address[]
+        const res = await fetch('/api/addresses')
+        const rows = (res.ok ? await res.json() : []) as Address[]
         setAddresses(rows)
         const def = rows.find((a) => a.is_default) ?? rows[0]
         if (def) setSelectedId(def.id)
@@ -105,7 +99,7 @@ export default function CheckoutClient({ profileId }: Props) {
         setLoadingAddresses(false)
       }
     })()
-  }, [profileId, items.length, router])
+  }, [items.length, router])
 
   useEffect(() => {
     setPincodeResult(null)

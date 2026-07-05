@@ -30,9 +30,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient()
+  const adminDb = createAdminClient()
 
-  // Verify address belongs to this user
-  const { data: rawAddress } = await supabase
+  // Verify the address belongs to this user. `addresses` is a service-role-only
+  // table (no anon/authenticated grant), so this MUST use the admin client —
+  // scoped to the session's profileId, so it can only ever match the user's own.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rawAddress } = await (adminDb as any)
     .from('addresses')
     .select('*')
     .eq('id', address_id)
@@ -93,7 +97,6 @@ export async function POST(request: Request) {
   let discountAmt = 0
   let appliedCouponCode: string | null = null
   let appliedCoupon: { id: string; uses_count: number | null } | null = null
-  const adminDb = createAdminClient()
 
   if (coupon_code && coupon_code.trim()) {
     const { data: coupon } = await adminDb
@@ -131,7 +134,7 @@ export async function POST(request: Request) {
 
   const total = subtotal + deliveryFee - discountAmt
 
-  const { data: order, error } = await db
+  const { data: order, error } = await adminDb
     .from('orders')
     .insert({
       user_id: profileId,
