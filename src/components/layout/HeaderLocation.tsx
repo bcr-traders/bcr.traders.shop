@@ -101,18 +101,17 @@ export default function HeaderLocation({ className = '' }: { className?: string 
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords
-          // Free, keyless reverse geocoding (no API key / signup required).
-          const res = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-          )
-          const data = await res.json()
-          const pin = String(data?.postcode ?? '').replace(/\D/g, '').slice(0, 6)
+          // Reverse-geocode via our own proxy, which tries multiple providers so
+          // an Indian pincode reliably comes back (BigDataCloud alone often omits it).
+          const res = await fetch(`/api/geocode?lat=${latitude}&lon=${longitude}`)
+          const data = await res.json() as { pincode?: string | null }
+          const pin = String(data?.pincode ?? '').replace(/\D/g, '').slice(0, 6)
           setGeoStatus('idle')
           if (/^\d{6}$/.test(pin)) {
             setInput(pin)
             checkPincode(pin)
           } else {
-            setGeoError("Couldn't detect your pincode. Please enter it manually.")
+            setGeoError("Couldn't detect your pincode from your location. Please enter it manually.")
           }
         } catch {
           setGeoStatus('idle')

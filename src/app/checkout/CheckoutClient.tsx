@@ -154,28 +154,28 @@ export default function CheckoutClient({ profileId }: Props) {
   return (
     <>
       {/* ── Fixed header ── */}
-      <header className="fixed top-0 left-0 w-full z-50 flex items-center px-4 h-14 lg:h-16 bg-primary border-b-2 border-primary shadow-sm">
+      <header className="fixed top-0 left-0 w-full z-50 flex items-center px-4 h-16 lg:h-[68px] bg-surface border-b-2 border-table-border shadow-sm">
         {/* Dot texture */}
-        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle,#1C130A_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
         <button
           onClick={() => router.back()}
-          className="relative z-10 p-2 -ml-1 text-white/70 hover:text-white transition-colors rounded-xl hover:bg-white/10"
+          className="relative z-10 p-2 -ml-1 text-primary/70 hover:text-primary transition-colors rounded-xl hover:bg-primary/5"
           aria-label="Go back"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="relative z-10 absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
           <Link href="/">
-            <Logo className="h-9 w-auto" />
+            <Logo className="h-12 lg:h-[52px] w-auto" />
           </Link>
         </div>
-        <div className="relative z-10 ml-auto flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-white/35">
+        <div className="relative z-10 ml-auto flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
           <ShieldCheck size={12} strokeWidth={2.5} /> Secure
         </div>
       </header>
 
       {/* ── Main content ── */}
-      <main className="pt-14 lg:pt-16 max-w-[1200px] mx-auto px-4 md:px-6 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
+      <main className="pt-16 lg:pt-[68px] max-w-[1200px] mx-auto px-4 md:px-6 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
 
         {/* LEFT — Checkout steps */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-5 mt-6">
