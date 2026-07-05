@@ -71,15 +71,43 @@ export async function POST(request: Request) {
   const cleanPhone = `+91${digits}`
 
   const supabase = createAdminClient()
+  const resolvedPerms = role === 'delivery' ? {} : (permissions ?? DEFAULT_PERMISSIONS)
 
-  // Block duplicates (same number in either legacy or canonical shape).
-  const { data: dupe } = await supabase
+  // Look up any existing profile for this number in either legacy (10-digit) or
+  // canonical (+91…) shape. `.in()` encodes the "+" correctly (unlike a raw
+  // `.or()` filter string); active rows come first so a live duplicate wins.
+  const { data: matches } = await supabase
     .from('admin_profiles')
-    .select('id')
-    .or(`phone.eq.${cleanPhone},phone.eq.${digits}`)
-    .maybeSingle()
-  if (dupe) {
-    return Response.json({ error: 'A staff profile with this phone number already exists.' }, { status: 409 })
+    .select('id, is_active')
+    .in('phone', [cleanPhone, digits])
+    .order('is_active', { ascending: false })
+    .limit(1)
+
+  const existing = (matches as { id: string; is_active: boolean }[] | null)?.[0]
+
+  if (existing) {
+    if (existing.is_active) {
+      return Response.json({ error: 'A staff profile with this phone number already exists.' }, { status: 409 })
+    }
+    // A previously-removed (soft-deleted) profile — reactivate & refresh it
+    // instead of failing on the unique constraint.
+    const { data: revived, error: reviveErr } = await supabase
+      .from('admin_profiles')
+      .update({
+        name: String(name).trim(),
+        phone: cleanPhone,
+        email: email || null,
+        role,
+        permissions: resolvedPerms,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .select()
+      .single()
+
+    if (reviveErr) return Response.json({ error: reviveErr.message }, { status: 500 })
+    return Response.json(revived, { status: 200 })
   }
 
   const { data, error } = await supabase
@@ -89,13 +117,20 @@ export async function POST(request: Request) {
       phone: cleanPhone,
       email: email || null,
       role,
-      permissions: role === 'delivery' ? {} : (permissions ?? DEFAULT_PERMISSIONS),
+      permissions: resolvedPerms,
       is_active: true,
     })
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // Final safety net: any unique-violation that slipped past the check above
+    // becomes a friendly 409 instead of the raw Postgres constraint message.
+    if (error.code === '23505' || /duplicate key|admin_profiles_phone_key/i.test(error.message)) {
+      return Response.json({ error: 'A staff profile with this phone number already exists.' }, { status: 409 })
+    }
+    return Response.json({ error: error.message }, { status: 500 })
+  }
 
   return Response.json(data, { status: 201 })
 }

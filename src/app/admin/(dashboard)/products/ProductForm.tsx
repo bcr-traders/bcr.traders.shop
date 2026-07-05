@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEditor, EditorContent } from '@tiptap/react'
@@ -94,6 +94,8 @@ export default function ProductForm({
   const [error, setError] = useState<string | null>(null)
   const showToast = useToastStore((s) => s.show)
   const [generatingSeo, setGeneratingSeo] = useState(false)
+  const [generatingDesc, setGeneratingDesc] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [images, setImages] = useState<ImageItem[]>(
     (product?.images ?? []).map(url => ({ id: makeId(), url })),
@@ -183,9 +185,43 @@ export default function ProductForm({
       if (data.keywords?.length) set('tags', data.keywords)
       showToast('SEO generated!')
     } else {
-      setError('SEO generation failed')
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setError(d.error ?? 'SEO generation failed')
+      showToast(d.error ?? 'SEO generation failed', 'error')
     }
     setGeneratingSeo(false)
+  }
+
+  // ── AI Description Generation (English + Odia) ────────────────────────────────
+
+  async function generateDescription() {
+    if (!form.name.trim()) { setError('Enter a product name first'); setTab(0); return }
+    setGeneratingDesc(true)
+    setError(null)
+    const catName = categories.find(c => c.id === form.category_id)?.name ?? ''
+    const res = await fetch('/api/products/generate-description', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        category: catName,
+        brand: form.brand.trim() || undefined,
+        price: form.price ? parseFloat(form.price) : undefined,
+        unit: form.unit.trim() || undefined,
+        prompt: aiPrompt.trim() || undefined,
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json() as { description?: string; description_or?: string }
+      if (data.description) set('description', data.description)
+      if (data.description_or) set('description_or', data.description_or)
+      showToast('Description generated!')
+    } else {
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setError(d.error ?? 'Description generation failed')
+      showToast(d.error ?? 'Description generation failed', 'error')
+    }
+    setGeneratingDesc(false)
   }
 
   // ── Save ─────────────────────────────────────────────────────────────────────
@@ -590,6 +626,35 @@ export default function ProductForm({
         {/* Tab 3: Description */}
         {tab === 3 && (
           <div className="space-y-8">
+            {/* ── AI generator ── */}
+            <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+                <h3 className="font-black text-sm text-primary uppercase tracking-widest">Generate with AI</h3>
+              </div>
+              <p className="font-medium text-xs text-on-surface-variant">
+                Writes the English &amp; Odia descriptions from the product details. Add an optional prompt to steer the tone or points to highlight.
+              </p>
+              <textarea
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                rows={2}
+                placeholder="Optional prompt — e.g. 'emphasise cold-pressed, great for restaurants, mention 15L bulk pack'"
+                className="w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-medium text-sm text-primary placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors resize-none"
+              />
+              <button
+                type="button"
+                onClick={generateDescription}
+                disabled={generatingDesc}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 disabled:opacity-60 transition-all active:scale-95 shadow-sm"
+              >
+                <span className={`material-symbols-outlined text-[16px] ${generatingDesc ? 'animate-spin' : ''}`}>
+                  {generatingDesc ? 'progress_activity' : 'auto_awesome'}
+                </span>
+                {generatingDesc ? 'Generating…' : 'Generate Description'}
+              </button>
+            </div>
+
             <Field label="Full Description (English)">
               <RichTextEditor
                 content={form.description}
@@ -859,16 +924,35 @@ function ToggleField({
 function RichTextEditor({
   content, onChange, placeholder,
 }: { content: string; onChange: (html: string) => void; placeholder?: string }) {
+  // Tracks the HTML we last synced, so external content changes (e.g. AI
+  // generation) push into the editor without looping against onUpdate.
+  const lastContent = useRef(content)
   const editor = useEditor({
     extensions: [StarterKit],
     content,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none min-h-[200px] p-4 focus:outline-none text-on-surface font-body-md text-body-md',
       },
     },
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML()
+      lastContent.current = html
+      onChange(html)
+    },
   })
+
+  // When `content` changes from outside (AI fill / reset), reflect it in the editor.
+  useEffect(() => {
+    if (!editor) return
+    if (content !== lastContent.current) {
+      lastContent.current = content
+      if (content !== editor.getHTML()) {
+        editor.commands.setContent(content || '', { emitUpdate: false })
+      }
+    }
+  }, [content, editor])
 
   return (
     <div className="border-2 border-table-border rounded-xl bg-surface overflow-hidden">

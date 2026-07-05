@@ -123,7 +123,7 @@ function CouponInputSection({
 }) {
   if (appliedCoupon) {
     return (
-      <div className="bg-surface-card rounded-2xl border-2 border-primary p-4 flex items-center justify-between gap-3">
+      <div className="relative overflow-hidden bg-surface-card rounded-2xl border-2 border-primary p-4 flex items-center justify-between gap-3">
         {/* Dot texture */}
         <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(circle,#000_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none rounded-2xl" />
         <div className="flex items-center gap-3 relative z-10">
@@ -157,19 +157,19 @@ function CouponInputSection({
         <Tag size={15} className="text-primary" strokeWidth={2.5} />
         <span className="text-[11px] font-black uppercase tracking-[0.15em] text-primary">Apply Coupon</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex items-stretch gap-2">
         <input
           type="text"
           value={couponInput}
           onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === 'Enter' && onApply()}
           placeholder="ENTER CODE"
-          className="flex-1 border-2 border-table-border focus:border-primary rounded-xl px-4 py-2.5 text-sm bg-surface-container-low placeholder:text-on-surface-variant/30 focus:outline-none transition-colors font-black tracking-widest uppercase"
+          className="flex-1 min-w-0 border-2 border-table-border focus:border-primary rounded-xl px-4 py-2.5 text-sm bg-surface-container-low placeholder:text-on-surface-variant/30 focus:outline-none transition-colors font-black tracking-widest uppercase"
         />
         <button
           onClick={onApply}
           disabled={!couponInput.trim() || loading}
-          className="px-5 py-2.5 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 active:scale-95"
+          className="shrink-0 whitespace-nowrap px-5 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-primary hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
         >
           {loading ? '...' : 'Apply'}
         </button>

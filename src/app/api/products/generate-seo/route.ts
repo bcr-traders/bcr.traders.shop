@@ -1,9 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@/lib/auth/server'
+import { aiJSON, isAIConfigured } from '@/lib/ai/openrouter'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
-
-const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
@@ -14,8 +12,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  if (!isAIConfigured()) {
+    return NextResponse.json({ error: 'AI is not configured. Add OPENROUTER_API_KEY to the environment.' }, { status: 503 })
+  }
+
   const { name, description, category, price, unit } = await req.json() as {
-    productId?: string
     name: string
     description?: string
     category?: string
@@ -25,53 +26,36 @@ export async function POST(req: NextRequest) {
 
   if (!name) return NextResponse.json({ error: 'Product name required' }, { status: 400 })
 
-  const priceStr = price != null && unit ? `₹${price} per ${unit}` : price != null ? `₹${price}` : null
+  const priceStr = price != null && unit ? `₹${price} per ${unit}` : price != null ? `₹${price}` : 'Not specified'
+  const plainDesc = description ? description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400) : 'N/A'
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 512,
-    messages: [
-      {
-        role: 'user',
-        content: `You are an SEO expert for BCR TRADERS, a B2B wholesale commodity distributor in Odisha, India. They sell edible oil, pulses, atta, spices, sugar, and packaged water to retailers in bulk.
+  const system = 'You are an SEO expert for BCR TRADERS, a B2B wholesale commodity distributor in Odisha, India that sells edible oil, pulses, atta, spices, sugar and packaged water to retailers in bulk. You always reply with strict JSON only.'
 
-Generate SEO metadata for this product listing:
+  const user = `Generate SEO metadata for this product listing.
 - Product name: ${name}
 - Category: ${category ?? 'General'}
-- Price: ${priceStr ?? 'Not specified'}
-- Description: ${description ? description.replace(/<[^>]*>/g, '').slice(0, 400) : 'N/A'}
+- Price: ${priceStr}
+- Description: ${plainDesc}
 
 Rules:
-- Write for B2B buyers searching for wholesale prices in Odisha/India
-- meta_title must be ≤ 60 characters and include the product name
-- meta_description must be ≤ 160 characters and mention "wholesale" or "bulk" and include a call to action
-- keywords: exactly 10 specific, high-intent wholesale keywords; no brand fluff
+- Write for B2B buyers searching for wholesale prices in Odisha/India.
+- meta_title: <= 60 characters, must include the product name.
+- meta_description: <= 160 characters, must mention "wholesale" or "bulk" and include a call to action.
+- keywords: exactly 10 specific, high-intent wholesale keywords (no brand fluff).
 
-Return ONLY valid JSON, no markdown, no extra text:
-{
-  "meta_title": "string ≤ 60 chars",
-  "meta_description": "string ≤ 160 chars",
-  "keywords": ["10 keyword strings"]
-}`,
-      },
-    ],
-  })
-
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}'
-  const match = text.match(/\{[\s\S]*\}/)
+Return ONLY this JSON, no markdown, no commentary:
+{"meta_title":"...","meta_description":"...","keywords":["...","..."]}`
 
   try {
-    const json = JSON.parse(match?.[0] ?? '{}') as {
-      meta_title?: string
-      meta_description?: string
-      keywords?: string[]
-    }
+    const json = await aiJSON<{ meta_title?: string; meta_description?: string; keywords?: string[] }>({
+      system, user, maxTokens: 600, temperature: 0.5,
+    })
     return NextResponse.json({
       meta_title: (json.meta_title ?? '').slice(0, 60),
       meta_description: (json.meta_description ?? '').slice(0, 160),
-      keywords: Array.isArray(json.keywords) ? json.keywords.slice(0, 10) : [],
+      keywords: Array.isArray(json.keywords) ? json.keywords.map(String).slice(0, 10) : [],
     })
-  } catch {
-    return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 })
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'SEO generation failed' }, { status: 502 })
   }
 }
