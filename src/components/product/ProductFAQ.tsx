@@ -29,9 +29,10 @@ export default function ProductFAQ({ faqs }: Props) {
                 expand_more
               </span>
             </summary>
-            <div className="pb-4 font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
-              {tField(faq.answer, faq.answer_or)}
-            </div>
+            <div
+              className="pb-4 font-body-lg text-body-lg text-on-surface-variant leading-relaxed break-words [&_a]:text-primary [&_a]:underline [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_strong]:font-black [&_strong]:text-primary"
+              dangerouslySetInnerHTML={{ __html: tField(faq.answer, faq.answer_or) }}
+            />
           </details>
         ))}
       </div>

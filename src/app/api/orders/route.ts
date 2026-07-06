@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import type { AuthMetadata } from '@/types'
 import type { CartItem, Address, OrderItem } from '@/types/database.types'
 import type { OrderEmailData } from '@/lib/resend'
@@ -29,7 +29,6 @@ export async function POST(request: Request) {
     return Response.json({ error: 'address_id and items are required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
   const adminDb = createAdminClient()
 
   // Verify the address belongs to this user. `addresses` is a service-role-only
@@ -53,42 +52,60 @@ export async function POST(request: Request) {
     }
   }
 
-  // Fetch authoritative prices from DB — never trust client-submitted prices
-  const productIds = [...new Set(items.map((i) => i.id))]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
-  const { data: dbProducts } = await db
+  // Fetch authoritative prices from DB — never trust client-submitted prices.
+  // Read via the admin client so RLS can't hide an inactive product (that would
+  // make it look "missing" instead of "unavailable").
+  const productIds = [...new Set(items.map((i) => i.product_id ?? i.id))]
+  const { data: dbProducts } = await adminDb
     .from('products')
-    .select('id, name, price, mrp, unit, images, slug, is_active')
+    .select('id, name, price, mrp, unit, images, slug, is_active, variants')
     .in('id', productIds)
 
-  type DbProduct = { id: string; name: string; price: number; mrp: number | null; unit: string; images: string[] | null; slug: string; is_active: boolean }
-
-  if (!dbProducts || (dbProducts as DbProduct[]).length < productIds.length) {
-    return Response.json({ error: 'One or more products not found' }, { status: 400 })
-  }
-
-  const inactiveProducts = (dbProducts as DbProduct[]).filter((p) => !p.is_active)
-  if (inactiveProducts.length > 0) {
-    return Response.json({ error: 'One or more products are no longer available' }, { status: 400 })
-  }
+  type DbVariant = { label: string; price: number; mrp: number | null }
+  type DbProduct = { id: string; name: string; price: number; mrp: number | null; unit: string; images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null }
 
   const productMap = new Map<string, DbProduct>(
-    (dbProducts as DbProduct[]).map((p) => [p.id, p]),
+    ((dbProducts as DbProduct[] | null) ?? []).map((p) => [p.id, p]),
   )
 
-  const orderItems: OrderItem[] = items.map((i) => {
-    const product = productMap.get(i.id)!
-    return {
-      product_id: i.id,
-      name: product.name,
-      price: product.price,   // authoritative DB price
-      mrp: product.mrp ?? null,
-      quantity: i.quantity,
-      unit: product.unit,
-      image: product.images?.[0] ?? null,
+  // Resolve each cart line to authoritative product/variant pricing. Flag any
+  // line that's unavailable — product deleted/inactive, or a selected variant
+  // that no longer exists — by its CART LINE id so the client can drop it.
+  const unavailableIds: string[] = []
+  const orderItems: OrderItem[] = []
+  for (const i of items) {
+    const pid = i.product_id ?? i.id
+    const product = productMap.get(pid)
+    if (!product || !product.is_active) { unavailableIds.push(i.id); continue }
+
+    let price = product.price
+    let mrp = product.mrp ?? null
+    let unit = product.unit
+    if (i.variant) {
+      const variant = (product.variants ?? []).find((v) => v.label === i.variant)
+      if (!variant) { unavailableIds.push(i.id); continue }
+      price = variant.price
+      mrp = variant.mrp ?? null
+      unit = variant.label
     }
-  })
+    orderItems.push({
+      product_id: pid,
+      name: product.name,
+      price,   // authoritative DB (variant) price
+      mrp,
+      quantity: i.quantity,
+      unit,
+      image: product.images?.[0] ?? null,
+    })
+  }
+
+  if (unavailableIds.length > 0) {
+    return Response.json({
+      error: 'Some items in your cart are no longer available and were removed. Please review your order.',
+      error_code: 'items_unavailable',
+      unavailable_ids: unavailableIds,
+    }, { status: 400 })
+  }
 
   const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
   const deliveryFee = 0
@@ -171,6 +188,10 @@ export async function POST(request: Request) {
       .update({ uses_count: (appliedCoupon.uses_count ?? 0) + 1 })
       .eq('id', appliedCoupon.id)
   }
+
+  // Mark this customer's abandoned cart as recovered (best-effort).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  void (adminDb as any).from('abandoned_carts').update({ is_recovered: true }).eq('user_id', profileId)
 
   // Fire-and-forget: emails + low stock check
   void sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, appliedCouponCode, total, profileId)

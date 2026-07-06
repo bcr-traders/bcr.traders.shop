@@ -42,6 +42,7 @@ type FormState = {
   units_per_pack: string
   unit_type: string
   price_per_pack: string
+  variants: { label: string; price: string; mrp: string }[]
   description: string
   description_or: string
   meta_title: string
@@ -95,6 +96,7 @@ export default function ProductForm({
   const showToast = useToastStore((s) => s.show)
   const [generatingSeo, setGeneratingSeo] = useState(false)
   const [generatingDesc, setGeneratingDesc] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [images, setImages] = useState<ImageItem[]>(
@@ -122,6 +124,11 @@ export default function ProductForm({
     units_per_pack: product?.units_per_pack?.toString() ?? '',
     unit_type: product?.unit_type ?? '',
     price_per_pack: product?.price_per_pack?.toString() ?? '',
+    variants: (product?.variants ?? []).map(v => ({
+      label: v.label,
+      price: v.price?.toString() ?? '',
+      mrp: v.mrp != null ? v.mrp.toString() : '',
+    })),
     description: product?.description ?? '',
     description_or: product?.description_or ?? '',
     meta_title: product?.meta_title ?? '',
@@ -224,6 +231,38 @@ export default function ProductForm({
     setGeneratingDesc(false)
   }
 
+  // ── AI Translate (English → Odia) ─────────────────────────────────────────────
+
+  async function translateToOdia() {
+    const fields: Record<string, string> = {}
+    if (form.name.trim()) fields.name = form.name.trim()
+    if (form.unit.trim()) fields.unit = form.unit.trim()
+    if (form.description.trim()) fields.description = form.description
+    if (form.meta_title.trim()) fields.meta_title = form.meta_title.trim()
+    if (form.meta_description.trim()) fields.meta_description = form.meta_description.trim()
+    if (Object.keys(fields).length === 0) { setError('Enter the English details first'); setTab(0); return }
+
+    setTranslating(true)
+    setError(null)
+    const res = await fetch('/api/ai/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields }),
+    })
+    if (res.ok) {
+      const { translations } = await res.json() as { translations: Record<string, string> }
+      if (translations.name) set('name_or', translations.name)
+      if (translations.unit) set('unit_or', translations.unit)
+      if (translations.description) set('description_or', translations.description)
+      showToast('Translated to Odia!')
+    } else {
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setError(d.error ?? 'Translation failed')
+      showToast(d.error ?? 'Translation failed', 'error')
+    }
+    setTranslating(false)
+  }
+
   // ── Save ─────────────────────────────────────────────────────────────────────
 
   async function handleSave() {
@@ -255,6 +294,13 @@ export default function ProductForm({
       units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
       unit_type: form.unit_type || null,
       price_per_pack: form.price_per_pack ? parseFloat(form.price_per_pack) : null,
+      variants: form.variants
+        .filter(v => v.label.trim() && v.price !== '' && !isNaN(parseFloat(v.price)))
+        .map(v => ({
+          label: v.label.trim(),
+          price: parseFloat(v.price),
+          mrp: v.mrp !== '' && !isNaN(parseFloat(v.mrp)) ? parseFloat(v.mrp) : null,
+        })),
       images: images.map(i => i.url),
       description: form.description || null,
       description_or: form.description_or || null,
@@ -580,6 +626,59 @@ export default function ProductForm({
               </Field>
             </div>
 
+            {/* ── Weight / Size Variants ── */}
+            <div className="space-y-3 rounded-2xl border-2 border-table-border bg-surface-card p-5">
+              <div>
+                <p className="font-black text-xs text-primary uppercase tracking-widest">Weight / Size Variants</p>
+                <p className="font-medium text-[11px] text-on-surface-variant mt-1">
+                  Optional — add options like <b>5kg</b> / <b>10kg</b>, each with its own price. Customers pick one on the product page. Leave empty for a single-price product.
+                </p>
+              </div>
+
+              {form.variants.map((v, i) => (
+                <div key={i} className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={v.label}
+                    onChange={e => set('variants', form.variants.map((x, j) => j === i ? { ...x, label: e.target.value } : x))}
+                    placeholder="Label (e.g. 10kg)"
+                    className={cn(inputCls, 'flex-1 min-w-[120px]')}
+                  />
+                  <input
+                    type="number" min={0} step="0.01"
+                    value={v.price}
+                    onChange={e => set('variants', form.variants.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                    placeholder="Price ₹"
+                    className={cn(inputCls, 'w-28')}
+                  />
+                  <input
+                    type="number" min={0} step="0.01"
+                    value={v.mrp}
+                    onChange={e => set('variants', form.variants.map((x, j) => j === i ? { ...x, mrp: e.target.value } : x))}
+                    placeholder="MRP ₹"
+                    className={cn(inputCls, 'w-28')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set('variants', form.variants.filter((_, j) => j !== i))}
+                    className="p-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-colors active:scale-95"
+                    title="Remove variant"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => set('variants', [...form.variants, { label: '', price: '', mrp: '' }])}
+                className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-table-border rounded-xl font-black text-[10px] text-on-surface-variant uppercase tracking-widest hover:border-primary hover:text-primary transition-colors active:scale-[0.99]"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Add Variant
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Field label="Stock Quantity" required>
                 <input
@@ -642,17 +741,31 @@ export default function ProductForm({
                 placeholder="Optional prompt — e.g. 'emphasise cold-pressed, great for restaurants, mention 15L bulk pack'"
                 className="w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-medium text-sm text-primary placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors resize-none"
               />
-              <button
-                type="button"
-                onClick={generateDescription}
-                disabled={generatingDesc}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 disabled:opacity-60 transition-all active:scale-95 shadow-sm"
-              >
-                <span className={`material-symbols-outlined text-[16px] ${generatingDesc ? 'animate-spin' : ''}`}>
-                  {generatingDesc ? 'progress_activity' : 'auto_awesome'}
-                </span>
-                {generatingDesc ? 'Generating…' : 'Generate Description'}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={generateDescription}
+                  disabled={generatingDesc || translating}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 disabled:opacity-60 transition-all active:scale-95 shadow-sm"
+                >
+                  <span className={`material-symbols-outlined text-[16px] ${generatingDesc ? 'animate-spin' : ''}`}>
+                    {generatingDesc ? 'progress_activity' : 'auto_awesome'}
+                  </span>
+                  {generatingDesc ? 'Generating…' : 'Generate Description'}
+                </button>
+                <button
+                  type="button"
+                  onClick={translateToOdia}
+                  disabled={translating || generatingDesc}
+                  title="Fill the Odia (ଓଡ଼ିଆ) versions of name, unit and description from the English fields using AI"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-surface-card border-2 border-primary/30 text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/60 disabled:opacity-60 transition-all active:scale-95"
+                >
+                  <span className={`material-symbols-outlined text-[16px] ${translating ? 'animate-spin' : ''}`}>
+                    {translating ? 'progress_activity' : 'translate'}
+                  </span>
+                  {translating ? 'Translating…' : 'Translate to Odia'}
+                </button>
+              </div>
             </div>
 
             <Field label="Full Description (English)">

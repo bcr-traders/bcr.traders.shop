@@ -62,9 +62,9 @@ function CartItemRow({ item, onQtyChange, onRemove }: {
           </span>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           {/* Price */}
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="text-base font-black text-primary">
               ₹{item.price.toLocaleString('en-IN')}
             </span>
@@ -74,7 +74,7 @@ function CartItemRow({ item, onQtyChange, onRemove }: {
           </div>
 
           {/* Qty stepper */}
-          <div className="flex items-center h-9 bg-primary text-white rounded-xl overflow-hidden border-2 border-primary">
+          <div className="flex flex-shrink-0 items-center h-9 bg-primary text-white rounded-xl overflow-hidden border-2 border-primary">
             <button
               onClick={() => onQtyChange(item.quantity - 1)}
               className="w-9 h-full flex items-center justify-center hover:bg-white/15 transition-colors active:scale-90"

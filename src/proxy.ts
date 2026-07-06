@@ -21,6 +21,7 @@ const PUBLIC_PREFIXES = [
   '/api/cms',
   '/api/search',
   '/api/pincodes/check',
+  '/api/unserviceable',
   '/api/merchant-feed',
   '/api/webhooks/',
   '/api/errors',

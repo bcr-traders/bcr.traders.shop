@@ -1,0 +1,196 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ShoppingCart, Plus, Minus } from 'lucide-react'
+import { useCartStore } from '@/store/cartStore'
+import { useAuthPromptStore } from '@/store/authPromptStore'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
+import { cn } from '@/lib/utils'
+import type { Product, ProductVariant } from '@/types/database.types'
+
+/**
+ * Client purchase panel: pricing box + weight/size variant selector + add-to-cart
+ * / buy-now (desktop inline + mobile sticky). Price, MRP and unit all follow the
+ * selected variant; the cart line is keyed per variant so 5kg and 10kg are
+ * separate lines.
+ */
+export default function ProductBuyPanel({ product }: { product: Product }) {
+  const variants: ProductVariant[] = product.variants ?? []
+  const hasVariants = variants.length > 0
+  const [selIdx, setSelIdx] = useState(0)
+  const active: ProductVariant | null = hasVariants ? variants[Math.min(selIdx, variants.length - 1)] : null
+
+  const price = active?.price ?? product.price
+  const mrp = active?.mrp ?? product.mrp
+  const unit = active?.label ?? product.unit
+  const discount = mrp && mrp > price ? Math.round((1 - price / mrp) * 100) : null
+  const outOfStock = product.stock_qty === 0
+
+  const router = useRouter()
+  const addItem = useCartStore((s) => s.addItem)
+  const updateQuantity = useCartStore((s) => s.updateQuantity)
+  const showAuthPrompt = useAuthPromptStore((s) => s.show)
+  const { isSignedIn, isLoaded } = useSupabaseUser()
+
+  const lineId = active ? `${product.id}::${active.label}` : product.id
+  const cartItem = useCartStore((s) => s.items.find((i) => i.id === lineId))
+
+  const buildItem = () => ({
+    id: lineId,
+    product_id: product.id,
+    variant: active?.label ?? null,
+    name: product.name,
+    price,
+    mrp,
+    unit,
+    image: product.images?.[0] ?? null,
+    slug: product.slug,
+  })
+
+  const requireAuth = () => {
+    if (isLoaded && !isSignedIn) { showAuthPrompt(); return false }
+    return true
+  }
+  const handleAdd = () => { if (outOfStock || !requireAuth()) return; addItem(buildItem()) }
+  const handleBuyNow = () => { if (outOfStock || !requireAuth()) return; addItem(buildItem()); router.push('/checkout') }
+
+  // Shared add / stepper control.
+  const AddControl = ({ full }: { full?: boolean }) =>
+    cartItem ? (
+      <div className={cn('flex items-center justify-between bg-primary text-white rounded-full h-12 px-1', full && 'flex-1')}>
+        <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Remove one">
+          <Minus size={16} strokeWidth={3} />
+        </button>
+        <span className="font-black text-sm min-w-8 text-center tracking-widest">{cartItem.quantity}</span>
+        <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Add one more">
+          <Plus size={16} strokeWidth={3} />
+        </button>
+      </div>
+    ) : (
+      <button
+        onClick={handleAdd}
+        disabled={outOfStock}
+        className={cn(
+          'h-12 px-6 rounded-full border-2 border-primary text-primary font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed',
+          full && 'flex-1',
+        )}
+      >
+        <ShoppingCart size={16} /> Add
+      </button>
+    )
+
+  return (
+    <>
+      {/* ── Pricing box ── */}
+      <div className="bg-gradient-to-br from-surface-container-low to-surface-container border border-table-border/70 rounded-2xl p-5 mb-5 relative overflow-hidden shadow-[0_2px_14px_rgba(38,23,12,0.06)]">
+        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle,#000_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
+        <div className="relative z-10">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50 mb-2">
+            Price per {unit}
+          </p>
+          <div className="flex items-end justify-between">
+            <div className="flex items-baseline gap-3">
+              <span className="text-4xl font-black text-primary tracking-tight">₹{price}</span>
+              {mrp && mrp > price && (
+                <span className="text-base font-medium text-on-surface-variant/40 line-through">₹{mrp}</span>
+              )}
+            </div>
+            {discount && (
+              <div className="bg-primary text-white font-black text-sm px-3 py-1.5 rounded-xl flex-shrink-0">Save {discount}%</div>
+            )}
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-table-border">
+            {outOfStock ? (
+              <p className="text-[11px] font-black uppercase tracking-widest text-error flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-error" /> Out of Stock
+              </p>
+            ) : (
+              <p className="text-[11px] font-black uppercase tracking-widest text-success flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success" /> In Stock
+                {product.stock_qty <= 10 && <span className="text-error font-black ml-1">— only {product.stock_qty} left</span>}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Variant selector ── */}
+      {hasVariants && (
+        <div className="mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-2">Select option</p>
+          <div className="flex flex-wrap gap-2.5">
+            {variants.map((v, i) => {
+              const isSel = i === selIdx
+              return (
+                <button
+                  key={`${v.label}-${i}`}
+                  onClick={() => setSelIdx(i)}
+                  className={cn(
+                    'flex flex-col items-start px-4 py-2.5 rounded-xl border-2 transition-all duration-200 active:scale-95 min-w-[92px]',
+                    isSel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
+                  )}
+                >
+                  <span className={cn('font-black text-sm uppercase tracking-wide', isSel ? 'text-primary' : 'text-on-surface-variant')}>{v.label}</span>
+                  <span className={cn('font-bold text-xs mt-0.5', isSel ? 'text-primary' : 'text-on-surface-variant/60')}>₹{v.price}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Badges ── */}
+      <div className="flex items-center gap-2 flex-wrap mb-5">
+        {!hasVariants && (
+          <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
+            {product.unit}{product.unit_or && ` / ${product.unit_or}`}
+          </span>
+        )}
+        {product.is_featured && (
+          <span className="px-3 py-1.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider">Featured</span>
+        )}
+        {product.units_per_pack && product.pack_type && (
+          <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
+            {product.pack_type} of {product.units_per_pack} {product.unit_type ?? 'Units'}
+            {product.price_per_pack && ` — ₹${product.price_per_pack}/pack`}
+          </span>
+        )}
+      </div>
+
+      {/* ── Desktop actions ── */}
+      <div className="hidden lg:flex gap-3">
+        <AddControl full />
+        <button
+          onClick={handleBuyNow}
+          disabled={outOfStock}
+          className="flex-1 h-12 px-6 rounded-full bg-primary text-white font-black text-sm uppercase tracking-wider hover:opacity-90 transition-opacity shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Buy Now
+        </button>
+      </div>
+
+      {/* ── Mobile sticky bar ── */}
+      <div
+        className="fixed bottom-0 left-0 w-full bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center gap-3 z-40 lg:hidden border-t border-outline-variant/30"
+        style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex flex-col leading-none">
+          <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/50">{unit}</span>
+          <span className="text-lg font-black text-primary">₹{price}</span>
+        </div>
+        <div className="flex-1 flex gap-2">
+          <AddControl full />
+          <button
+            onClick={handleBuyNow}
+            disabled={outOfStock}
+            className="flex-1 h-12 rounded-full bg-primary text-white font-black text-sm uppercase tracking-wider active:scale-95 transition-transform shadow-sm disabled:opacity-50"
+          >
+            Buy Now
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}

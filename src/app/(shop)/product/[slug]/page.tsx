@@ -13,7 +13,7 @@ import ProductBreadcrumb from '@/components/product/ProductBreadcrumb'
 import ProductFAQ from '@/components/product/ProductFAQ'
 import ProductReviews from '@/components/product/ProductReviews'
 import ProductGrid from '@/components/product/ProductGrid'
-import ProductActions from './ProductActions'
+import ProductBuyPanel from './ProductBuyPanel'
 
 export const revalidate = 60
 
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = product.meta_title ?? `${product.name} — Wholesale Price in Odisha | BCR Traders`
   const description =
     product.meta_description ??
-    `Buy ${product.name} (${product.unit}) at ₹${product.price} wholesale price in Odisha${product.brand ? ` — ${product.brand}` : ''}. Bulk order with Cash on Delivery & fast delivery across Cuttack, Bhubaneswar & all Odisha. ${product.description ? product.description.slice(0, 80) : ''}`.trim()
+    `Buy ${product.name} (${product.unit}) at ₹${product.price} wholesale price in Odisha${product.brand ? ` — ${product.brand}` : ''}. Bulk order with Cash on Delivery & fast delivery across Cuttack, Bhubaneswar & all Odisha. ${product.description ? product.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) : ''}`.trim()
   const keywords = getProductKeywords(product.tags ?? null, category?.slug)
   const ogImage = product.images?.[0]
 
@@ -90,11 +90,6 @@ export default async function ProductPage({ params }: PageProps) {
     category ? getRelatedProducts(category.id, product.id, 4) : Promise.resolve([]),
   ])
 
-  const discount =
-    product.mrp && product.mrp > product.price
-      ? Math.round((1 - product.price / product.mrp) * 100)
-      : null
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
 
   // ── JSON-LD ────────────────────────────────────────────────────────────────
@@ -104,7 +99,7 @@ export default async function ProductPage({ params }: PageProps) {
     '@type': 'Product',
     name: product.name,
     image: product.images,
-    description: product.description ?? undefined,
+    description: product.description ? product.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : undefined,
     sku: product.sku ?? undefined,
     brand: { '@type': 'Brand', name: product.brand ?? 'BCR Traders' },
     offers: {
@@ -275,74 +270,8 @@ export default async function ProductPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* ── Pricing box ── */}
-            <div className="bg-gradient-to-br from-surface-container-low to-surface-container border border-table-border/70 rounded-2xl p-5 mb-5 relative overflow-hidden shadow-[0_2px_14px_rgba(38,23,12,0.06)]">
-              {/* Subtle dot texture */}
-              <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle,#000_1px,transparent_1px)] bg-[size:14px_14px] pointer-events-none" />
-
-              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50 mb-2">
-                  Price per {product.unit}
-                </p>
-                <div className="flex items-end justify-between">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-black text-primary tracking-tight">
-                      ₹{product.price}
-                    </span>
-                    {product.mrp && product.mrp > product.price && (
-                      <span className="text-base font-medium text-on-surface-variant/40 line-through">
-                        ₹{product.mrp}
-                      </span>
-                    )}
-                  </div>
-                  {discount && (
-                    <div className="bg-primary text-white font-black text-sm px-3 py-1.5 rounded-xl flex-shrink-0">
-                      Save {discount}%
-                    </div>
-                  )}
-                </div>
-
-                {/* Stock status */}
-                <div className="mt-3 pt-3 border-t border-table-border">
-                  {product.stock_qty === 0 ? (
-                    <p className="text-[11px] font-black uppercase tracking-widest text-error flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-error" />
-                      Out of Stock
-                    </p>
-                  ) : (
-                    <p className="text-[11px] font-black uppercase tracking-widest text-success flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-success" />
-                      In Stock
-                      {product.stock_qty <= 10 && (
-                        <span className="text-error font-black ml-1">— only {product.stock_qty} left</span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Unit + Featured badges */}
-            <div className="flex items-center gap-2 flex-wrap mb-5">
-              <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
-                {product.unit}
-                {product.unit_or && ` / ${product.unit_or}`}
-              </span>
-              {product.is_featured && (
-                <span className="px-3 py-1.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider">
-                  Featured
-                </span>
-              )}
-              {product.units_per_pack && product.pack_type && (
-                <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
-                  {product.pack_type} of {product.units_per_pack} {product.unit_type ?? 'Units'}
-                  {product.price_per_pack && ` — ₹${product.price_per_pack}/pack`}
-                </span>
-              )}
-            </div>
-
-            {/* Desktop actions */}
-            <ProductActions product={product} />
+            {/* ── Pricing + variants + actions ── */}
+            <ProductBuyPanel product={product} />
 
             {/* Collapsible description + tags — desktop */}
             <div className="mt-6 border-t border-table-border hidden lg:block">
@@ -354,9 +283,10 @@ export default async function ProductPage({ params }: PageProps) {
                       expand_more
                     </span>
                   </summary>
-                  <div className="pb-5 text-sm font-medium text-on-surface-variant/80 leading-relaxed">
-                    {product.description}
-                  </div>
+                  <div
+                    className="pb-5 prose prose-sm max-w-none text-sm font-medium text-on-surface-variant/80 leading-relaxed break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-black [&_strong]:text-primary"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
                 </details>
               )}
 
@@ -394,9 +324,10 @@ export default async function ProductPage({ params }: PageProps) {
                   expand_more
                 </span>
               </summary>
-              <div className="p-4 text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t border-table-border">
-                {product.description}
-              </div>
+              <div
+                className="p-4 prose prose-sm max-w-none text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t border-table-border break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-black [&_strong]:text-primary"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
             </details>
           </div>
         )}

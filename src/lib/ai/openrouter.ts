@@ -7,7 +7,26 @@
  */
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions'
-const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free'
+
+// Free models are frequently rate-limited/exhausted, so we try a chain: the
+// configured model(s) first, then these known-good free fallbacks. The request
+// succeeds as soon as any one of them returns text.
+// Instruct models first — they return clean JSON. Reasoning models (nemotron)
+// are last resort: they burn the token budget "thinking" and often truncate
+// structured output, so we only fall back to them if every instruct model is busy.
+const FALLBACK_MODELS = [
+  'google/gemma-4-31b-it:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'qwen/qwen3-next-80b-a3b-instruct:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+]
+
+function modelChain(): string[] {
+  const configured = (process.env.OPENROUTER_MODEL ?? '')
+    .split(',').map((s) => s.trim()).filter(Boolean)
+  return [...new Set([...configured, ...FALLBACK_MODELS])]
+}
 
 export function isAIConfigured(): boolean {
   return !!process.env.OPENROUTER_API_KEY
@@ -20,46 +39,60 @@ interface ChatOpts {
   temperature?: number
 }
 
-/** Raw chat call — returns the model's text content (reasoning tags stripped). */
+/** Raw chat call — tries each model in the chain until one returns text. */
 export async function aiChat({ system, user, maxTokens = 900, temperature = 0.6 }: ChatOpts): Promise<string> {
   const key = process.env.OPENROUTER_API_KEY
   if (!key) throw new Error('AI is not configured. Set OPENROUTER_API_KEY in your environment.')
-  const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL
 
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      // Optional attribution headers OpenRouter uses for its dashboards.
-      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com',
-      'X-Title': 'BCR Traders Admin',
-    },
-    body: JSON.stringify({
-      model,
-      temperature,
-      max_tokens: maxTokens,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    }),
-  })
+  let lastError = 'no model responded'
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    // 429 = free-tier rate/quota limit — surface a friendly hint.
-    if (res.status === 429) throw new Error('AI is rate-limited right now (free tier). Please wait a moment and try again.')
-    throw new Error(`AI request failed (${res.status})${detail ? `: ${detail.slice(0, 180)}` : ''}`)
+  for (const model of modelChain()) {
+    let res: Response
+    try {
+      res = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com',
+          'X-Title': 'BCR Traders Admin',
+        },
+        body: JSON.stringify({
+          model,
+          temperature,
+          max_tokens: maxTokens,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+        }),
+      })
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e)
+      continue
+    }
+
+    // An auth failure won't be fixed by trying another model.
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('AI key is invalid or unauthorized. Check OPENROUTER_API_KEY.')
+    }
+
+    // OpenRouter can return an upstream error INSIDE a 200 body — check both.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = (await res.json().catch(() => null)) as any
+    const apiError: string | undefined = data?.error?.message
+    if (apiError) { lastError = apiError; continue }
+    if (!res.ok) { lastError = `HTTP ${res.status}`; continue }
+
+    const raw = data?.choices?.[0]?.message?.content
+    // Some reasoning models prepend a <think>…</think> block — strip it.
+    const text = typeof raw === 'string' ? raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() : ''
+    if (text) return text
+
+    lastError = `empty response from ${model}`
   }
 
-  const data = await res.json()
-  const content = data?.choices?.[0]?.message?.content
-  if (typeof content !== 'string' || !content.trim()) {
-    throw new Error('AI returned an empty response. Please try again.')
-  }
-  // Some reasoning models (incl. Nemotron) prepend a <think>…</think> block.
-  return content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+  throw new Error(`AI is busy right now — free models are rate-limited (${lastError.slice(0, 110)}). Please try again in a moment.`)
 }
 
 /** Chat call that expects a JSON object back; tolerant of code fences / prose. */

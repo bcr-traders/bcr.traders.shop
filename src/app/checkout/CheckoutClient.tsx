@@ -28,6 +28,7 @@ export default function CheckoutClient({ profileId }: Props) {
   const router = useRouter()
   const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
+  const removeItem = useCartStore((s) => s.removeItem)
   const totalItems = useCartStore((s) => s.totalItems)
   const totalPrice = useCartStore((s) => s.totalPrice)
   const couponCode = useCartStore((s) => s.couponCode)
@@ -123,7 +124,22 @@ export default function CheckoutClient({ profileId }: Props) {
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Failed to place order')
+      if (!res.ok) {
+        // Stale cart — a product was deleted/deactivated. Drop those items so
+        // the customer can retry with what's still available.
+        if (json.error_code === 'items_unavailable' && Array.isArray(json.unavailable_ids)) {
+          const names = items.filter((i) => json.unavailable_ids.includes(i.id)).map((i) => i.name)
+          json.unavailable_ids.forEach((id: string) => removeItem(id))
+          setError(
+            names.length
+              ? `${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} no longer available and ${names.length === 1 ? 'was' : 'were'} removed from your cart. Please review your order and try again.`
+              : (json.error ?? 'Some items are no longer available.'),
+          )
+          setIsPlacing(false)
+          return
+        }
+        throw new Error(json.error ?? 'Failed to place order')
+      }
       clearCart()
       router.push(`/orders/${json.order_id}?new=1`)
     } catch (e) {

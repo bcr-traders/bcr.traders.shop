@@ -1,10 +1,22 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
+import type { AuthMetadata } from '@/types'
 
+/**
+ * POST /api/abandoned-carts — record/refresh the signed-in customer's cart.
+ *
+ * `abandoned_carts` is a service-role-only table (no anon/authenticated grant),
+ * so this MUST use the admin client — and it has no unique constraint on
+ * user_id, so we do a manual upsert (find existing → update, else insert)
+ * instead of `onConflict`.
+ */
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId, sessionClaims } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
+  const profileId = meta?.supabase_profile_id ?? userId
 
   let body: unknown
   try {
@@ -20,35 +32,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'items must be an array' }, { status: 400 })
   }
 
-  const totalValue = items.reduce(
-    (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
-    0,
-  )
+  const totalValue = items.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
   const itemCount = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
 
-  const supabase = await createClient()
-
-  // Live columns: cart_items / last_activity / total_value / item_count.
+  const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from('abandoned_carts')
-    .upsert(
-      {
-        user_id: userId,
-        cart_items: items,
-        total_value: totalValue,
-        item_count: itemCount,
-        last_activity: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' },
-    )
+  const db = supabase as any
 
-  if (error) {
-    // Table may not exist yet — fail silently so the client never errors
+  try {
+    // Stamp the customer's phone so admins can follow up.
+    const { data: profile } = await db.from('profiles').select('phone').eq('id', profileId).maybeSingle()
+
+    const payload = {
+      phone: profile?.phone ?? null,
+      cart_items: items,
+      total_value: totalValue,
+      item_count: itemCount,
+      last_activity: new Date().toISOString(),
+      is_recovered: false,
+    }
+
+    const { data: existingRows } = await db
+      .from('abandoned_carts')
+      .select('id')
+      .eq('user_id', profileId)
+      .order('last_activity', { ascending: false })
+      .limit(1)
+    const existing = (existingRows as { id: string }[] | null)?.[0]
+
+    if (existing) {
+      await db.from('abandoned_carts').update(payload).eq('id', existing.id)
+    } else {
+      await db.from('abandoned_carts').insert({ user_id: profileId, ...payload })
+    }
+    return NextResponse.json({ ok: true })
+  } catch {
+    // Best-effort tracking — never surface an error to the shopping flow.
     return NextResponse.json({ ok: false }, { status: 200 })
   }
-
-  return NextResponse.json({ ok: true })
 }
 
 export async function GET() {

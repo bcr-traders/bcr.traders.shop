@@ -31,16 +31,59 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const db = supabase as any
+
+  // The client (header pincode check) usually only sends the pincode. If the
+  // visitor is signed in, enrich the attempt with their profile + live cart so
+  // admins can follow up — anonymous visitors are still recorded.
+  let resolvedUserId: string | null = user_id ?? null
+  let resolvedName: string | null = name ?? null
+  let resolvedPhone: string = phone ?? ''
+  let resolvedCart: unknown = cart_items ?? null
+  let resolvedCartValue: number | null = cart_value ?? null
+
+  try {
+    const { userId, sessionClaims } = await auth()
+    if (userId) {
+      const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
+      const profileId = meta?.supabase_profile_id ?? userId
+      resolvedUserId = resolvedUserId ?? profileId
+
+      const { data: profile } = await db.from('profiles').select('name, phone').eq('id', profileId).maybeSingle()
+      if (profile) {
+        if (!resolvedName) resolvedName = profile.name ?? null
+        if (!resolvedPhone) resolvedPhone = profile.phone ?? ''
+      }
+
+      // Pull their current cart for context if the client didn't send one.
+      if (!resolvedCart) {
+        const { data: cart } = await db
+          .from('abandoned_carts')
+          .select('cart_items, total_value')
+          .eq('user_id', profileId)
+          .order('last_activity', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (cart) {
+          resolvedCart = cart.cart_items ?? null
+          resolvedCartValue = resolvedCartValue ?? cart.total_value ?? null
+        }
+      }
+    }
+  } catch {
+    /* not signed in — record anonymously */
+  }
+
+  const { data, error } = await db
     .from('unserviceable_attempts')
     .insert({
-      user_id: user_id ?? null,
-      name: name ?? null,
-      phone: phone ?? '',
+      user_id: resolvedUserId,
+      name: resolvedName,
+      phone: resolvedPhone,
       pincode,
       city: city ?? null,
       state: state ?? null,
-      cart_snapshot: cart_items ?? null,
+      cart_snapshot: resolvedCart,
       admin_notified: false,
       admin_contacted: false,
     })
@@ -52,7 +95,7 @@ export async function POST(request: Request) {
   const insertedId = (data as { id: string }).id
 
   // Fire-and-forget: notify admins
-  void notifyAdmins(insertedId, name ?? null, phone ?? '', pincode, city ?? null, cart_items ?? null, cart_value ?? null)
+  void notifyAdmins(insertedId, resolvedName, resolvedPhone, pincode, city ?? null, resolvedCart as OrderItem[] | null, resolvedCartValue)
 
   return Response.json({ id: insertedId }, { status: 201 })
 }

@@ -81,7 +81,11 @@ export default function HeroBanner({ banners }: Props) {
   return (
     <section className="px-4 md:px-8 max-w-7xl mx-auto w-full">
       <div
-        className="relative w-full rounded-3xl overflow-hidden select-none min-h-[220px] sm:min-h-[280px] md:min-h-[360px]"
+        className={`relative w-full rounded-3xl overflow-hidden select-none ${
+          banner.image_url
+            ? 'aspect-[5/2]'
+            : 'min-h-[220px] sm:min-h-[280px] md:min-h-[360px]'
+        }`}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           const diff = touchStartX.current - e.changedTouches[0].clientX
@@ -99,7 +103,9 @@ export default function HeroBanner({ banners }: Props) {
             exit="exit"
             transition={{ type: 'tween', duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex items-center"
-            style={{ backgroundColor: bg }}
+            // A full-bleed image covers the whole banner, so skip the colour
+            // background entirely when one is set — only text banners use it.
+            style={banner.image_url ? undefined : { backgroundColor: bg }}
           >
             <div className="relative z-10 flex flex-col justify-center px-6 sm:px-10 md:px-16 py-8 md:py-0 max-w-xl">
               {title && (
@@ -142,20 +148,29 @@ export default function HeroBanner({ banners }: Props) {
               )}
             </div>
 
+            {/* Full-bleed banner image (complete pre-designed banners) —
+                covers the whole area on every screen size. */}
             {banner.image_url && (
-              <div className="absolute inset-y-0 right-0 w-1/2 hidden sm:block">
+              <>
                 <Image
                   src={banner.image_url}
                   alt={title ?? 'Banner'}
                   fill
                   priority={index === 0}
-                  sizes="50vw"
-                  className="object-contain object-right"
+                  sizes="(max-width: 768px) 100vw, 1200px"
+                  className="object-cover object-center"
                 />
-              </div>
+                {/* Dark scrim only when there is overlay text, for readability. */}
+                {(title || subtitle) && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent pointer-events-none" />
+                )}
+              </>
             )}
 
-            <div className="absolute -bottom-10 -right-10 w-56 h-56 rounded-full bg-white/10 pointer-events-none" />
+            {/* Decorative accent only on text-only (image-less) banners. */}
+            {!banner.image_url && (
+              <div className="absolute -bottom-10 -right-10 w-56 h-56 rounded-full bg-white/10 pointer-events-none" />
+            )}
           </motion.div>
         </AnimatePresence>
 

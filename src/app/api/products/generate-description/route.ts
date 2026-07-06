@@ -57,7 +57,7 @@ Return ONLY this JSON, no commentary:
 
   try {
     const json = await aiJSON<{ description?: string; description_or?: string }>({
-      system, user, maxTokens: 1200, temperature: 0.7,
+      system, user, maxTokens: 1500, temperature: 0.7,
     })
     if (!json.description) {
       return NextResponse.json({ error: 'AI did not return a description. Please try again.' }, { status: 502 })

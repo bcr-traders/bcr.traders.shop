@@ -39,6 +39,13 @@ export interface Category {
 export type PackType = 'Box' | 'Bag'
 export type UnitType = 'Pieces' | 'Packet'
 
+/** A selectable weight/size option, e.g. { label: '10kg', price: 480, mrp: 520 }. */
+export interface ProductVariant {
+  label: string
+  price: number
+  mrp: number | null
+}
+
 export interface Product {
   id: string
   name: string
@@ -66,6 +73,7 @@ export interface Product {
   units_per_pack: number | null
   unit_type: UnitType | null
   price_per_pack: number | null
+  variants: ProductVariant[]
   created_at: string
   updated_at: string
 }
@@ -190,7 +198,9 @@ export interface OfferBannerConfig {
 // ── Cart ───────────────────────────────────────────────────────────────────
 
 export interface CartItem {
-  id: string
+  id: string              // unique cart line key — productId, or `${productId}::${variant}`
+  product_id?: string     // real product id (falls back to `id` when absent)
+  variant?: string | null // selected variant label, if any
   name: string
   price: number
   mrp: number | null

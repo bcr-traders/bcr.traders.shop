@@ -126,17 +126,17 @@ export default function UnserviceableClient({ initialRows }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-4 border-r border-table-border max-w-[200px]">
+                  <td className="px-5 py-4 border-r border-table-border min-w-[220px] max-w-[260px]">
                     {editingNote === row.id ? (
-                      <div className="flex gap-2">
+                      <div className="flex items-stretch gap-2">
                         <input
                           autoFocus
                           value={noteText}
                           onChange={(e) => setNoteText(e.target.value)}
-                          className="flex-1 px-3 py-2 text-sm font-bold border-2 border-table-border rounded-lg bg-surface focus:outline-none focus:border-primary"
+                          className="flex-1 min-w-0 px-3 py-2 text-sm font-bold border-2 border-table-border rounded-lg bg-surface focus:outline-none focus:border-primary"
                           onKeyDown={(e) => { if (e.key === 'Enter') saveNote(row.id); if (e.key === 'Escape') setEditingNote(null) }}
                         />
-                        <button onClick={() => saveNote(row.id)} className="px-3 rounded-lg bg-primary text-white font-black text-[10px] uppercase tracking-widest active:scale-95">Save</button>
+                        <button onClick={() => saveNote(row.id)} className="flex-shrink-0 whitespace-nowrap px-3.5 py-2 rounded-lg bg-primary text-white font-black text-[10px] uppercase tracking-widest active:scale-95 hover:bg-primary/90 transition-colors">Save</button>
                       </div>
                     ) : (
                       <button

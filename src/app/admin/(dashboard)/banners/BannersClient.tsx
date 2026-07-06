@@ -428,23 +428,29 @@ function BannerFormModal({
           <div className="space-y-2">
             <label className="font-black text-xs text-primary uppercase tracking-widest">Live Preview</label>
             <div
-              className="rounded-2xl p-5 min-h-[110px] flex flex-col justify-center border-2 border-table-border"
-              style={{ backgroundColor: form.background_color }}
+              className="relative overflow-hidden rounded-2xl p-5 flex flex-col justify-center border-2 border-table-border"
+              style={form.image_url ? { aspectRatio: '5 / 2' } : { backgroundColor: form.background_color, minHeight: 110 }}
             >
-              <p className="font-black text-lg leading-tight" style={{ color: form.text_color }}>
-                {form.title || 'Banner title'}
-              </p>
-              {form.subtitle && (
-                <p className="text-sm font-medium mt-1 opacity-85" style={{ color: form.text_color }}>{form.subtitle}</p>
+              {form.image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
               )}
-              {form.cta_text && (
-                <span
-                  className="inline-flex w-max items-center px-3 py-1.5 rounded-lg bg-black/20 text-xs font-bold mt-3"
-                  style={{ color: form.text_color }}
-                >
-                  {form.cta_text}
-                </span>
-              )}
+              <div className="relative z-10">
+                <p className="font-black text-lg leading-tight" style={{ color: form.text_color }}>
+                  {form.title || (form.image_url ? '' : 'Banner title')}
+                </p>
+                {form.subtitle && (
+                  <p className="text-sm font-medium mt-1 opacity-85" style={{ color: form.text_color }}>{form.subtitle}</p>
+                )}
+                {form.cta_text && (
+                  <span
+                    className="inline-flex w-max items-center px-3 py-1.5 rounded-lg bg-black/20 text-xs font-bold mt-3"
+                    style={{ color: form.text_color }}
+                  >
+                    {form.cta_text}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -461,16 +467,20 @@ function BannerFormModal({
                 <option value="mid_page">Promo Card</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="font-black text-xs text-primary uppercase tracking-widest">Background</label>
-              <div className="flex gap-2 items-center">
-                <div className="relative w-11 h-11 flex-shrink-0">
-                  <input type="color" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                  <div className="w-full h-full rounded-lg border-2 border-table-border pointer-events-none" style={{ backgroundColor: form.background_color }} />
+            {/* Background colour only matters for text-only banners — a full
+                image covers it, so hide it once an image is uploaded. */}
+            {!form.image_url && (
+              <div className="space-y-2">
+                <label className="font-black text-xs text-primary uppercase tracking-widest">Background</label>
+                <div className="flex gap-2 items-center">
+                  <div className="relative w-11 h-11 flex-shrink-0">
+                    <input type="color" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    <div className="w-full h-full rounded-lg border-2 border-table-border pointer-events-none" style={{ backgroundColor: form.background_color }} />
+                  </div>
+                  <input type="text" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className={cn(inputCls, 'flex-1 font-mono uppercase text-xs px-3')} />
                 </div>
-                <input type="text" value={form.background_color} onChange={e => setForm(p => ({ ...p, background_color: e.target.value }))} className={cn(inputCls, 'flex-1 font-mono uppercase text-xs px-3')} />
               </div>
-            </div>
+            )}
             <div className="space-y-2">
               <label className="font-black text-xs text-primary uppercase tracking-widest">Text Color</label>
               <div className="flex gap-2 items-center">
