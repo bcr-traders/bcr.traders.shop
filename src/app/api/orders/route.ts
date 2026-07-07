@@ -16,20 +16,29 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string }
   try {
     body = await request.json()
   } catch {
     return Response.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { address_id, items, notes, is_bulk, coupon_code } = body
+  const { address_id, items, notes, is_bulk, coupon_code, email } = body
 
   if (!address_id || !Array.isArray(items) || items.length === 0) {
     return Response.json({ error: 'address_id and items are required' }, { status: 400 })
   }
 
   const adminDb = createAdminClient()
+
+  // Save the email the customer gave at checkout onto their profile, so the
+  // order-confirmation email (and future ones) can actually reach them —
+  // phone-only signups otherwise have no email.
+  const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  if (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) && !/@bcrtraders\.internal$/i.test(cleanEmail)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminDb as any).from('profiles').update({ email: cleanEmail }).eq('id', profileId)
+  }
 
   // Verify the address belongs to this user. `addresses` is a service-role-only
   // table (no anon/authenticated grant), so this MUST use the admin client —

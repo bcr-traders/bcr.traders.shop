@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft, Loader2, Package, MapPin,
-  Truck, Wallet, Plus, ShieldCheck,
+  Truck, Wallet, Plus, ShieldCheck, Mail,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
@@ -15,7 +15,7 @@ import AddressForm from '@/components/checkout/AddressForm'
 import Logo from '@/components/layout/Logo'
 import type { Address } from '@/types/database.types'
 
-interface Props { profileId: string }
+interface Props { profileId: string; initialEmail?: string }
 
 interface PincodeResult {
   serviceable: boolean
@@ -24,7 +24,7 @@ interface PincodeResult {
   delivery_days?: number
 }
 
-export default function CheckoutClient({ profileId }: Props) {
+export default function CheckoutClient({ profileId, initialEmail = '' }: Props) {
   const router = useRouter()
   const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
@@ -40,6 +40,7 @@ export default function CheckoutClient({ profileId }: Props) {
   const [isBulk, setIsBulk] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [notes, setNotes] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [isPlacing, setIsPlacing] = useState(false)
   const [error, setError] = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
@@ -121,6 +122,7 @@ export default function CheckoutClient({ profileId }: Props) {
           notes: notes.trim() || undefined,
           is_bulk: isBulk,
           coupon_code: validCouponCode || undefined,
+          email: email.trim() || undefined,
         }),
       })
       const json = await res.json()
@@ -328,6 +330,27 @@ export default function CheckoutClient({ profileId }: Props) {
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* ── Contact email (for order confirmation) ── */}
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <label htmlFor="checkout-email" className="flex items-center gap-2 font-black text-sm uppercase tracking-widest text-primary mb-2">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                <Mail size={14} className="text-white" />
+              </div>
+              Order Confirmation Email
+            </label>
+            <p className="text-xs text-on-surface-variant/60 font-medium mb-3">
+              We&apos;ll send your order confirmation &amp; delivery updates here.
+            </p>
+            <input
+              id="checkout-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors"
+            />
           </section>
 
           {/* ── Order Notes (mobile) ── */}

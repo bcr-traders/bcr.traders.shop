@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { AuthMetadata } from '@/types'
@@ -19,5 +20,13 @@ export default async function CheckoutPage() {
 
   if (!profileId) redirect('/')
 
-  return <CheckoutClient profileId={profileId} />
+  // Pre-fill the email so returning customers don't re-type it.
+  const admin = createAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (admin as any).from('profiles').select('email').eq('id', profileId).maybeSingle()
+  const rawEmail = (profile?.email as string | null) ?? ''
+  // Ignore the internal placeholder emails created for phone-only signups.
+  const initialEmail = /@bcrtraders\.internal$/i.test(rawEmail) ? '' : rawEmail
+
+  return <CheckoutClient profileId={profileId} initialEmail={initialEmail} />
 }

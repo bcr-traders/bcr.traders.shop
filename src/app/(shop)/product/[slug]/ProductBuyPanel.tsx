@@ -116,24 +116,49 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* ── Variant selector ── */}
+      {/* ── Variant selector (pack-size cards with discount badge) ── */}
       {hasVariants && (
-        <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-2">Select option</p>
-          <div className="flex flex-wrap gap-2.5">
+        <div className="mb-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">Select pack size</p>
+          <div className="flex flex-wrap gap-3">
             {variants.map((v, i) => {
               const isSel = i === selIdx
+              const vDiscount = v.mrp && v.mrp > v.price ? Math.round((1 - v.price / v.mrp) * 100) : null
               return (
                 <button
                   key={`${v.label}-${i}`}
                   onClick={() => setSelIdx(i)}
+                  aria-pressed={isSel}
                   className={cn(
-                    'flex flex-col items-start px-4 py-2.5 rounded-xl border-2 transition-all duration-200 active:scale-95 min-w-[92px]',
-                    isSel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
+                    'relative flex flex-col items-center gap-1 min-w-[108px] px-4 pt-4 pb-3 rounded-2xl border-2 transition-all duration-200 active:scale-95',
+                    isSel
+                      ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]'
+                      : 'border-table-border hover:border-primary/40',
                   )}
                 >
-                  <span className={cn('font-black text-sm uppercase tracking-wide', isSel ? 'text-primary' : 'text-on-surface-variant')}>{v.label}</span>
-                  <span className={cn('font-bold text-xs mt-0.5', isSel ? 'text-primary' : 'text-on-surface-variant/60')}>₹{v.price}</span>
+                  {vDiscount && (
+                    <span
+                      className={cn(
+                        'absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide shadow-sm',
+                        isSel ? 'bg-primary text-white' : 'bg-secondary text-on-secondary',
+                      )}
+                    >
+                      {vDiscount}% OFF
+                    </span>
+                  )}
+
+                  {/* Selected tick */}
+                  {isSel && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-black">✓</span>
+                  )}
+
+                  <span className={cn('font-black text-sm', isSel ? 'text-primary' : 'text-on-surface')}>{v.label}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span className={cn('font-black text-base', isSel ? 'text-primary' : 'text-on-surface')}>₹{v.price}</span>
+                    {v.mrp && v.mrp > v.price && (
+                      <span className="text-xs text-on-surface-variant/40 line-through">₹{v.mrp}</span>
+                    )}
+                  </span>
                 </button>
               )
             })}
