@@ -258,7 +258,7 @@ INSERT INTO cms_content (key, value, value_or, description) VALUES
   ('delivery_promise',   '{"text": "Delivery within 24-48 hours"}', '{"text": "24-48 ଘଣ୍ଟା ମଧ୍ୟରେ ଡେଲିଭରି"}', 'Delivery promise text'),
   ('trust_badges',       '{"items": ["Best Wholesale Distributor in Odisha", "10,000+ Happy Customers", "Fresh Stock Every Week", "Direct from Manufacturers"]}', NULL, 'Trust badges on homepage'),
   ('contact_phone',      '{"text": "+91 XXXXXXXXXX"}', NULL, 'Footer contact phone'),
-  ('contact_email',      '{"text": "info@bcrtrades.in"}', NULL, 'Footer contact email'),
+  ('contact_email',      '{"text": "info@bcrtraders.com"}', NULL, 'Footer contact email'),
   ('contact_address',    '{"text": "BCR TRADERS, Odisha, India"}', NULL, 'Footer address'),
   ('footer_tagline',     '{"text": "Your Trusted Commodities Partner"}', NULL, 'Footer tagline'),
   ('min_order_value',    '{"value": 0}', NULL, 'Minimum cart value for checkout'),

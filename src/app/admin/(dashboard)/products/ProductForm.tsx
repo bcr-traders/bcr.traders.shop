@@ -325,6 +325,10 @@ export default function ProductForm({
         router.push(`/admin/products/${data.id}`)
       } else {
         showToast('Changes saved successfully')
+        // Re-fetch the server component so the Router Cache holds the freshly
+        // saved values — otherwise navigating away and back re-hydrates the
+        // form from a stale cached page and the edits appear to vanish.
+        router.refresh()
       }
     } else {
       const data = await res.json() as { error?: string }

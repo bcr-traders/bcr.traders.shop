@@ -14,7 +14,7 @@
 -- Super Admin row must exist before Clerk webhook can link the Clerk user.
 -- Set phone to the super-admin WhatsApp number stored in SUPER_ADMIN_PHONE env.
 INSERT INTO admin_profiles (phone, name, email, role, permissions) VALUES
-  ('+91XXXXXXXXXX', 'Super Admin', 'admin@bcrtrades.in', 'super_admin',
+  ('+91XXXXXXXXXX', 'Super Admin', 'admin@bcrtraders.com', 'super_admin',
    '{
      "view_orders":              true,
      "update_order_status":      true,

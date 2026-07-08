@@ -4,8 +4,12 @@ import type { OrderItem, Address } from '@/types/database.types'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'BCR Traders <noreply@bcrtraders.com>'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
+// Compose "Name <email>" so inboxes show a friendly sender. If the configured
+// FROM_EMAIL already contains a display name (has a "<"), use it as-is.
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'noreply@bcrtraders.com'
+const FROM_NAME = process.env.RESEND_FROM_NAME ?? 'BCR Traders'
+const FROM = FROM_EMAIL.includes('<') ? FROM_EMAIL : `${FROM_NAME} <${FROM_EMAIL}>`
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

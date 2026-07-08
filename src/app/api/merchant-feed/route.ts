@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bcrtraders.com'
 
 // Google taxonomy path fallback by category slug
 const CAT_GPC: Record<string, string> = {

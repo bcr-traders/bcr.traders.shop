@@ -99,7 +99,7 @@ async function sendStatusEmail(orderId: string, status: OrderStatus, adminProfil
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: order } = await (supabase as any)
       .from('orders')
-      .select('id, order_number, items, address, subtotal, delivery_fee, discount, coupon_code, total, created_at, estimated_delivery, custom_message, notes')
+      .select('id, user_id, order_number, items, address, subtotal, delivery_fee, discount, coupon_code, total, created_at, estimated_delivery, custom_message, notes')
       .eq('id', orderId)
       .maybeSingle()
 
