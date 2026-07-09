@@ -49,7 +49,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
   const grandTotal = Math.max(0, subtotal - couponDiscount)
-  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk)
+  // PRD #3: a valid email is mandatory before an order can be placed.
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && emailValid
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -338,19 +340,27 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                 <Mail size={14} className="text-white" />
               </div>
-              Order Confirmation Email
+              Order Confirmation Email <span className="text-error">*</span>
             </label>
             <p className="text-xs text-on-surface-variant/60 font-medium mb-3">
-              We&apos;ll send your order confirmation &amp; delivery updates here.
+              Required — we&apos;ll send your order confirmation &amp; delivery updates here.
             </p>
             <input
               id="checkout-email"
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors"
+              aria-invalid={email.trim().length > 0 && !emailValid}
+              className={cn(
+                'w-full px-4 py-3 rounded-xl border-2 bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors',
+                email.trim().length > 0 && !emailValid ? 'border-error focus:border-error' : 'border-table-border focus:border-primary',
+              )}
             />
+            {email.trim().length > 0 && !emailValid && (
+              <p className="mt-2 text-xs font-bold text-error">Please enter a valid email address.</p>
+            )}
           </section>
 
           {/* ── Order Notes (mobile) ── */}

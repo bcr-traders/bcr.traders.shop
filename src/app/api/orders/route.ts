@@ -31,13 +31,28 @@ export async function POST(request: Request) {
 
   const adminDb = createAdminClient()
 
-  // Save the email the customer gave at checkout onto their profile, so the
-  // order-confirmation email (and future ones) can actually reach them —
-  // phone-only signups otherwise have no email.
+  // PRD #3: an order requires a valid customer email on file. Enforce it here
+  // server-side so it can't be bypassed even if the client gate is skipped.
+  // The email the customer typed at checkout is saved to their profile so all
+  // order/status emails can reach them (phone-only signups otherwise have none).
+  const isRealEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !/@bcrtraders\.internal$/i.test(e)
   const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
-  if (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) && !/@bcrtraders\.internal$/i.test(cleanEmail)) {
+
+  if (isRealEmail(cleanEmail)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (adminDb as any).from('profiles').update({ email: cleanEmail }).eq('id', profileId)
+  } else {
+    // No valid email supplied — fall back to whatever is already on the profile.
+    // Existing customers who already have a real email are unaffected (backfill:
+    // existing profiles/orders are exempt; only new orders require an email).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: prof } = await (adminDb as any).from('profiles').select('email').eq('id', profileId).maybeSingle()
+    if (!isRealEmail((prof?.email as string | null) ?? '')) {
+      return Response.json(
+        { error: 'A valid email address is required to place your order.', error_code: 'email_required' },
+        { status: 400 },
+      )
+    }
   }
 
   // Verify the address belongs to this user. `addresses` is a service-role-only

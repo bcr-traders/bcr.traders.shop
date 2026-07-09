@@ -2,8 +2,8 @@ import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
-import type { OrderStatus, Address, OrderItem } from '@/types/database.types'
-import type { OrderEmailData } from '@/lib/resend'
+import type { OrderStatus, OrderItem } from '@/types/database.types'
+import { notifyOrderEvent } from '@/lib/resend/notify'
 
 const VALID_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled']
 
@@ -53,9 +53,10 @@ export async function PATCH(
     void restoreStockOnCancel(id)
   }
 
-  // Send status email (only when status actually changes)
+  // Notify the customer AND every eligible admin/super-admin on each status
+  // change (PRD #4). Best-effort — never blocks the status update.
   if (body.status && ['confirmed', 'packed', 'shipping', 'delivered', 'cancelled'].includes(body.status)) {
-    void sendStatusEmail(id, body.status, meta?.admin_profile_id ?? null)
+    void notifyOrderEvent(id, body.status, { adminProfileId: meta?.admin_profile_id ?? null })
   }
 
   return NextResponse.json({ ok: true })
@@ -91,68 +92,3 @@ async function restoreStockOnCancel(orderId: string) {
   }
 }
 
-async function sendStatusEmail(orderId: string, status: OrderStatus, adminProfileId: string | null) {
-  try {
-    const supabase = createAdminClient()
-
-    // Fetch full order
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: order } = await (supabase as any)
-      .from('orders')
-      .select('id, user_id, order_number, items, address, subtotal, delivery_fee, discount, coupon_code, total, created_at, estimated_delivery, custom_message, notes')
-      .eq('id', orderId)
-      .maybeSingle()
-
-    if (!order) return
-
-    // Fetch customer email via profile
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile } = await (supabase as any)
-      .from('profiles')
-      .select('email')
-      .eq('id', order.user_id ?? '')
-      .maybeSingle()
-
-    let confirmedByName: string | null = null
-    if (adminProfileId && status === 'confirmed') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: adminProfile } = await (supabase as any)
-        .from('admin_profiles')
-        .select('name')
-        .eq('id', adminProfileId)
-        .maybeSingle()
-      confirmedByName = (adminProfile as { name?: string } | null)?.name ?? null
-    }
-
-    const resend = await import('@/lib/resend')
-
-    const addr = order.address as Address
-    const emailData: OrderEmailData = {
-      orderId,
-      orderNumber: order.order_number,
-      items: order.items as OrderItem[],
-      address: addr,
-      subtotal: order.subtotal,
-      deliveryFee: order.delivery_fee ?? 0,
-      discount: order.discount ?? 0,
-      couponCode: order.coupon_code ?? null,
-      total: order.total,
-      createdAt: order.created_at,
-      customerEmail: (profile as { email?: string | null } | null)?.email ?? null,
-      customerName: addr?.name,
-      estimatedDelivery: order.estimated_delivery ?? null,
-      customMessage: order.custom_message ?? null,
-      confirmedByName,
-      status,
-      notes: order.notes ?? null,
-    }
-
-    if (status === 'confirmed') {
-      await resend.sendOrderConfirmedCustomer(emailData)
-    } else {
-      await resend.sendOrderStatusUpdate(emailData)
-    }
-  } catch (e) {
-    console.error('Status email error:', e)
-  }
-}

@@ -154,6 +154,31 @@ export async function sendOrderStatusUpdate(data: OrderEmailData): Promise<void>
   })
 }
 
+/**
+ * Notify staff on EVERY order status change (PRD item #4). Recipients come from
+ * getOrderEmailAdmins() which already includes super_admin unconditionally and
+ * every admin with receive_order_emails, excluding delivery staff.
+ */
+export async function sendOrderStatusAdmin(data: OrderEmailData, admins: AdminRecipient[]): Promise<void> {
+  if (!admins.length) return
+  const title = STATUS_TITLES[data.status ?? ''] ?? data.status ?? 'Updated'
+  const html = `<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e1d9;border-radius:12px;overflow:hidden">
+    <div style="background:#26170c;color:#fdf9f1;padding:16px 20px;font-weight:700;letter-spacing:1px">BCR TRADERS — Order Update</div>
+    <div style="padding:20px;color:#26170c">
+      <p style="margin:0 0 10px;font-size:15px">Order <strong>#${data.orderNumber}</strong> is now <strong>${title}</strong>.</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#4f453f">Customer: ${data.customerName ?? '—'}${data.address?.phone ? ` · ${data.address.phone}` : ''}</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#4f453f">Total: ₹${data.total.toLocaleString('en-IN')}</p>
+      ${data.estimatedDelivery ? `<p style="margin:0;font-size:13px;color:#4f453f">ETA: ${data.estimatedDelivery}</p>` : ''}
+    </div>
+  </div>`
+  await resend.emails.send({
+    from: FROM,
+    to: admins.map(a => a.email),
+    subject: `📦 Order ${title} — #${data.orderNumber}`,
+    html,
+  })
+}
+
 export async function sendUnserviceableAlert(data: UnserviceableEmailData, admins: AdminRecipient[]): Promise<void> {
   if (!admins.length) return
   const { default: Template } = await import('./templates/unserviceable-pincode-admin')

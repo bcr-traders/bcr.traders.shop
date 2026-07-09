@@ -7,6 +7,7 @@
  */
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { notifyOrderEvent } from '@/lib/resend/notify'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 import type { OrderItem } from '@/types/database.types'
@@ -56,6 +57,9 @@ export async function PATCH(
 
   // Restore stock — best-effort, fire-and-forget style
   void restoreStock(order.items as OrderItem[], supabase)
+
+  // Email the customer + eligible admins that the order was returned (PRD #4).
+  void notifyOrderEvent(id, 'returned')
 
   return NextResponse.json({ ok: true, returned_at: now })
 }
