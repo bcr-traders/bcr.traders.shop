@@ -147,7 +147,23 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
       />
 
-      <div className="flex flex-col gap-6 py-4">
+      {/* Faint Jagannath watermark behind the homepage content (glass effect).
+          Decorative only: fixed, non-interactive, very low opacity, sits BELOW
+          every card/section (z-0) so it just tints the cream gaps and never
+          covers or alters any existing UI. Needs a transparent-background PNG. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 flex items-start justify-center overflow-hidden"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/jagannath-watermark.png"
+          alt=""
+          className="mt-24 w-[min(88vw,620px)] max-w-none opacity-[0.06] select-none"
+        />
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-6 py-4">
         {/* 1. Hero banner carousel */}
         <HeroBanner banners={banners} />
 
