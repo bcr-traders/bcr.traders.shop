@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
-  if (meta?.role !== 'delivery') {
+  if (meta?.role !== 'delivery' || !meta.admin_profile_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -22,6 +22,22 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  // PRD Rule #5 / §1.8: a delivery person may only verify the door-OTP for an
+  // order actually assigned to them — role alone is not enough, or any delivery
+  // account could complete-deliver any order by guessing its id. Mirrors the
+  // same `assigned_to` guard already enforced in send-otp.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: order } = await (supabase as any)
+    .from('orders')
+    .select('id, assigned_to')
+    .eq('id', body.order_id)
+    .maybeSingle()
+
+  if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  if (order.assigned_to !== meta.admin_profile_id) {
+    return NextResponse.json({ error: 'Not your order' }, { status: 403 })
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: record } = await (supabase as any)

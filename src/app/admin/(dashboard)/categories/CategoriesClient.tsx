@@ -69,7 +69,7 @@ export default function CategoriesClient({
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight capitalize">
             Categories.
           </h1>
           <p className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mt-1">

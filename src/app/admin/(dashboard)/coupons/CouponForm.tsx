@@ -158,7 +158,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
             <ArrowLeft size={20} strokeWidth={2.5} />
           </Link>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight lowercase">
+            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight capitalize">
               {isEdit ? `Edit: ${coupon.code}` : 'New Coupon.'}
             </h1>
             {isEdit && (

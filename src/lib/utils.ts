@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Serialize a value for safe embedding inside a
+ * <script type="application/ld+json"> block. Escapes `<` so a field value that
+ * contains "</script>" (e.g. a product description or review body) cannot break
+ * out of the script tag and inject markup. Safe for client or server use.
+ */
+export function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c')
+}
+
 export function formatCurrency(amount: number, currency = 'INR'): string {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',

@@ -1,14 +1,27 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { AuthMetadata } from '@/types'
+import type { AdminPermissions } from '@/types/admin.types'
 
+// §1.3 / Rule #9: managing admin accounts requires super_admin, or an admin who
+// actually holds the `manage_admin_profiles` permission. A plain `admin` role is
+// NOT enough — otherwise any admin could edit/deactivate other admins or grant
+// themselves permissions by PATCHing their own row (privilege escalation).
 async function requireAdminAccess(): Promise<Response | null> {
   const { userId, sessionClaims } = await auth()
   if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
-  if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
-    return Response.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  if (meta?.role === 'super_admin') return null
+  if (meta?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 })
+
+  const supabase = createAdminClient()
+  const { data: profile } = await supabase
+    .from('admin_profiles')
+    .select('permissions')
+    .eq('user_id', userId)
+    .maybeSingle()
+  const perms = (profile as unknown as { permissions: AdminPermissions } | null)?.permissions
+  if (!perms?.manage_admin_profiles) return Response.json({ error: 'Forbidden' }, { status: 403 })
   return null
 }
 

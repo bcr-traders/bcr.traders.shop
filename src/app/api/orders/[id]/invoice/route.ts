@@ -1,5 +1,4 @@
 import { auth } from '@/lib/auth/server'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 import type { Order } from '@/types/database.types'
@@ -36,15 +35,18 @@ export async function GET(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let data: any, error: any
 
+  // `orders` is a service-role-only table (authenticated reads are denied), so
+  // BOTH branches must use the admin client. The customer branch is scoped to
+  // the session's own profileId, so a customer can only ever fetch their own
+  // order — never another customer's by guessing its id.
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const supabase = createAdminClient()
   if (isAdmin) {
-    const { createAdminClient } = await import('@/lib/supabase/server')
-    const supabase = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;({ data, error } = await (supabase as any).from('orders').select('*').eq('id', id).maybeSingle())
   } else {
     const profileId = meta?.supabase_profile_id
     if (!profileId) return NextResponse.json({ error: 'Profile not configured' }, { status: 400 })
-    const supabase = await createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;({ data, error } = await (supabase as any).from('orders').select('*').eq('id', id).eq('user_id', profileId).maybeSingle())
   }

@@ -190,12 +190,19 @@ export async function POST(request: Request) {
   // Decrement stock immediately to prevent overselling
   void decrementStock(orderItems)
 
-  // Record coupon usage
+  // Record coupon usage atomically so concurrent orders can't push a coupon past
+  // its max_uses (migration 014). Falls back to a plain update if the function
+  // isn't present yet.
   if (appliedCoupon) {
-    void adminDb
-      .from('coupons')
-      .update({ uses_count: (appliedCoupon.uses_count ?? 0) + 1 })
-      .eq('id', appliedCoupon.id)
+    const cid = appliedCoupon.id
+    const prevCount = appliedCoupon.uses_count ?? 0
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (adminDb as any).rpc('increment_coupon_use', { p_coupon_id: cid })
+      if (error) {
+        await adminDb.from('coupons').update({ uses_count: prevCount + 1 }).eq('id', cid)
+      }
+    })()
   }
 
   // Mark this customer's abandoned cart as recovered (best-effort).
@@ -265,18 +272,18 @@ async function decrementStock(items: OrderItem[]) {
     const supabase = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
-    const productIds = items.map((i) => i.product_id)
-    const { data: products } = await db
-      .from('products')
-      .select('id, stock_qty')
-      .in('id', productIds)
-    if (!products) return
-    type StockRow = { id: string; stock_qty: number }
+    // A product may appear as several variant lines — sum quantity per product.
+    const byProduct = new Map<string, number>()
+    for (const i of items) byProduct.set(i.product_id, (byProduct.get(i.product_id) ?? 0) + i.quantity)
+
     await Promise.all(
-      (products as StockRow[]).map((p) => {
-        const ordered = items.filter((i) => i.product_id === p.id).reduce((s, i) => s + i.quantity, 0)
-        const next = Math.max(0, p.stock_qty - ordered)
-        return db.from('products').update({ stock_qty: next }).eq('id', p.id)
+      [...byProduct].map(async ([pid, qty]) => {
+        // Atomic guarded decrement (migration 014): never oversells / goes negative.
+        const { error } = await db.rpc('decrement_product_stock', { p_product_id: pid, p_qty: qty })
+        if (!error) return
+        // Fallback if migration 014 isn't applied yet: best-effort read-then-write.
+        const { data: p } = await db.from('products').select('stock_qty').eq('id', pid).maybeSingle()
+        if (p) await db.from('products').update({ stock_qty: Math.max(0, p.stock_qty - qty) }).eq('id', pid)
       }),
     )
   } catch (e) {

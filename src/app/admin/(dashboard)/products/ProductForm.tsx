@@ -103,6 +103,12 @@ export default function ProductForm({
     (product?.images ?? []).map(url => ({ id: makeId(), url })),
   )
   const [uploading, setUploading] = useState(false)
+  const [autoTranslatingName, setAutoTranslatingName] = useState(false)
+  // Becomes true once the admin edits the Odia name themselves, so the
+  // auto-translation below never overwrites a manual correction. Seeded true
+  // when editing a product that already has an Odia name, so opening it doesn't
+  // re-translate and clobber the saved value.
+  const nameOrTouched = useRef(!!product?.name_or)
 
   const [form, setForm] = useState<FormState>({
     category_id: product?.category_id ?? '',
@@ -145,6 +151,39 @@ export default function ProductForm({
     if (!isEdit || !product?.slug) {
       set('slug', toSlug(form.name))
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.name])
+
+  // Auto-translate the English name → Odia (name_or) as the admin types, using
+  // the same AI model as the manual "Translate to Odia" button. Debounced so we
+  // don't hit the API on every keystroke, and skipped once the admin edits the
+  // Odia name by hand so a manual correction is never clobbered.
+  useEffect(() => {
+    const en = form.name.trim()
+    if (!en || nameOrTouched.current) return
+    const handle = setTimeout(async () => {
+      try {
+        setAutoTranslatingName(true)
+        const res = await fetch('/api/ai/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { name: en } }),
+        })
+        if (res.ok) {
+          const { translations } = await res.json() as { translations?: Record<string, string> }
+          // Apply only if the name hasn't changed since and the admin hasn't
+          // started editing the Odia field in the meantime.
+          if (translations?.name && !nameOrTouched.current) {
+            setForm(prev => (prev.name.trim() === en ? { ...prev, name_or: translations.name } : prev))
+          }
+        }
+      } catch {
+        // Silent — the manual "Translate to Odia" button remains available.
+      } finally {
+        setAutoTranslatingName(false)
+      }
+    }, 900)
+    return () => clearTimeout(handle)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.name])
 
@@ -353,7 +392,7 @@ export default function ProductForm({
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </Link>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight lowercase">
+            <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight capitalize">
               {isEdit ? form.name || 'Edit Product' : 'New Product.'}
             </h1>
             {isEdit && (
@@ -443,12 +482,12 @@ export default function ProductForm({
                   className={inputCls}
                 />
               </Field>
-              <Field label="Product Name (Odia)">
+              <Field label="Product Name (Odia)" hint={autoTranslatingName ? 'Translating…' : 'Auto-translated from the English name'}>
                 <input
                   type="text"
                   value={form.name_or}
-                  onChange={e => set('name_or', e.target.value)}
-                  placeholder="Odia name…"
+                  onChange={e => { nameOrTouched.current = true; set('name_or', e.target.value) }}
+                  placeholder="ଓଡ଼ିଆ ନାମ…"
                   className={inputCls}
                 />
               </Field>

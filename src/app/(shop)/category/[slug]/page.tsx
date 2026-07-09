@@ -5,6 +5,7 @@ import { getCategoryBySlug, getCategoryProducts } from '@/lib/data/category'
 import { getCategoryKeywords } from '@/lib/seo/generator'
 import ProductBreadcrumb from '@/components/product/ProductBreadcrumb'
 import CategoryProductsSection from './CategoryProductsSection'
+import { safeJsonLd } from '@/lib/utils'
 
 export const revalidate = 60
 
@@ -112,12 +113,12 @@ export default async function CategoryPage({ params }: PageProps) {
       {/* JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }}
         />
       )}
 

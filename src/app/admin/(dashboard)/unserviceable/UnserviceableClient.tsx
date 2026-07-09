@@ -70,7 +70,7 @@ export default function UnserviceableClient({ initialRows }: Props) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">Unserviceable.</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight capitalize">Unserviceable.</h1>
           <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">
             {rows.filter((r) => !r.is_contacted).length} pending contact · {rows.length} total attempts
           </p>

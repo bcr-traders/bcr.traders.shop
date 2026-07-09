@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sanitizeRichText } from '@/lib/sanitize'
 import FaqClient from './FaqClient'
 import type { ProductFAQ } from '@/types/database.types'
 
@@ -49,7 +50,15 @@ export default async function FaqPage({
   }
 
   const tableExists = !faqRes.error || faqRes.error?.code !== '42P01'
-  const faqs = tableExists ? ((faqRes.data ?? []) as ProductFAQ[]) : []
+  // Sanitize stored answer HTML before it reaches the client editor/preview, so
+  // a rogue-authored <script>/onerror can't run in the admin panel either.
+  const faqs = tableExists
+    ? ((faqRes.data ?? []) as ProductFAQ[]).map((f) => ({
+        ...f,
+        answer: sanitizeRichText(f.answer),
+        answer_or: f.answer_or ? sanitizeRichText(f.answer_or) : f.answer_or,
+      }))
+    : []
 
   return (
     <FaqClient

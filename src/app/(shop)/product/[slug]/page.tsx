@@ -14,6 +14,8 @@ import ProductFAQ from '@/components/product/ProductFAQ'
 import ProductReviews from '@/components/product/ProductReviews'
 import ProductGrid from '@/components/product/ProductGrid'
 import ProductBuyPanel from './ProductBuyPanel'
+import { sanitizeRichText } from '@/lib/sanitize'
+import { safeJsonLd } from '@/lib/utils'
 
 export const revalidate = 60
 
@@ -179,17 +181,17 @@ export default async function ProductPage({ params }: PageProps) {
       {/* JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }}
       />
       {faqJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
 
       {/* ── Top strip (breadcrumb + back) ── */}
@@ -285,7 +287,7 @@ export default async function ProductPage({ params }: PageProps) {
                   </summary>
                   <div
                     className="pb-5 prose prose-sm max-w-none text-sm font-medium text-on-surface-variant/80 leading-relaxed break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-black [&_strong]:text-primary"
-                    dangerouslySetInnerHTML={{ __html: product.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(product.description) }}
                   />
                 </details>
               )}
@@ -326,7 +328,7 @@ export default async function ProductPage({ params }: PageProps) {
               </summary>
               <div
                 className="p-4 prose prose-sm max-w-none text-sm font-medium text-on-surface-variant/80 leading-relaxed border-t border-table-border break-words [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-black [&_strong]:text-primary"
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(product.description) }}
               />
             </details>
           </div>
@@ -340,7 +342,7 @@ export default async function ProductPage({ params }: PageProps) {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">FAQs</span>
               <div className="h-px flex-1 bg-table-border" />
             </div>
-            <ProductFAQ faqs={faqs} />
+            <ProductFAQ faqs={faqs.map((f) => ({ ...f, answer: sanitizeRichText(f.answer), answer_or: f.answer_or ? sanitizeRichText(f.answer_or) : f.answer_or }))} />
           </div>
         )}
 

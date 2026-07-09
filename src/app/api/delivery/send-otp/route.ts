@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendSms } from '@/lib/message-central'
 import type { AuthMetadata } from '@/types'
@@ -54,7 +55,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Maximum OTP sends reached for this order. Contact support.' }, { status: 429 })
   }
 
-  const otp = String(Math.floor(100000 + Math.random() * 900000))
+  // §1.8: use a cryptographically secure source, not Math.random(), for the
+  // 6-digit door OTP sent over SMS.
+  const otp = String(randomInt(100000, 1000000))
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
   // Expire all previous OTPs for this order (keep rows for send-count tracking)

@@ -11,6 +11,7 @@ import CouponCards from '@/components/home/CouponCards'
 import CouponMarquee from '@/components/home/CouponMarquee'
 import AnimatedStats from '@/components/home/AnimatedStats'
 import WhatsAppFAB from '@/components/home/WhatsAppFAB'
+import { safeJsonLd } from '@/lib/utils'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
 
@@ -133,17 +134,17 @@ export default async function HomePage() {
       {/* Organization JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(orgJsonLd) }}
       />
       {/* LocalBusiness JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBizJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(localBizJsonLd) }}
       />
       {/* WebSite + SearchAction JSON-LD (sitelinks search box) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
       />
 
       <div className="flex flex-col gap-6 py-4">

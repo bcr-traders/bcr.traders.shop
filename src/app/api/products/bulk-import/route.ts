@@ -104,12 +104,21 @@ function parseCSV(text: string): Record<string, string>[] {
   })
 }
 
+// §1.11: neutralize CSV/formula injection — a cell starting with = + - @ (or a
+// tab/CR) is treated as a formula by Excel/Sheets. Prefix a single quote so the
+// re-downloaded error report can never execute anything.
+function csvCell(v: string): string {
+  const s = v ?? ''
+  const guarded = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+  return `"${guarded.replace(/"/g, '""')}"`
+}
+
 function toCSV(rows: Array<Record<string, string>>): string {
   if (rows.length === 0) return ''
   const headers = Object.keys(rows[0])
   return [
     headers.join(','),
-    ...rows.map((r) => headers.map((h) => `"${(r[h] ?? '').replace(/"/g, '""')}"`).join(',')),
+    ...rows.map((r) => headers.map((h) => csvCell(r[h] ?? '')).join(',')),
   ].join('\n')
 }
 

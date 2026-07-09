@@ -140,7 +140,7 @@ export default function PincodesClient({ initialRows }: Props) {
       {/* Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b-2 border-table-border pb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">Serviceable Pincodes.</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight capitalize">Serviceable Pincodes.</h1>
           <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">{rows.length} pincodes configured</p>
         </div>
         <div className="flex gap-3 flex-wrap">

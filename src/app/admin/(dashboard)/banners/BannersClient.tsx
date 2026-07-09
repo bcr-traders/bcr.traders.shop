@@ -65,7 +65,7 @@ export default function BannersClient({
 
       {/* ── Header ── */}
       <div className="border-b-2 border-table-border pb-6">
-        <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight lowercase">
+        <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight capitalize">
           Banners &amp; CMS.
         </h1>
         <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">

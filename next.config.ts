@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Force HTTPS for 2 years incl. subdomains (P12.14). Safe here because
+          // the site is served exclusively over HTTPS on Vercel.
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           // geolocation=(self) — the "Use my current location" delivery check needs
           // geolocation for our OWN origin. An empty allowlist "geolocation=()"
           // disables it site-wide, so the browser blocks getCurrentPosition and
