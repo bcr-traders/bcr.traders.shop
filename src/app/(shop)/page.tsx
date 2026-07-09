@@ -159,7 +159,7 @@ export default async function HomePage() {
         <img
           src="/images/jagannath-watermark.png"
           alt=""
-          className="mt-24 w-[min(88vw,620px)] max-w-none opacity-[0.06] select-none"
+          className="mt-24 w-[min(88vw,620px)] max-w-none opacity-[0.12] select-none"
         />
       </div>
 
