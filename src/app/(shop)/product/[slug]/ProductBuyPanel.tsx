@@ -7,6 +7,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useAuthPromptStore } from '@/store/authPromptStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { cn } from '@/lib/utils'
+import { useT } from '@/hooks/useT'
 import type { Product, ProductVariant } from '@/types/database.types'
 
 /**
@@ -27,6 +28,16 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const discount = mrp && mrp > price ? Math.round((1 - price / mrp) * 100) : null
   const outOfStock = product.stock_qty === 0
 
+  // Box-sold products (PRD #1/#2): reuse the existing pack fields — no new schema.
+  const soldByBox = product.pack_type === 'Box' && !!product.units_per_pack
+  const unitsPerBox = product.units_per_pack ?? null
+  // Clamp any typed quantity to available stock (never accept an invalid amount).
+  const clampQty = (n: number) => {
+    if (!Number.isFinite(n) || n < 1) return 1
+    return product.stock_qty > 0 ? Math.min(Math.floor(n), product.stock_qty) : 1
+  }
+
+  const { tField } = useT()
   const router = useRouter()
   const addItem = useCartStore((s) => s.addItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
@@ -62,8 +73,17 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Remove one">
           <Minus size={16} strokeWidth={3} />
         </button>
-        <span className="font-black text-sm min-w-8 text-center tracking-widest">{cartItem.quantity}</span>
-        <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Add one more">
+        {/* Typed quantity — enter e.g. 100 boxes in one action instead of tapping +1 (PRD #1). */}
+        <input
+          type="number"
+          min={1}
+          max={product.stock_qty || undefined}
+          value={cartItem.quantity}
+          onChange={(e) => { const n = parseInt(e.target.value, 10); updateQuantity(cartItem.id, clampQty(Number.isNaN(n) ? 1 : n)) }}
+          aria-label={soldByBox ? 'Number of boxes' : 'Quantity'}
+          className="w-14 bg-transparent text-center font-black text-sm tracking-widest outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button onClick={() => updateQuantity(cartItem.id, clampQty(cartItem.quantity + 1))} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Add one more">
           <Plus size={16} strokeWidth={3} />
         </button>
       </div>
@@ -100,6 +120,19 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
               <div className="bg-primary text-white font-black text-sm px-3 py-1.5 rounded-xl flex-shrink-0">Save {discount}%</div>
             )}
           </div>
+
+          {/* Units per box + per-box price — only for box-sold products, bilingual (PRD #2). */}
+          {soldByBox && unitsPerBox && (
+            <p className="mt-2 text-[12px] font-bold text-on-surface-variant/75">
+              {tField(`${unitsPerBox} units per box`, `ବାକ୍ସ ପିଛା ${unitsPerBox} ୟୁନିଟ୍`)}
+              {product.price_per_pack ? (
+                <span className="text-primary">
+                  {' · '}
+                  {tField(`₹${product.price_per_pack}/box`, `₹${product.price_per_pack}/ବାକ୍ସ`)}
+                </span>
+              ) : null}
+            </p>
+          )}
 
           <div className="mt-3 pt-3 border-t border-table-border">
             {outOfStock ? (

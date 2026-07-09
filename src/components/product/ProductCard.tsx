@@ -84,6 +84,13 @@ export default function ProductCard({ product, className }: ProductCardProps) {
           {/* Unit — muted pill-ish label */}
           <p className="text-[11px] font-semibold text-on-surface-variant/80">{unit}</p>
 
+          {/* Units per box — only for box-sold products with a real pack size */}
+          {product.pack_type === 'Box' && product.units_per_pack ? (
+            <p className="text-[10px] font-bold text-on-surface-variant/55">
+              {tField(`${product.units_per_pack} units/box`, `ବାକ୍ସ ପିଛା ${product.units_per_pack} ୟୁନିଟ୍`)}
+            </p>
+          ) : null}
+
           {/* Price row */}
           <div className="flex items-baseline gap-1.5 flex-wrap mt-1.5">
             <span className="text-[17px] font-black text-primary tracking-tight">₹{product.price}</span>

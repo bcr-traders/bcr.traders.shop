@@ -82,9 +82,14 @@ function CartItemRow({ item, onQtyChange, onRemove }: {
             >
               <Minus size={14} strokeWidth={3} />
             </button>
-            <span className="w-8 text-center text-sm font-black select-none">
-              {item.quantity}
-            </span>
+            <input
+              type="number"
+              min={1}
+              value={item.quantity}
+              onChange={(e) => { const n = parseInt(e.target.value, 10); onQtyChange(Number.isNaN(n) || n < 1 ? 1 : n) }}
+              aria-label="Quantity"
+              className="w-10 text-center text-sm font-black bg-transparent text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
             <button
               onClick={() => onQtyChange(item.quantity + 1)}
               className="w-9 h-full flex items-center justify-center hover:bg-white/15 transition-colors active:scale-90"
