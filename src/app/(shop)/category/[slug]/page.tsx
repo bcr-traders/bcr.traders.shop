@@ -192,7 +192,7 @@ export default async function CategoryPage({ params }: PageProps) {
           </h2>
           <p className="text-sm font-medium text-on-surface-variant/80 max-w-3xl leading-relaxed">
             Discover our curated selection of <strong className="text-primary font-black">{category.name}</strong> products at BCR
-            Traders. We source only the finest quality {category.name.toLowerCase()} items directly
+            Traders. We source only the finest quality{' '}{category.name.toLowerCase()}{' '}items directly
             from trusted suppliers, ensuring freshness and value with every order. Whether you&apos;re
             stocking your pantry or shopping for your business, our {category.name.toLowerCase()}{' '}
             collection is carefully picked to meet your everyday needs — at prices that make sense.
