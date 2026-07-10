@@ -41,6 +41,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [showForm, setShowForm] = useState(false)
   const [notes, setNotes] = useState('')
   const [email, setEmail] = useState(initialEmail)
+  const [showEmailModal, setShowEmailModal] = useState(false)
   const [isPlacing, setIsPlacing] = useState(false)
   const [error, setError] = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
@@ -49,9 +50,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
   const grandTotal = Math.max(0, subtotal - couponDiscount)
-  // PRD #3: a valid email is mandatory before an order can be placed.
+  // Address + serviceability gate the button. The email is captured in a popup
+  // at "Place Order" (PRD #3/#4) — every order/status update is sent to it.
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && emailValid
+  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk)
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -110,8 +112,17 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
     setIsBulk(false)
   }, [selectedId])
 
+  // Clicking "Place Order" opens the email popup first — the customer must enter
+  // an active email that all order/status update emails will be delivered to.
+  const requestPlaceOrder = () => {
+    if (!canPlace || isPlacing) return
+    setError('')
+    setShowEmailModal(true)
+  }
+
   const placeOrder = async () => {
-    if (!canPlace) return
+    if (!canPlace || !emailValid) return
+    setShowEmailModal(false)
     setError('')
     setIsPlacing(true)
     try {
@@ -334,34 +345,6 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
             </div>
           </section>
 
-          {/* ── Contact email (for order confirmation) ── */}
-          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
-            <label htmlFor="checkout-email" className="flex items-center gap-2 font-black text-sm uppercase tracking-widest text-primary mb-2">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                <Mail size={14} className="text-white" />
-              </div>
-              Order Confirmation Email <span className="text-error">*</span>
-            </label>
-            <p className="text-xs text-on-surface-variant/60 font-medium mb-3">
-              Required — we&apos;ll send your order confirmation &amp; delivery updates here.
-            </p>
-            <input
-              id="checkout-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              aria-invalid={email.trim().length > 0 && !emailValid}
-              className={cn(
-                'w-full px-4 py-3 rounded-xl border-2 bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors',
-                email.trim().length > 0 && !emailValid ? 'border-error focus:border-error' : 'border-table-border focus:border-primary',
-              )}
-            />
-            {email.trim().length > 0 && !emailValid && (
-              <p className="mt-2 text-xs font-bold text-error">Please enter a valid email address.</p>
-            )}
-          </section>
 
           {/* ── Order Notes (mobile) ── */}
           <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 lg:hidden">
@@ -479,7 +462,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
 
               {/* Desktop CTA */}
               <button
-                onClick={placeOrder}
+                onClick={requestPlaceOrder}
                 disabled={!canPlace || isPlacing}
                 className="hidden md:flex w-full items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-4 px-4 rounded-xl hover:bg-white/90 transition-all duration-200 active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -510,7 +493,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
         </div>
         {error && <p className="text-xs font-bold text-error mb-2">{error}</p>}
         <button
-          onClick={placeOrder}
+          onClick={requestPlaceOrder}
           disabled={!canPlace || isPlacing}
           className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-3.5 px-4 rounded-xl active:scale-95 transition-all duration-200 disabled:opacity-40"
         >
@@ -518,6 +501,59 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           {isPlacing ? 'Placing Order…' : 'Place Order'}
         </button>
       </div>
+
+      {/* ── Email prompt modal — active email for all order/status updates ── */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
+          <div className="w-full max-w-md bg-surface rounded-3xl border-2 border-table-border shadow-2xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+                <Mail size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 id="email-modal-title" className="font-black text-lg text-primary leading-tight">Your email for order updates</h3>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant/50">Required</p>
+              </div>
+            </div>
+            <p className="text-sm font-medium text-on-surface-variant/80 mb-4">
+              Enter an active email address. We&apos;ll send your order confirmation and every status update — <strong className="text-primary">processing, shipped, out for delivery</strong> and <strong className="text-primary">delivered</strong> — to this email.
+            </p>
+            <input
+              type="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && emailValid && !isPlacing) placeOrder() }}
+              placeholder="you@example.com"
+              aria-invalid={email.trim().length > 0 && !emailValid}
+              className={cn(
+                'w-full px-4 py-3 rounded-xl border-2 bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors',
+                email.trim().length > 0 && !emailValid ? 'border-error focus:border-error' : 'border-table-border focus:border-primary',
+              )}
+            />
+            {email.trim().length > 0 && !emailValid && (
+              <p className="mt-2 text-xs font-bold text-error">Please enter a valid email address.</p>
+            )}
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowEmailModal(false)}
+                disabled={isPlacing}
+                className="flex-1 py-3 rounded-xl border-2 border-table-border font-black text-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={placeOrder}
+                disabled={!emailValid || isPlacing}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPlacing && <Loader2 size={16} className="animate-spin" />}
+                {isPlacing ? 'Placing…' : 'Confirm & Place Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Address form modal ── */}
       {showForm && (
