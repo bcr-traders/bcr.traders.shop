@@ -214,53 +214,61 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </div>
       )}
 
-      {/* ── Quantity / Boxes selector — type the number directly (PRD #1) ── */}
-      {!outOfStock && (
-        <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-2">
-            {soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center h-12 rounded-full border-2 border-table-border overflow-hidden">
-              <button
-                type="button"
-                onClick={() => (cartItem ? updateQuantity(lineId, cartItem.quantity - 1) : setQty((q) => Math.max(1, q - 1)))}
-                className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition"
-                aria-label="Decrease"
-              >
-                <Minus size={16} strokeWidth={3} />
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={product.stock_qty || undefined}
-                value={cartItem ? cartItem.quantity : qty}
-                onChange={(e) => {
-                  const parsed = parseInt(e.target.value, 10)
-                  const v = clampQty(Number.isNaN(parsed) ? 1 : parsed)
-                  if (cartItem) updateQuantity(lineId, v)
-                  else setQty(v)
-                }}
-                aria-label={soldByBox ? 'Number of boxes' : 'Quantity'}
-                className="w-16 h-full bg-transparent text-center font-black text-base text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <button
-                type="button"
-                onClick={() => (cartItem ? updateQuantity(lineId, clampQty(cartItem.quantity + 1)) : setQty((q) => clampQty(q + 1)))}
-                className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition"
-                aria-label="Increase"
-              >
-                <Plus size={16} strokeWidth={3} />
-              </button>
+      {/* ── Quantity / Boxes: +/- stepper + explicit typed field + live total (PRD #1) ── */}
+      {!outOfStock && (() => {
+        const currentQty = cartItem?.quantity ?? qty
+        const setQtyValue = (v: number) => { if (cartItem) updateQuantity(lineId, v); else setQty(v) }
+        return (
+          <div className="mb-5 rounded-2xl border-2 border-table-border p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
+              {soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
+            </p>
+
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* +/- stepper */}
+              <div className="inline-flex items-center h-12 rounded-full border-2 border-table-border overflow-hidden">
+                <button type="button" onClick={() => setQtyValue(Math.max(1, currentQty - 1))} className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition" aria-label="Decrease">
+                  <Minus size={16} strokeWidth={3} />
+                </button>
+                <span className="w-12 text-center font-black text-base text-primary tabular-nums">{currentQty}</span>
+                <button type="button" onClick={() => setQtyValue(clampQty(currentQty + 1))} className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition" aria-label="Increase">
+                  <Plus size={16} strokeWidth={3} />
+                </button>
+              </div>
+
+              {/* Explicit "or type an exact number" field — obvious to new users */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-on-surface-variant/60">{tField('or type', 'କିମ୍ବା ଲେଖନ୍ତୁ')}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={product.stock_qty || undefined}
+                  value={currentQty}
+                  onChange={(e) => { const parsed = parseInt(e.target.value, 10); setQtyValue(clampQty(Number.isNaN(parsed) ? 1 : parsed)) }}
+                  placeholder={soldByBox ? '100' : '10'}
+                  aria-label={soldByBox ? 'Type number of boxes' : 'Type quantity'}
+                  className="w-24 h-12 px-3 rounded-xl border-2 border-primary/40 bg-surface text-center font-black text-lg text-primary placeholder:text-on-surface-variant/30 outline-none focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                {soldByBox && <span className="text-sm font-bold text-on-surface-variant">{tField('boxes', 'ବାକ୍ସ')}</span>}
+              </div>
             </div>
-            {soldByBox && unitsPerBox && (
-              <span className="text-xs font-bold text-on-surface-variant/60">
-                {tField(`= ${(cartItem?.quantity ?? qty) * unitsPerBox} units`, `= ${(cartItem?.quantity ?? qty) * unitsPerBox} ୟୁନିଟ୍`)}
-              </span>
-            )}
+
+            {/* Live auto-calculated total amount — updates as you type */}
+            <div className="mt-4 pt-3 border-t border-table-border flex items-end justify-between gap-3">
+              <div className="text-[11px] font-bold text-on-surface-variant/70 leading-snug">
+                <span>{currentQty} × ₹{price}</span>
+                {soldByBox && unitsPerBox ? (
+                  <><br />{tField(`${currentQty * unitsPerBox} total units`, `ମୋଟ ${currentQty * unitsPerBox} ୟୁନିଟ୍`)}</>
+                ) : null}
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50">{tField('Total amount', 'ମୋଟ ରାଶି')}</p>
+                <p className="text-2xl font-black text-primary tracking-tight leading-none mt-0.5">₹{(currentQty * price).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── Badges ── */}
       <div className="flex items-center gap-2 flex-wrap mb-5">
