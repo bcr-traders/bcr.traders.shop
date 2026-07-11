@@ -20,6 +20,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const variants: ProductVariant[] = product.variants ?? []
   const hasVariants = variants.length > 0
   const [selIdx, setSelIdx] = useState(0)
+  const [qty, setQty] = useState(1)
   const active: ProductVariant | null = hasVariants ? variants[Math.min(selIdx, variants.length - 1)] : null
 
   const price = active?.price ?? product.price
@@ -63,8 +64,22 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
     if (isLoaded && !isSignedIn) { showAuthPrompt(); return false }
     return true
   }
-  const handleAdd = () => { if (outOfStock || !requireAuth()) return; addItem(buildItem()) }
-  const handleBuyNow = () => { if (outOfStock || !requireAuth()) return; addItem(buildItem()); router.push('/checkout') }
+  // Add the typed quantity in one action (PRD #1) — respects the stock clamp.
+  const handleAdd = () => {
+    if (outOfStock || !requireAuth()) return
+    addItem(buildItem())
+    const n = clampQty(qty)
+    if (n > 1) updateQuantity(lineId, n)
+  }
+  const handleBuyNow = () => {
+    if (outOfStock || !requireAuth()) return
+    if (!cartItem) {
+      addItem(buildItem())
+      const n = clampQty(qty)
+      if (n > 1) updateQuantity(lineId, n)
+    }
+    router.push('/checkout')
+  }
 
   // Shared add / stepper control.
   const AddControl = ({ full }: { full?: boolean }) =>
@@ -195,6 +210,54 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Quantity / Boxes selector — type the number directly (PRD #1) ── */}
+      {!outOfStock && (
+        <div className="mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-2">
+            {soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center h-12 rounded-full border-2 border-table-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => (cartItem ? updateQuantity(lineId, cartItem.quantity - 1) : setQty((q) => Math.max(1, q - 1)))}
+                className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition"
+                aria-label="Decrease"
+              >
+                <Minus size={16} strokeWidth={3} />
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={product.stock_qty || undefined}
+                value={cartItem ? cartItem.quantity : qty}
+                onChange={(e) => {
+                  const parsed = parseInt(e.target.value, 10)
+                  const v = clampQty(Number.isNaN(parsed) ? 1 : parsed)
+                  if (cartItem) updateQuantity(lineId, v)
+                  else setQty(v)
+                }}
+                aria-label={soldByBox ? 'Number of boxes' : 'Quantity'}
+                className="w-16 h-full bg-transparent text-center font-black text-base text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => (cartItem ? updateQuantity(lineId, clampQty(cartItem.quantity + 1)) : setQty((q) => clampQty(q + 1)))}
+                className="w-12 h-full flex items-center justify-center text-primary hover:bg-surface-container active:scale-95 transition"
+                aria-label="Increase"
+              >
+                <Plus size={16} strokeWidth={3} />
+              </button>
+            </div>
+            {soldByBox && unitsPerBox && (
+              <span className="text-xs font-bold text-on-surface-variant/60">
+                {tField(`= ${(cartItem?.quantity ?? qty) * unitsPerBox} units`, `= ${(cartItem?.quantity ?? qty) * unitsPerBox} ୟୁନିଟ୍`)}
+              </span>
+            )}
           </div>
         </div>
       )}
