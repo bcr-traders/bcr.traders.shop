@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, Home, Grid, Truck, User, Heart } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, Home, Grid, Truck, User, Heart, ClipboardList } from 'lucide-react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { useCartStore } from '@/store/cartStore'
@@ -118,6 +118,14 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
             </Link>
 
             <Link
+              href="/shopping-list"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low hover:bg-surface-container text-primary transition-colors"
+              aria-label="Shopping list"
+            >
+              <ClipboardList size={18} strokeWidth={2.5} />
+            </Link>
+
+            <Link
               href="/cart"
               className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-black text-sm transition-colors"
             >
@@ -148,6 +156,13 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
               aria-label="Wishlist"
             >
               <Heart size={17} strokeWidth={2.5} />
+            </Link>
+            <Link
+              href="/shopping-list"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary transition-colors"
+              aria-label="Shopping list"
+            >
+              <ClipboardList size={17} strokeWidth={2.5} />
             </Link>
             <Link
               href="/cart"
