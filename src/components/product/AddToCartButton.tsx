@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Minus } from 'lucide-react'
+import { Plus, Minus, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthPromptStore } from '@/store/authPromptStore'
@@ -26,17 +26,27 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   const showAuthPrompt = useAuthPromptStore((s) => s.show)
   const { isSignedIn, isLoaded } = useSupabaseUser()
   const [flash, setFlash] = useState(false)
-  const { t } = useT()
+  const { t, tField } = useT()
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (disabled) return
-    // Require login before adding to cart.
-    if (isLoaded && !isSignedIn) {
-      showAuthPrompt()
-      return
-    }
+  // Box-sold products get a Blinkit-style quick-pick sheet (1 / 10 / custom
+  // boxes) on ADD, so the customer can bulk-order without opening the product
+  // page. For unit products, ADD stays an instant add-one.
+  const soldByBox = product.pack_type === 'Box' && !!product.units_per_pack
+  const unitsPerBox = product.units_per_pack ?? 0
+  const pricePerBox = product.price
+  const maxQty = product.stock_qty > 0 ? product.stock_qty : 9999
+  const clampNum = (n: number) => Math.max(1, Math.min(Math.floor(n), maxQty))
+
+  const [showSheet, setShowSheet] = useState(false)
+  const [qtyStr, setQtyStr] = useState('1')
+  const qtyNum = clampNum(parseInt(qtyStr || '1', 10) || 1)
+
+  const requireAuth = () => {
+    if (isLoaded && !isSignedIn) { showAuthPrompt(); return false }
+    return true
+  }
+
+  const addToCart = (quantity: number) => {
     addItem({
       id: product.id,
       name: product.name,
@@ -46,8 +56,27 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
       image: product.images?.[0] ?? null,
       slug: product.slug,
     })
+    if (quantity > 1) updateQuantity(product.id, quantity)
     setFlash(true)
     setTimeout(() => setFlash(false), 800)
+  }
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (disabled) return
+    if (!requireAuth()) return
+    if (soldByBox && !cartItem) {
+      setQtyStr('1')
+      setShowSheet(true)
+      return
+    }
+    addToCart(1)
+  }
+
+  const confirmSheet = () => {
+    addToCart(qtyNum)
+    setShowSheet(false)
   }
 
   const handleChange = (e: React.MouseEvent, delta: number) => {
@@ -57,9 +86,116 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
     updateQuantity(cartItem.id, cartItem.quantity + delta)
   }
 
+  const fmt = (n: number) => n.toLocaleString('en-IN')
+
+  // ── Quick-pick bottom sheet (box products) ──────────────────────────────────
+  const sheet = (
+    <AnimatePresence>
+      {showSheet && (
+        <motion.div
+          key="box-sheet"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSheet(false) }}
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+            className="relative w-full max-w-md bg-surface rounded-t-3xl p-5 shadow-2xl"
+            style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+          >
+            <div className="mx-auto w-10 h-1.5 rounded-full bg-outline-variant/40 mb-4" />
+
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={product.images?.[0] ?? ''} alt="" className="w-12 h-12 rounded-lg object-contain bg-surface-container flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-sm text-primary leading-tight line-clamp-2">{tField(product.name, product.name_or)}</p>
+                <p className="text-[11px] font-bold text-on-surface-variant/60 mt-0.5">
+                  {tField(`${unitsPerBox} units/box`, `ବାକ୍ସ ପିଛା ${unitsPerBox} ୟୁନିଟ୍`)} · ₹{fmt(pricePerBox)}/{tField('box', 'ବାକ୍ସ')}
+                </p>
+              </div>
+              <button onClick={() => setShowSheet(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary transition-colors flex-shrink-0" aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mb-2">
+              {tField('Select number of boxes', 'ବାକ୍ସ ସଂଖ୍ୟା ବାଛନ୍ତୁ')}
+            </p>
+
+            {/* Quick options: 1 box / 10 boxes */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {[1, 10].map((n) => {
+                const sel = qtyStr === String(n)
+                return (
+                  <button
+                    key={n}
+                    onClick={() => setQtyStr(String(n))}
+                    className={cn(
+                      'flex flex-col items-start gap-0.5 rounded-2xl border-2 p-3 text-left transition-all active:scale-95',
+                      sel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
+                    )}
+                  >
+                    <span className="font-black text-sm text-primary">{n} {n === 1 ? tField('box', 'ବାକ୍ସ') : tField('boxes', 'ବାକ୍ସ')}</span>
+                    <span className="font-black text-base text-primary">₹{fmt(n * pricePerBox)}</span>
+                    <span className="text-[10px] font-bold text-on-surface-variant/60">{fmt(n * unitsPerBox)} {tField('units', 'ୟୁନିଟ୍')}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Custom number of boxes */}
+            <div className="rounded-2xl border-2 border-primary/25 bg-primary/[0.04] p-3 mb-4">
+              <label htmlFor="box-sheet-custom" className="block text-[10px] font-black uppercase tracking-widest text-primary mb-2">
+                {tField('Or enter custom boxes', 'କିମ୍ବା ନିଜ ବାକ୍ସ ସଂଖ୍ୟା ଲେଖନ୍ତୁ')}
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="box-sheet-custom"
+                  type="text"
+                  inputMode="numeric"
+                  value={qtyStr}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setQtyStr(e.target.value.replace(/[^0-9]/g, ''))}
+                  onBlur={() => setQtyStr(String(qtyNum))}
+                  placeholder="100"
+                  aria-label="Number of boxes"
+                  className="w-24 h-12 px-3 rounded-xl border-2 border-primary/40 bg-surface text-center font-black text-lg text-primary placeholder:text-on-surface-variant/30 outline-none focus:border-primary"
+                />
+                <span className="text-sm font-bold text-on-surface-variant">{tField('boxes', 'ବାକ୍ସ')}</span>
+                <div className="ml-auto text-right">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50">{tField('Total', 'ମୋଟ')}</p>
+                  <p className="text-xl font-black text-primary leading-none mt-0.5">₹{fmt(qtyNum * pricePerBox)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Confirm */}
+            <button
+              onClick={confirmSheet}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-black text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
+            >
+              {tField(`Add ${qtyNum} ${qtyNum === 1 ? 'box' : 'boxes'}`, `${qtyNum} ${qtyNum === 1 ? 'ବାକ୍ସ' : 'ବାକ୍ସ'} ଯୋଡ଼ନ୍ତୁ`)} · ₹{fmt(qtyNum * pricePerBox)}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
   // ── Full-width variant ─────────────────────────────────────────────────────
   if (variant === 'full') {
     return (
+      <>
       <div
         className={cn('relative h-10', className)}
         onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
@@ -119,10 +255,12 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
           )}
         </AnimatePresence>
       </div>
+      {sheet}
+      </>
     )
   }
 
-  // ── Icon variant (default — small circle, for product detail page) ──────────
+  // ── Icon variant (default — small circle) ───────────────────────────────────
   if (cartItem) {
     return (
       <div
@@ -149,6 +287,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   }
 
   return (
+    <>
     <button
       onClick={handleAdd}
       disabled={disabled}
@@ -165,5 +304,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
     >
       <Plus size={18} />
     </button>
+    {sheet}
+    </>
   )
 }
