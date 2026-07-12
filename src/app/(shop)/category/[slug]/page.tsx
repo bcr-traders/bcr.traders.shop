@@ -5,6 +5,7 @@ import { getCategoryBySlug, getCategoryProducts } from '@/lib/data/category'
 import { getCategoryKeywords } from '@/lib/seo/generator'
 import ProductBreadcrumb from '@/components/product/ProductBreadcrumb'
 import CategoryProductsSection from './CategoryProductsSection'
+import CategoryStrip from '@/components/category/CategoryStrip'
 import { safeJsonLd } from '@/lib/utils'
 
 export const revalidate = 60
@@ -75,6 +76,15 @@ export default async function CategoryPage({ params }: PageProps) {
     sort: 'featured',
     page: 1,
   })
+
+  // All active categories for the Blinkit-style top strip / switcher.
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: allCategories } = await supabase
+    .from('categories')
+    .select('id, name, name_or, slug, image_url')
+    .eq('is_active', true)
+    .order('display_order')
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
 
@@ -169,6 +179,12 @@ export default async function CategoryPage({ params }: PageProps) {
           ]}
         />
       </div>
+
+      {/* ── Category switcher strip (Blinkit-style, editable images) ── */}
+      <CategoryStrip
+        categories={(allCategories ?? []) as Array<{ id: string; name: string; name_or: string | null; slug: string; image_url: string | null }>}
+        activeSlug={slug}
+      />
 
       {/* ── Sort / Filter / Grid (Client) ── */}
       <CategoryProductsSection
