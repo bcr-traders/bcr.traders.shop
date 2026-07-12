@@ -6,6 +6,7 @@ import { Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/hooks/useT'
 import AddToCartButton from './AddToCartButton'
+import WishlistButton from './WishlistButton'
 import type { Product } from '@/types/database.types'
 
 interface ProductCardProps {
@@ -56,6 +57,11 @@ export default function ProductCard({ product, className }: ProductCardProps) {
               {discount}% OFF
             </span>
           )}
+
+          {/* Wishlist heart */}
+          <div className="absolute top-2.5 right-2.5 z-20">
+            <WishlistButton productId={product.id} />
+          </div>
 
           {/* Out of stock overlay */}
           {outOfStock && (
