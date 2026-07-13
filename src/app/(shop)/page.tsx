@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { HOMEPAGE_KEYWORDS } from '@/lib/seo/generator'
 import { getHomepageData } from '@/lib/data/homepage'
 import HeroBanner from '@/components/home/HeroBanner'
 import PromoCardsRow from '@/components/home/PromoCardsRow'
 import TrustBadges from '@/components/home/TrustBadges'
-import CategoryGrid from '@/components/home/CategoryGrid'
 import ProductSection from '@/components/home/ProductSection'
 import OfferBanner from '@/components/home/OfferBanner'
 import CouponCards from '@/components/home/CouponCards'
@@ -168,17 +168,22 @@ export default async function HomePage() {
         {/* 1. Hero banner carousel */}
         <HeroBanner banners={banners} />
 
-        {/* Quick category strip (Blinkit-style horizontal switcher, editable images) */}
-        <CategoryStrip categories={categories} />
-
         {/* 2. Promo cards row */}
         <PromoCardsRow cards={promoCards} />
 
         {/* 3. Coupon marquee ticker */}
         {coupons.length > 0 && <CouponMarquee coupons={coupons} />}
 
-        {/* 4. Category bento grid (staggered entry) — straight to shopping */}
-        <CategoryGrid categories={categories} />
+        {/* 4. Shop by category — Blinkit-style horizontal strip (editable images) */}
+        <section className="pt-2">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-end justify-between">
+            <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-primary">Shop by Category</h3>
+            <Link href="/search" className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary hover:text-primary/70 underline underline-offset-4 transition-colors">
+              View All
+            </Link>
+          </div>
+          <CategoryStrip categories={categories} />
+        </section>
 
         {/* 5. Active coupon offers (premium coupon design) */}
         <CouponCards coupons={coupons} />
