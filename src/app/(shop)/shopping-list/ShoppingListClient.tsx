@@ -80,7 +80,7 @@ export default function ShoppingListClient() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') add() }}
           placeholder="e.g. 10 boxes sunflower oil"
-          className="flex-1 h-12 px-4 rounded-xl border-2 border-table-border bg-surface text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 outline-none focus:border-primary transition-colors"
+          className="flex-1 min-w-0 h-12 px-4 rounded-xl border-2 border-table-border bg-surface text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 outline-none focus:border-primary transition-colors"
         />
         <button
           onClick={add}

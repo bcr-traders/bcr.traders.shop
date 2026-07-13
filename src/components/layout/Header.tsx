@@ -151,20 +151,6 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
           <div className="flex lg:hidden items-center gap-2 ml-auto flex-shrink-0">
             <LanguageToggle />
             <Link
-              href="/wishlist"
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary transition-colors"
-              aria-label="Wishlist"
-            >
-              <Heart size={17} strokeWidth={2.5} />
-            </Link>
-            <Link
-              href="/shopping-list"
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary transition-colors"
-              aria-label="Shopping list"
-            >
-              <ClipboardList size={17} strokeWidth={2.5} />
-            </Link>
-            <Link
               href="/cart"
               className="relative w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary transition-colors"
               aria-label="Cart"
@@ -251,6 +237,27 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
                       }`}
                     >
                       <span>{t(key)}</span>
+                      {active && <span className="w-2 h-2 rounded-full bg-primary" />}
+                    </Link>
+                  )
+                })}
+
+                {/* Wishlist + Shopping list (kept out of the crowded top bar on mobile) */}
+                {[
+                  { href: '/wishlist', label: 'Wishlist', Icon: Heart },
+                  { href: '/shopping-list', label: 'Shopping List', Icon: ClipboardList },
+                ].map(({ href, label, Icon }) => {
+                  const active = pathname === href
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`text-2xl font-black uppercase tracking-tighter transition-all duration-300 flex items-center justify-between ${
+                        active ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3"><Icon size={22} strokeWidth={2.5} /> {label}</span>
                       {active && <span className="w-2 h-2 rounded-full bg-primary" />}
                     </Link>
                   )
