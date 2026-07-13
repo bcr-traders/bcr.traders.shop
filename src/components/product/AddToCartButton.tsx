@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Minus, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthPromptStore } from '@/store/authPromptStore'
+import { useOverlayStore } from '@/store/overlayStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { useT } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,27 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   const [showSheet, setShowSheet] = useState(false)
   const [qtyStr, setQtyStr] = useState('1')
   const qtyNum = clampNum(parseInt(qtyStr || '1', 10) || 1)
+
+  // Portal target only exists on the client.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const pushOverlay = useOverlayStore((s) => s.push)
+  const popOverlay = useOverlayStore((s) => s.pop)
+
+  // While the sheet is open: lock background scroll and mark an overlay open
+  // (so the floating WhatsApp button hides). The sheet itself is portaled to
+  // <body> so it escapes the card's transformed stacking context.
+  useEffect(() => {
+    if (!showSheet) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    pushOverlay()
+    return () => {
+      document.body.style.overflow = prev
+      popOverlay()
+    }
+  }, [showSheet, pushOverlay, popOverlay])
 
   const requireAuth = () => {
     if (isLoaded && !isSignedIn) { showAuthPrompt(); return false }
@@ -98,7 +121,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSheet(false) }}
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
         >
@@ -108,7 +131,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 320 }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-            className="relative w-full max-w-md bg-surface rounded-t-3xl p-5 shadow-2xl"
+            className="relative w-full max-w-md bg-surface rounded-t-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto overscroll-contain"
             style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
           >
             <div className="mx-auto w-10 h-1.5 rounded-full bg-outline-variant/40 mb-4" />
@@ -255,7 +278,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
           )}
         </AnimatePresence>
       </div>
-      {sheet}
+      {mounted && createPortal(sheet, document.body)}
       </>
     )
   }
@@ -304,7 +327,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
     >
       <Plus size={18} />
     </button>
-    {sheet}
+    {mounted && createPortal(sheet, document.body)}
     </>
   )
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
+import { useOverlayStore } from '@/store/overlayStore'
 
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919040011053'
 const WA_MESSAGE = encodeURIComponent('Hi BCR TRADERS, I want to place a bulk order.')
@@ -11,6 +12,9 @@ const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGE}`
 export default function WhatsAppFAB() {
   // Ride above the floating "View Cart" bar when the cart has items.
   const hasCart = useCartStore((s) => s.items.length > 0)
+  // Hide while a full-screen overlay (e.g. the box quick-add sheet) is open.
+  const overlayOpen = useOverlayStore((s) => s.count > 0)
+  if (overlayOpen) return null
 
   return (
     <motion.div
