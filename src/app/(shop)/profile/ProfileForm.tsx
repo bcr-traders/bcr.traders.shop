@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Loader2, LogOut, Package } from 'lucide-react'
+import { Loader2, LogOut, Package, MapPin, ChevronRight } from 'lucide-react'
 
 interface Props {
   initialName: string
@@ -59,6 +59,20 @@ export default function ProfileForm({ initialName, initialEmail, phone }: Props)
           </span>
           <span className="font-black text-sm text-primary">My Orders</span>
         </div>
+        <ChevronRight size={18} className="text-on-surface-variant/40" />
+      </Link>
+
+      <Link
+        href="/addresses"
+        className="flex items-center justify-between p-4 rounded-2xl border-2 border-table-border bg-surface-card hover:border-primary/40 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <MapPin size={18} />
+          </span>
+          <span className="font-black text-sm text-primary">Saved Addresses</span>
+        </div>
+        <ChevronRight size={18} className="text-on-surface-variant/40" />
       </Link>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4 p-5 rounded-2xl border-2 border-table-border bg-surface-card">
