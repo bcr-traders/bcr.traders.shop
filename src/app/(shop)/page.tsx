@@ -11,6 +11,7 @@ import CouponCards from '@/components/home/CouponCards'
 import CouponMarquee from '@/components/home/CouponMarquee'
 import AnimatedStats from '@/components/home/AnimatedStats'
 import WhatsAppFAB from '@/components/home/WhatsAppFAB'
+import CategoryStrip from '@/components/category/CategoryStrip'
 import { safeJsonLd } from '@/lib/utils'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
@@ -166,6 +167,9 @@ export default async function HomePage() {
       <div className="relative z-10 flex flex-col gap-6 py-4">
         {/* 1. Hero banner carousel */}
         <HeroBanner banners={banners} />
+
+        {/* Quick category strip (Blinkit-style horizontal switcher, editable images) */}
+        <CategoryStrip categories={categories} />
 
         {/* 2. Promo cards row */}
         <PromoCardsRow cards={promoCards} />
