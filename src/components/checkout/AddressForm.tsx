@@ -14,6 +14,8 @@ interface Props {
   profileId: string
   onSaved: (address: Address) => void
   onClose: () => void
+  /** When provided, the form edits this address instead of creating a new one. */
+  address?: Address
 }
 
 const inputCls =
@@ -21,7 +23,8 @@ const inputCls =
 const errorCls = 'text-[11px] font-bold text-error mt-1'
 const labelCls = 'text-[11px] font-black text-on-surface-variant/70 uppercase tracking-[0.1em] block mb-1.5'
 
-export default function AddressForm({ profileId, onSaved, onClose }: Props) {
+export default function AddressForm({ profileId, onSaved, onClose, address }: Props) {
+  const isEditing = !!address
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [pincodeValue, setPincodeValue] = useState('')
@@ -32,29 +35,46 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<AddressFormData>({ defaultValues: { label: 'Home', is_default: false } })
+  } = useForm<AddressFormData>({
+    defaultValues: address
+      ? {
+          name: address.name,
+          phone: address.phone,
+          line1: address.line1,
+          line2: address.line2 ?? '',
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode,
+          label: address.label ?? 'Home',
+          is_default: address.is_default,
+        }
+      : { label: 'Home', is_default: false },
+  })
 
-  const watchedPincode = watch('pincode', '')
+  const watchedPincode = watch('pincode', address?.pincode ?? '')
 
   const onSubmit = async (data: AddressFormData) => {
     setIsSaving(true)
     setSaveError(null)
     try {
-      const res = await fetch('/api/addresses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          phone: data.phone,
-          line1: data.line1,
-          line2: data.line2 ?? null,
-          city: data.city,
-          state: data.state,
-          pincode: data.pincode,
-          label: data.label ?? null,
-          is_default: data.is_default ?? false,
-        }),
-      })
+      const res = await fetch(
+        isEditing ? `/api/addresses/${address.id}` : '/api/addresses',
+        {
+          method: isEditing ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: data.name,
+            phone: data.phone,
+            line1: data.line1,
+            line2: data.line2 ?? null,
+            city: data.city,
+            state: data.state,
+            pincode: data.pincode,
+            label: data.label ?? null,
+            is_default: data.is_default ?? false,
+          }),
+        },
+      )
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error ?? 'Failed to save address.')
       onSaved(json as Address)
@@ -75,7 +95,7 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
               <MapPin size={18} className="text-primary" strokeWidth={2.5} />
             </div>
             <div>
-              <h3 className="font-sans text-lg font-black text-primary tracking-tight leading-none">Add New Address</h3>
+              <h3 className="font-sans text-lg font-black text-primary tracking-tight leading-none">{isEditing ? 'Edit Address' : 'Add New Address'}</h3>
               <p className="text-[11px] font-medium text-on-surface-variant/60 mt-1">Where should we deliver your order?</p>
             </div>
           </div>
@@ -249,7 +269,7 @@ export default function AddressForm({ profileId, onSaved, onClose }: Props) {
               className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-60 disabled:hover:translate-y-0 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isSaving && <Loader2 size={14} className="animate-spin" />}
-              {isSaving ? 'Saving…' : 'Save Address'}
+              {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save Address'}
             </button>
           </div>
         </form>

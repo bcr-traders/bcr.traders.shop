@@ -5,6 +5,7 @@ import { SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import ProductGrid from '@/components/product/ProductGrid'
+import { ProductGridSkeleton } from '@/components/ui/Skeleton'
 import type { Product } from '@/types/database.types'
 import type { SortOption } from '@/lib/data/category'
 
@@ -187,9 +188,7 @@ export default function CategoryProductsSection({ categoryId, initialProducts, i
       {/* ── Product grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isPending ? (
-          <div className="flex justify-center py-24">
-            <Loader2 size={32} className="animate-spin text-primary" />
-          </div>
+          <ProductGridSkeleton count={products.length || 12} />
         ) : (
           <>
             <ProductGrid

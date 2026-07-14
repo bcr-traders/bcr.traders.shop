@@ -8,6 +8,7 @@ import { Download, Search, X, ArrowRight, FileText } from 'lucide-react'
 
 type OrderRow = {
   id: string
+  order_number?: string | null
   status: OrderStatus
   total: number
   created_at: string
@@ -51,6 +52,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
       const q = search.toLowerCase()
       list = list.filter(o =>
         o.id.toLowerCase().includes(q) ||
+        o.order_number?.toLowerCase().includes(q) ||
         (o.address as { phone?: string } | null)?.phone?.includes(q) ||
         (o.address as { name?: string } | null)?.name?.toLowerCase().includes(q),
       )
@@ -73,7 +75,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     const rows = filtered.map(o => {
       const addr = o.address as { name?: string; phone?: string } | null
       return [
-        `BCR-${o.id.slice(-8).toUpperCase()}`,
+        o.order_number || `BCR-${o.id.slice(-8).toUpperCase()}`,
         new Date(o.created_at).toLocaleDateString('en-IN'),
         `"${(addr?.name ?? '').replace(/"/g, '""')}"`,
         addr?.phone ?? '',
@@ -223,7 +225,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                     >
                       <td className="py-4 px-5 border-r border-table-border">
                         <span className="font-black text-xs text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
-                          #{order.id.slice(-8).toUpperCase()}
+                          {order.order_number || `#${order.id.slice(-8).toUpperCase()}`}
                         </span>
                       </td>
                       <td className="py-4 px-5 border-r border-table-border">

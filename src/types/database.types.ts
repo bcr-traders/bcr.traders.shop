@@ -73,6 +73,10 @@ export interface Product {
   units_per_pack: number | null
   unit_type: UnitType | null
   price_per_pack: number | null
+  // Spices only: buyer picks hangers/packs. `price` is the per-hanger price;
+  // pack price = hangers_per_pack × price. Null for non-spice products.
+  units_per_hanger: number | null
+  hangers_per_pack: number | null
   variants: ProductVariant[]
   created_at: string
   updated_at: string
@@ -155,6 +159,10 @@ export interface OrderItem {
   quantity: number
   unit: string
   image: string | null
+  // Total stock units this line consumes (spices: quantity × units per hanger/
+  // pack; otherwise = quantity). Drives stock decrement/restore. Optional for
+  // backward compatibility with orders placed before this field existed.
+  stock_units?: number
 }
 
 export type OrderStatus = 'placed' | 'confirmed' | 'packed' | 'shipping' | 'delivered' | 'cancelled' | 'returned'
@@ -162,6 +170,7 @@ export type OrderStatus = 'placed' | 'confirmed' | 'packed' | 'shipping' | 'deli
 export interface Order {
   id: string
   user_id: string
+  order_number: string
   items: OrderItem[]
   address: Address
   subtotal: number
@@ -176,6 +185,8 @@ export interface Order {
   estimated_delivery?: string | null
   custom_message?: string | null
   returned_at?: string | null
+  gstin?: string | null
+  gst_business_name?: string | null
   created_at: string
   updated_at: string
 }

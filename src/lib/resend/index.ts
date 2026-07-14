@@ -31,6 +31,8 @@ export interface OrderEmailData {
   confirmedByName?: string | null
   status?: string
   notes?: string | null
+  gstin?: string | null
+  gstBusinessName?: string | null
 }
 
 export interface AdminRecipient {

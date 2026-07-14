@@ -10,6 +10,7 @@ type DeliveryPerson = { id: string; name: string; phone: string }
 
 type OrderDetail = {
   id: string
+  order_number?: string | null
   status: OrderStatus
   total: number
   subtotal: number
@@ -120,7 +121,7 @@ export default function OrderDetailClient({
           </Link>
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight">
-              #{order.id.slice(-8).toUpperCase()}
+              {order.order_number || `#${order.id.slice(-8).toUpperCase()}`}
             </h1>
             <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-1">
               {new Date(order.created_at).toLocaleString('en-IN', {

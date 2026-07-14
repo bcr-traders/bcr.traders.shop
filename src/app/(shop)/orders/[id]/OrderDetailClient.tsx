@@ -20,6 +20,7 @@ import {
   CalendarCheck,
   Loader2,
   AlertTriangle,
+  XCircle,
 } from 'lucide-react'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import ReviewPopup from '@/components/product/ReviewPopup'
@@ -102,7 +103,7 @@ function SuccessOverlay({
   order: Order
   onDismiss: () => void
 }) {
-  const orderId = `BCR-${order.id.slice(0, 8).toUpperCase()}`
+  const orderId = order.order_number || `BCR-${order.id.slice(0, 8).toUpperCase()}`
 
   return (
     <motion.div
@@ -236,6 +237,13 @@ export default function OrderDetailClient({
   const [showSuccess, setShowSuccess] = useState(isNew)
   const [reordering, setReordering] = useState(false)
   const [skippedItems, setSkippedItems] = useState<string[]>([])
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+
+  // A customer may cancel only before the admin confirms (status still 'placed'),
+  // and never for a GST-invoice order. The server enforces this too.
+  const canCancel = order.status === 'placed' && !order.gstin
 
   // Review popup queue
   const [reviewIdx, setReviewIdx] = useState(0)
@@ -298,6 +306,22 @@ export default function OrderDetailClient({
     }
   }, [order.items, addItem, router])
 
+  const handleCancel = useCallback(async () => {
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/cancel`, { method: 'POST' })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? 'Could not cancel the order.')
+      setShowCancelConfirm(false)
+      router.refresh()
+    } catch (e) {
+      setCancelError(e instanceof Error ? e.message : 'Could not cancel the order.')
+    } finally {
+      setCancelling(false)
+    }
+  }, [order.id, router])
+
   function handleNextReview() {
     if (reviewIdx + 1 < order.items.length) {
       setReviewIdx((i) => i + 1)
@@ -307,7 +331,7 @@ export default function OrderDetailClient({
   }
 
   const currentReviewItem = order.items[reviewIdx]
-  const orderId = `BCR-${order.id.slice(0, 8).toUpperCase()}`
+  const orderId = order.order_number || `BCR-${order.id.slice(0, 8).toUpperCase()}`
   const discount = order.discount ?? 0
   const totalItems = order.items.reduce((s, i) => s + i.quantity, 0)
 
@@ -319,6 +343,45 @@ export default function OrderDetailClient({
 
       {showReview && currentReviewItem && (
         <ReviewPopup productId={currentReviewItem.product_id} productName={currentReviewItem.name} onClose={handleNextReview} />
+      )}
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md bg-surface rounded-3xl border-2 border-table-border shadow-2xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={18} className="text-error" />
+              </div>
+              <h3 className="font-black text-lg text-primary leading-tight">Cancel this order?</h3>
+            </div>
+            <p className="text-sm font-medium text-on-surface-variant/80 mb-4">
+              Order <strong className="text-primary">#{orderId}</strong> will be cancelled and can&apos;t be undone.
+              You can only cancel while an order is still awaiting confirmation.
+            </p>
+            {cancelError && (
+              <p className="text-[13px] font-bold text-error bg-error/10 border-2 border-error/20 rounded-xl px-4 py-3 mb-4">
+                {cancelError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={cancelling}
+                className="flex-1 py-3 rounded-xl border-2 border-table-border font-black text-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-error text-white font-black text-xs uppercase tracking-widest hover:bg-error/90 transition-colors active:scale-95 disabled:opacity-50"
+              >
+                {cancelling && <Loader2 size={15} className="animate-spin" />}
+                {cancelling ? 'Cancelling…' : 'Cancel Order'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="min-h-screen">
@@ -451,7 +514,15 @@ export default function OrderDetailClient({
           )}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t-2 border-table-border">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-5 border-t-2 border-table-border">
+            {canCancel && (
+              <button
+                onClick={() => { setCancelError(null); setShowCancelConfirm(true) }}
+                className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-error border-2 border-error/30 hover:border-error hover:bg-error/5 active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden sm:mr-auto"
+              >
+                <XCircle size={15} /> Cancel Order
+              </button>
+            )}
             <button onClick={() => window.print()} className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
               <Printer size={15} /> Print
             </button>

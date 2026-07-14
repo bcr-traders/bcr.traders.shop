@@ -1,9 +1,10 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import type { AuthMetadata } from '@/types'
-import type { OrderStatus, OrderItem } from '@/types/database.types'
+import type { OrderStatus } from '@/types/database.types'
 import { notifyOrderEvent } from '@/lib/resend/notify'
+import { restoreStockForOrder } from '@/lib/orders/stock'
 
 const VALID_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled']
 
@@ -50,45 +51,16 @@ export async function PATCH(
 
   // Restore stock when an order is cancelled
   if (body.status === 'cancelled') {
-    void restoreStockOnCancel(id)
+    void restoreStockForOrder(id)
   }
 
   // Notify the customer AND every eligible admin/super-admin on each status
   // change (PRD #4). Best-effort — never blocks the status update.
   if (body.status && ['confirmed', 'packed', 'shipping', 'delivered', 'cancelled'].includes(body.status)) {
-    void notifyOrderEvent(id, body.status, { adminProfileId: meta?.admin_profile_id ?? null })
+    const status = body.status
+    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null }))
   }
 
   return NextResponse.json({ ok: true })
-}
-
-async function restoreStockOnCancel(orderId: string) {
-  try {
-    const supabase = createAdminClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabase as any
-    const { data: order } = await db
-      .from('orders')
-      .select('items')
-      .eq('id', orderId)
-      .maybeSingle()
-    const items = (order?.items ?? []) as OrderItem[]
-    if (!items.length) return
-    const productIds = items.map((i) => i.product_id)
-    const { data: products } = await db
-      .from('products')
-      .select('id, stock_qty')
-      .in('id', productIds)
-    if (!products) return
-    type StockRow = { id: string; stock_qty: number }
-    await Promise.all(
-      (products as StockRow[]).map((p) => {
-        const qty = items.filter((i) => i.product_id === p.id).reduce((s, i) => s + i.quantity, 0)
-        return db.from('products').update({ stock_qty: p.stock_qty + qty }).eq('id', p.id)
-      }),
-    )
-  } catch (e) {
-    console.error('Stock restore failed:', e)
-  }
 }
 

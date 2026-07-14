@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createDeliveryPaymentLink } from '@/lib/razorpay'
 import { notifyOrderEvent } from '@/lib/resend/notify'
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // Email the customer + eligible admins that the order was delivered (PRD #4).
-    void notifyOrderEvent(body.order_id, 'delivered')
+    after(() => notifyOrderEvent(body.order_id, 'delivered'))
 
     return NextResponse.json({ ok: true })
   }

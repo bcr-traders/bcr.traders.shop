@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { auth } from '@/lib/auth/server'
 import type { AuthMetadata } from '@/types'
@@ -94,8 +95,9 @@ export async function POST(request: Request) {
 
   const insertedId = (data as { id: string }).id
 
-  // Fire-and-forget: notify admins
-  void notifyAdmins(insertedId, resolvedName, resolvedPhone, pincode, city ?? null, resolvedCart as OrderItem[] | null, resolvedCartValue)
+  // Notify admins after the response — `after()` keeps the function alive so the
+  // alert reliably sends instead of being dropped when the response returns.
+  after(() => notifyAdmins(insertedId, resolvedName, resolvedPhone, pincode, city ?? null, resolvedCart as OrderItem[] | null, resolvedCartValue))
 
   return Response.json({ id: insertedId }, { status: 201 })
 }

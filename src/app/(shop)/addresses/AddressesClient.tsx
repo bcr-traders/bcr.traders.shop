@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, Plus, Trash2, Star, Loader2 } from 'lucide-react'
+import { ArrowLeft, MapPin, Plus, Pencil, Trash2, Star, Loader2 } from 'lucide-react'
 import AddressForm from '@/components/checkout/AddressForm'
 import { cn } from '@/lib/utils'
 import type { Address } from '@/types/database.types'
@@ -16,6 +16,7 @@ export default function AddressesClient({
 }) {
   const [addresses, setAddresses] = useState<Address[]>(initialAddresses)
   const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<Address | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
   const remove = async (id: string) => {
@@ -93,14 +94,24 @@ export default function AddressesClient({
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => remove(addr.id)}
-                    disabled={busy === addr.id}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant/50 hover:text-error hover:bg-error/5 transition-colors flex-shrink-0 disabled:opacity-50"
-                    aria-label="Delete address"
-                  >
-                    {busy === addr.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => setEditing(addr)}
+                      disabled={busy === addr.id}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant/50 hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                      aria-label="Edit address"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => remove(addr.id)}
+                      disabled={busy === addr.id}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant/50 hover:text-error hover:bg-error/5 transition-colors disabled:opacity-50"
+                      aria-label="Delete address"
+                    >
+                      {busy === addr.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 <p className="font-black text-sm text-primary">{addr.name}</p>
@@ -138,6 +149,26 @@ export default function AddressesClient({
             setShowForm(false)
           }}
           onClose={() => setShowForm(false)}
+        />
+      )}
+
+      {editing && (
+        <AddressForm
+          profileId={profileId}
+          address={editing}
+          onSaved={(addr) => {
+            setAddresses((prev) =>
+              prev.map((x) =>
+                x.id === addr.id
+                  ? addr
+                  : addr.is_default
+                    ? { ...x, is_default: false }
+                    : x,
+              ),
+            )
+            setEditing(null)
+          }}
+          onClose={() => setEditing(null)}
         />
       )}
     </div>

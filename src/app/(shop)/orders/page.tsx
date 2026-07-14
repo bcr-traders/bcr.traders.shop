@@ -104,7 +104,7 @@ export default async function OrdersPage() {
           <div className="flex flex-col gap-3">
             {orders.map((order) => {
               const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, dot: 'bg-primary' }
-              const orderId = `BCR-${order.id.slice(0, 8).toUpperCase()}`
+              const orderId = order.order_number || `BCR-${order.id.slice(0, 8).toUpperCase()}`
               const isDelivered = order.status === 'delivered'
               const isCancelled = order.status === 'cancelled' || order.status === 'returned'
 

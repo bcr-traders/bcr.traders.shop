@@ -1,5 +1,8 @@
+import { after } from 'next/server'
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { cleanGstin } from '@/lib/validations/gst'
+import { isSpiceProduct, pricePerSelection, unitsPerSelection, spiceUnitLabel, HANGER, PACK } from '@/lib/products/spices'
 import type { AuthMetadata } from '@/types'
 import type { CartItem, Address, OrderItem } from '@/types/database.types'
 import type { OrderEmailData } from '@/lib/resend'
@@ -16,7 +19,7 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string }
   try {
     body = await request.json()
   } catch {
@@ -27,6 +30,17 @@ export async function POST(request: Request) {
 
   if (!address_id || !Array.isArray(items) || items.length === 0) {
     return Response.json({ error: 'address_id and items are required' }, { status: 400 })
+  }
+
+  // Optional GST invoice ("claim GST bill"). If a GSTIN is supplied it must be
+  // valid, and a business name is required alongside it.
+  const gstin = cleanGstin(body.gstin)
+  const gstBusinessName = body.gst_business_name?.trim() || null
+  if (body.gstin && body.gstin.trim() && !gstin) {
+    return Response.json({ error: 'Enter a valid 15-character GSTIN, or leave it blank.' }, { status: 400 })
+  }
+  if (gstin && !gstBusinessName) {
+    return Response.json({ error: 'Business name is required for a GST invoice.' }, { status: 400 })
   }
 
   const adminDb = createAdminClient()
@@ -82,11 +96,11 @@ export async function POST(request: Request) {
   const productIds = [...new Set(items.map((i) => i.product_id ?? i.id))]
   const { data: dbProducts } = await adminDb
     .from('products')
-    .select('id, name, price, mrp, unit, images, slug, is_active, variants')
+    .select('id, name, price, mrp, unit, images, slug, is_active, variants, units_per_hanger, hangers_per_pack')
     .in('id', productIds)
 
   type DbVariant = { label: string; price: number; mrp: number | null }
-  type DbProduct = { id: string; name: string; price: number; mrp: number | null; unit: string; images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null }
+  type DbProduct = { id: string; name: string; price: number; mrp: number | null; unit: string; images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null; units_per_hanger: number | null; hangers_per_pack: number | null }
 
   const productMap = new Map<string, DbProduct>(
     ((dbProducts as DbProduct[] | null) ?? []).map((p) => [p.id, p]),
@@ -105,7 +119,17 @@ export async function POST(request: Request) {
     let price = product.price
     let mrp = product.mrp ?? null
     let unit = product.unit
-    if (i.variant) {
+    let stockUnits = i.quantity
+    if (isSpiceProduct(product) && (i.variant === HANGER || i.variant === PACK)) {
+      // Spices: price the hanger/pack authoritatively from the DB per-hanger
+      // price; total stock units = quantity × units in the chosen packaging.
+      const uph = product.units_per_hanger ?? 0
+      const hpp = product.hangers_per_pack ?? 0
+      price = pricePerSelection(i.variant, product.price, hpp)
+      mrp = product.mrp != null ? pricePerSelection(i.variant, product.mrp, hpp) : null
+      unit = spiceUnitLabel(i.variant, uph, hpp)
+      stockUnits = i.quantity * unitsPerSelection(i.variant, uph, hpp)
+    } else if (i.variant) {
       const variant = (product.variants ?? []).find((v) => v.label === i.variant)
       if (!variant) { unavailableIds.push(i.id); continue }
       price = variant.price
@@ -120,6 +144,7 @@ export async function POST(request: Request) {
       quantity: i.quantity,
       unit,
       image: product.images?.[0] ?? null,
+      stock_units: stockUnits,
     })
   }
 
@@ -190,6 +215,8 @@ export async function POST(request: Request) {
       status: 'placed',
       notes: notes?.trim() || null,
       is_bulk: is_bulk ?? false,
+      gstin: gstin,
+      gst_business_name: gstBusinessName,
     })
     .select('id, order_number, created_at')
     .single()
@@ -224,8 +251,11 @@ export async function POST(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   void (adminDb as any).from('abandoned_carts').update({ is_recovered: true }).eq('user_id', profileId)
 
-  // Fire-and-forget: emails + low stock check
-  void sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, appliedCouponCode, total, profileId)
+  // Emails + low stock check run AFTER the response is sent. `after()` (vs a bare
+  // `void`) is what makes this reliable on serverless: the platform keeps the
+  // function alive until the callback finishes, so the email actually goes out
+  // promptly instead of being frozen/dropped when the response returns.
+  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, appliedCouponCode, total, profileId))
 
   return Response.json({ order_id: orderId }, { status: 201 })
 }
@@ -287,9 +317,11 @@ async function decrementStock(items: OrderItem[]) {
     const supabase = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any
-    // A product may appear as several variant lines — sum quantity per product.
+    // A product may appear as several variant lines — sum the stock units per
+    // product (spices consume units, not hanger/pack count; falls back to
+    // quantity for normal products and legacy lines without stock_units).
     const byProduct = new Map<string, number>()
-    for (const i of items) byProduct.set(i.product_id, (byProduct.get(i.product_id) ?? 0) + i.quantity)
+    for (const i of items) byProduct.set(i.product_id, (byProduct.get(i.product_id) ?? 0) + (i.stock_units ?? i.quantity))
 
     await Promise.all(
       [...byProduct].map(async ([pid, qty]) => {

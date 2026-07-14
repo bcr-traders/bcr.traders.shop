@@ -8,6 +8,10 @@ import { useAuthPromptStore } from '@/store/authPromptStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { cn } from '@/lib/utils'
 import { useT } from '@/hooks/useT'
+import {
+  isSpiceProduct, pricePerSelection, unitsPerSelection, spiceUnitLabel,
+  HANGER, PACK, type SpicePackaging,
+} from '@/lib/products/spices'
 import type { Product, ProductVariant } from '@/types/database.types'
 
 /**
@@ -17,7 +21,13 @@ import type { Product, ProductVariant } from '@/types/database.types'
  * separate lines.
  */
 export default function ProductBuyPanel({ product }: { product: Product }) {
-  const variants: ProductVariant[] = product.variants ?? []
+  // Spices are sold by hanger/pack instead of weight/size variants.
+  const isSpice = isSpiceProduct(product)
+  const unitsPerHanger = product.units_per_hanger ?? 0
+  const hangersPerPack = product.hangers_per_pack ?? 0
+  const [packaging, setPackaging] = useState<SpicePackaging>(HANGER)
+
+  const variants: ProductVariant[] = isSpice ? [] : (product.variants ?? [])
   const hasVariants = variants.length > 0
   const [selIdx, setSelIdx] = useState(0)
   const [qty, setQty] = useState(1)
@@ -26,19 +36,32 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const [qtyInput, setQtyInput] = useState('1')
   const active: ProductVariant | null = hasVariants ? variants[Math.min(selIdx, variants.length - 1)] : null
 
-  const price = active?.price ?? product.price
-  const mrp = active?.mrp ?? product.mrp
-  const unit = active?.label ?? product.unit
+  // Units contained in one hanger/pack, for the spice unit calculation.
+  const unitsEach = isSpice ? unitsPerSelection(packaging, unitsPerHanger, hangersPerPack) : 0
+
+  const price = isSpice
+    ? pricePerSelection(packaging, product.price, hangersPerPack)
+    : (active?.price ?? product.price)
+  const mrp = isSpice
+    ? (product.mrp != null ? pricePerSelection(packaging, product.mrp, hangersPerPack) : null)
+    : (active?.mrp ?? product.mrp)
+  const unit = isSpice ? packaging : (active?.label ?? product.unit)
   const discount = mrp && mrp > price ? Math.round((1 - price / mrp) * 100) : null
   const outOfStock = product.stock_qty === 0
 
   // Box-sold products (PRD #1/#2): reuse the existing pack fields — no new schema.
-  const soldByBox = product.pack_type === 'Box' && !!product.units_per_pack
+  const soldByBox = !isSpice && product.pack_type === 'Box' && !!product.units_per_pack
   const unitsPerBox = product.units_per_pack ?? null
   // Clamp any typed quantity to available stock (never accept an invalid amount).
+  // For spices, stock_qty is measured in units, so the cap is how many whole
+  // hangers/packs those units allow.
   const clampQty = (n: number) => {
     if (!Number.isFinite(n) || n < 1) return 1
-    return product.stock_qty > 0 ? Math.min(Math.floor(n), product.stock_qty) : 1
+    if (product.stock_qty <= 0) return 1
+    const cap = isSpice && unitsEach > 0
+      ? Math.max(1, Math.floor(product.stock_qty / unitsEach))
+      : product.stock_qty
+    return Math.min(Math.floor(n), cap)
   }
 
   const { tField } = useT()
@@ -48,17 +71,19 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const showAuthPrompt = useAuthPromptStore((s) => s.show)
   const { isSignedIn, isLoaded } = useSupabaseUser()
 
-  const lineId = active ? `${product.id}::${active.label}` : product.id
+  const lineId = isSpice
+    ? `${product.id}::${packaging}`
+    : active ? `${product.id}::${active.label}` : product.id
   const cartItem = useCartStore((s) => s.items.find((i) => i.id === lineId))
 
   const buildItem = () => ({
     id: lineId,
     product_id: product.id,
-    variant: active?.label ?? null,
+    variant: isSpice ? packaging : (active?.label ?? null),
     name: product.name,
     price,
     mrp,
-    unit,
+    unit: isSpice ? spiceUnitLabel(packaging, unitsPerHanger, hangersPerPack) : unit,
     image: product.images?.[0] ?? null,
     slug: product.slug,
   })
@@ -173,6 +198,46 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </div>
       </div>
 
+      {/* ── Spices: Hanger / Pack selector ── */}
+      {isSpice && (
+        <div className="mb-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
+            {tField('Buy by', 'କିଣନ୍ତୁ')}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {([HANGER, PACK] as SpicePackaging[]).map((opt) => {
+              const isSel = packaging === opt
+              const optUnits = unitsPerSelection(opt, unitsPerHanger, hangersPerPack)
+              const optPrice = pricePerSelection(opt, product.price, hangersPerPack)
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setPackaging(opt)}
+                  aria-pressed={isSel}
+                  className={cn(
+                    'relative flex flex-col items-start gap-1 px-4 pt-4 pb-3 rounded-2xl border-2 transition-all duration-200 active:scale-95 text-left',
+                    isSel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
+                  )}
+                >
+                  {isSel && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-black">✓</span>
+                  )}
+                  <span className={cn('font-black text-sm', isSel ? 'text-primary' : 'text-on-surface')}>
+                    {opt === HANGER ? tField('Hanger', 'ହାଙ୍ଗର') : tField('Pack', 'ପ୍ୟାକ୍')}
+                  </span>
+                  <span className={cn('font-black text-base', isSel ? 'text-primary' : 'text-on-surface')}>₹{optPrice}</span>
+                  <span className="text-[11px] font-bold text-on-surface-variant/60">
+                    {opt === PACK
+                      ? tField(`${hangersPerPack} hangers · ${optUnits} units`, `${hangersPerPack} ହାଙ୍ଗର · ${optUnits} ୟୁନିଟ୍`)
+                      : tField(`${optUnits} units`, `${optUnits} ୟୁନିଟ୍`)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Variant selector (pack-size cards with discount badge) ── */}
       {hasVariants && (
         <div className="mb-6">
@@ -227,7 +292,9 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
       {!outOfStock && (
         <div className="mb-5 rounded-2xl border-2 border-table-border p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
-            {soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
+            {isSpice
+              ? (packaging === PACK ? tField('Number of packs', 'ପ୍ୟାକ୍ ସଂଖ୍ୟା') : tField('Number of hangers', 'ହାଙ୍ଗର ସଂଖ୍ୟା'))
+              : soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
           </p>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -273,7 +340,12 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           <div className="mt-4 pt-3 border-t border-table-border flex items-end justify-between gap-3">
             <div className="text-[11px] font-bold text-on-surface-variant/70 leading-snug">
               <span>{currentQty} × ₹{price}</span>
-              {soldByBox && unitsPerBox ? (
+              {isSpice ? (
+                <><br />{tField(
+                  `${currentQty} ${packaging === PACK ? 'pack' : 'hanger'}${currentQty > 1 ? 's' : ''} = ${currentQty * unitsEach} total units`,
+                  `${currentQty} ${packaging === PACK ? 'ପ୍ୟାକ୍' : 'ହାଙ୍ଗର'} = ମୋଟ ${currentQty * unitsEach} ୟୁନିଟ୍`,
+                )}</>
+              ) : soldByBox && unitsPerBox ? (
                 <><br />{tField(`${currentQty * unitsPerBox} total units`, `ମୋଟ ${currentQty * unitsPerBox} ୟୁନିଟ୍`)}</>
               ) : null}
             </div>
@@ -287,7 +359,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
 
       {/* ── Badges ── */}
       <div className="flex items-center gap-2 flex-wrap mb-5">
-        {!hasVariants && (
+        {!hasVariants && !isSpice && (
           <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
             {product.unit}{product.unit_or && ` / ${product.unit_or}`}
           </span>

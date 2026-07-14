@@ -6,12 +6,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft, Loader2, Package, MapPin,
-  Truck, Wallet, Plus, ShieldCheck, Mail,
+  Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
+import { Skeleton, AddressCardSkeleton } from '@/components/ui/Skeleton'
+import { isValidGstin } from '@/lib/validations/gst'
 import Logo from '@/components/layout/Logo'
 import type { Address } from '@/types/database.types'
 
@@ -39,6 +41,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [pincodeResult, setPincodeResult] = useState<PincodeResult | null>(null)
   const [isBulk, setIsBulk] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<Address | null>(null)
+  const [gstEnabled, setGstEnabled] = useState(false)
+  const [gstin, setGstin] = useState('')
+  const [gstBusinessName, setGstBusinessName] = useState('')
   const [notes, setNotes] = useState('')
   const [email, setEmail] = useState(initialEmail)
   const [showEmailModal, setShowEmailModal] = useState(false)
@@ -53,7 +59,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   // Address + serviceability gate the button. The email is captured in a popup
   // at "Place Order" (PRD #3/#4) — every order/status update is sent to it.
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk)
+  // A GST invoice is optional, but if requested the GSTIN + business name must be valid.
+  const gstOk = !gstEnabled || (isValidGstin(gstin) && gstBusinessName.trim().length >= 2)
+  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && gstOk
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -136,6 +144,8 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           is_bulk: isBulk,
           coupon_code: validCouponCode || undefined,
           email: email.trim() || undefined,
+          gstin: gstEnabled ? gstin.trim().toUpperCase() || undefined : undefined,
+          gst_business_name: gstEnabled ? gstBusinessName.trim() || undefined : undefined,
         }),
       })
       const json = await res.json()
@@ -165,13 +175,18 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
 
   if (loadingAddresses) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 size={28} className="animate-spin text-primary" />
-          <p className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant/40">
-            Loading…
-          </p>
-        </div>
+      <div className="min-h-screen max-w-2xl mx-auto px-4 pt-8 pb-16">
+        <Skeleton className="h-8 w-40 mb-6" />
+        <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-8 w-24 rounded-xl" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AddressCardSkeleton />
+            <AddressCardSkeleton />
+          </div>
+        </section>
       </div>
     )
   }
@@ -276,9 +291,18 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                       </p>
                       <p className="text-xs font-medium text-on-surface-variant/50 mt-1.5">{addr.phone}</p>
 
-                      {/* Pincode checker */}
+                      {/* Edit + pincode checker */}
                       {isSelected && (
                         <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setEditing(addr)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(addr) } }}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-3"
+                          >
+                            <Pencil size={12} strokeWidth={2.5} /> Edit address
+                          </span>
                           <PincodeChecker
                             pincode={addr.pincode}
                             onResult={setPincodeResult}
@@ -343,6 +367,87 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* ── GST Invoice (optional) ── */}
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <h2 className="font-black text-sm uppercase tracking-widest text-primary flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                <Receipt size={14} className="text-white" />
+              </div>
+              GST Invoice
+              <span className="text-[10px] normal-case tracking-normal text-on-surface-variant/50 font-medium">
+                (optional)
+              </span>
+            </h2>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gstEnabled}
+                onChange={(e) => setGstEnabled(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className={cn(
+                  'mt-0.5 w-9 h-5 rounded-full transition-colors flex-shrink-0',
+                  gstEnabled ? 'bg-primary' : 'bg-outline-variant',
+                )}
+              >
+                <div
+                  className={cn(
+                    'mt-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform',
+                    gstEnabled ? 'translate-x-[18px]' : 'translate-x-0.5',
+                  )}
+                />
+              </div>
+              <span className="text-sm font-bold text-on-surface-variant leading-snug">
+                I&apos;m buying for my business — add my GST details so I can claim input tax credit.
+              </span>
+            </label>
+
+            {gstEnabled && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="gst-business" className="text-[11px] font-black text-on-surface-variant/70 uppercase tracking-[0.1em] block mb-1.5">
+                    Registered Business Name *
+                  </label>
+                  <input
+                    id="gst-business"
+                    value={gstBusinessName}
+                    onChange={(e) => setGstBusinessName(e.target.value)}
+                    placeholder="e.g. Ramesh Kirana Stores"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-table-border bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="gst-number" className="text-[11px] font-black text-on-surface-variant/70 uppercase tracking-[0.1em] block mb-1.5">
+                    GSTIN *
+                  </label>
+                  <input
+                    id="gst-number"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                    placeholder="21GBUPR9356D1Z3"
+                    maxLength={15}
+                    autoCapitalize="characters"
+                    className={cn(
+                      'w-full px-4 py-3 rounded-xl border-2 bg-background text-sm font-bold tracking-wider uppercase text-on-surface placeholder:text-on-surface-variant/40 placeholder:font-medium placeholder:tracking-normal focus:outline-none transition-colors',
+                      gstin.length === 0 || isValidGstin(gstin)
+                        ? 'border-table-border focus:border-primary'
+                        : 'border-error focus:border-error',
+                    )}
+                  />
+                  {gstin.length > 0 && !isValidGstin(gstin) && (
+                    <p className="text-[11px] font-bold text-error mt-1">Enter a valid 15-character GSTIN.</p>
+                  )}
+                </div>
+                <p className="sm:col-span-2 text-[11px] font-medium text-on-surface-variant/60 leading-relaxed">
+                  Your invoice will show these GST details so you can claim input tax credit.
+                  <strong className="text-primary"> Note: GST invoice orders can&apos;t be cancelled once placed.</strong>
+                </p>
+              </div>
+            )}
           </section>
 
 
@@ -475,6 +580,11 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                   Select bulk order above to proceed with this address
                 </p>
               )}
+              {gstEnabled && !gstOk && (
+                <p className="text-[11px] font-medium text-white/40 text-center mt-3">
+                  Enter a valid GSTIN and business name to continue
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -565,6 +675,21 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
             setShowForm(false)
           }}
           onClose={() => setShowForm(false)}
+        />
+      )}
+
+      {editing && (
+        <AddressForm
+          profileId={profileId}
+          address={editing}
+          onSaved={(addr) => {
+            setAddresses((prev) => prev.map((x) => (x.id === addr.id ? addr : x)))
+            setSelectedId(addr.id)
+            // Re-check serviceability against the edited pincode.
+            setPincodeResult(null)
+            setEditing(null)
+          }}
+          onClose={() => setEditing(null)}
         />
       )}
     </>

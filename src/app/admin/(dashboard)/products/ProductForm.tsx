@@ -42,6 +42,8 @@ type FormState = {
   units_per_pack: string
   unit_type: string
   price_per_pack: string
+  units_per_hanger: string
+  hangers_per_pack: string
   variants: { label: string; price: string; mrp: string }[]
   description: string
   description_or: string
@@ -130,6 +132,8 @@ export default function ProductForm({
     units_per_pack: product?.units_per_pack?.toString() ?? '',
     unit_type: product?.unit_type ?? '',
     price_per_pack: product?.price_per_pack?.toString() ?? '',
+    units_per_hanger: product?.units_per_hanger?.toString() ?? '',
+    hangers_per_pack: product?.hangers_per_pack?.toString() ?? '',
     variants: (product?.variants ?? []).map(v => ({
       label: v.label,
       price: v.price?.toString() ?? '',
@@ -145,6 +149,12 @@ export default function ProductForm({
   const set = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm(prev => ({ ...prev, [key]: value }))
   }, [])
+
+  // Spices are sold by hanger/pack, not weight/size variants. Detect the chosen
+  // category by name/slug so the form swaps the packaging fields accordingly.
+  const selectedCategory = categories.find(c => c.id === form.category_id)
+  const isSpiceCategory =
+    /spice/i.test(selectedCategory?.name ?? '') || selectedCategory?.slug === 'spices'
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -311,6 +321,10 @@ export default function ProductForm({
     if (!form.name.trim()) { setError('Product name is required'); setTab(0); return }
     if (!form.price || parseFloat(form.price) <= 0) { setError('Price must be greater than 0'); setTab(1); return }
     if (!form.unit.trim()) { setError('Unit is required'); setTab(1); return }
+    if (isSpiceCategory) {
+      if (!form.units_per_hanger || parseInt(form.units_per_hanger, 10) <= 0) { setError('Units per hanger is required for spices'); setTab(1); return }
+      if (!form.hangers_per_pack || parseInt(form.hangers_per_pack, 10) <= 0) { setError('Hangers per pack is required for spices'); setTab(1); return }
+    }
 
     setSaving(true)
 
@@ -333,7 +347,11 @@ export default function ProductForm({
       units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
       unit_type: form.unit_type || null,
       price_per_pack: form.price_per_pack ? parseFloat(form.price_per_pack) : null,
-      variants: form.variants
+      // Spices (hanger/pack). Only stored for spice products; cleared otherwise.
+      units_per_hanger: isSpiceCategory && form.units_per_hanger ? parseInt(form.units_per_hanger, 10) : null,
+      hangers_per_pack: isSpiceCategory && form.hangers_per_pack ? parseInt(form.hangers_per_pack, 10) : null,
+      // Spices don't use weight/size variants — they're replaced by hanger/pack.
+      variants: isSpiceCategory ? [] : form.variants
         .filter(v => v.label.trim() && v.price !== '' && !isNaN(parseFloat(v.price)))
         .map(v => ({
           label: v.label.trim(),
@@ -567,6 +585,44 @@ export default function ProductForm({
         {/* Tab 1: Pricing & Stock */}
         {tab === 1 && (
           <div className="space-y-6">
+            {isSpiceCategory && (
+              <div className="p-5 bg-primary/5 rounded-2xl border-2 border-primary/20 space-y-4">
+                <div>
+                  <p className="font-black text-[10px] text-primary uppercase tracking-widest">Spices — Hanger / Pack</p>
+                  <p className="font-medium text-[11px] text-on-surface-variant mt-1">
+                    Spices are sold by <b>hanger</b> and <b>pack</b>. Set how many units make a hanger and how many hangers make a pack. The <b>Selling Price below is the price per hanger</b> — the pack price is calculated automatically.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Field label="Units per Hanger" required hint="How many single units are in one hanger">
+                    <input
+                      type="number" min={1}
+                      value={form.units_per_hanger}
+                      onChange={e => set('units_per_hanger', e.target.value)}
+                      placeholder="10"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Hangers per Pack" required hint="How many hangers make one pack">
+                    <input
+                      type="number" min={1}
+                      value={form.hangers_per_pack}
+                      onChange={e => set('hangers_per_pack', e.target.value)}
+                      placeholder="12"
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+                {form.price && form.units_per_hanger && form.hangers_per_pack && (
+                  <p className="text-[11px] font-bold text-primary">
+                    1 hanger = ₹{parseFloat(form.price || '0').toFixed(2)} · {form.units_per_hanger} units &nbsp;|&nbsp;
+                    1 pack = ₹{(parseFloat(form.price || '0') * parseInt(form.hangers_per_pack || '0', 10)).toFixed(2)} · {parseInt(form.units_per_hanger || '0', 10) * parseInt(form.hangers_per_pack || '0', 10)} units ({form.hangers_per_pack} hangers)
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!isSpiceCategory && (
             <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border space-y-6">
               <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">
                 Wholesale Pack Details
@@ -631,9 +687,10 @@ export default function ProductForm({
                 />
               </Field>
             </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Selling Price (₹)" required hint={form.price_per_pack && form.units_per_pack ? 'Auto-calculated from Price per Pack ÷ Units per Pack — you can still override' : undefined}>
+              <Field label={isSpiceCategory ? 'Price per Hanger (₹)' : 'Selling Price (₹)'} required hint={!isSpiceCategory && form.price_per_pack && form.units_per_pack ? 'Auto-calculated from Price per Pack ÷ Units per Pack — you can still override' : undefined}>
                 <input
                   type="number"
                   value={form.price}
@@ -669,7 +726,8 @@ export default function ProductForm({
               </Field>
             </div>
 
-            {/* ── Weight / Size Variants ── */}
+            {/* ── Weight / Size Variants (not for spices — they use hanger/pack) ── */}
+            {!isSpiceCategory && (
             <div className="space-y-3 rounded-2xl border-2 border-table-border bg-surface-card p-5">
               <div>
                 <p className="font-black text-xs text-primary uppercase tracking-widest">Weight / Size Variants</p>
@@ -721,9 +779,10 @@ export default function ProductForm({
                 Add Variant
               </button>
             </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Stock Quantity" required>
+              <Field label={isSpiceCategory ? 'Stock Quantity (in units)' : 'Stock Quantity'} required>
                 <input
                   type="number"
                   value={form.stock_qty}

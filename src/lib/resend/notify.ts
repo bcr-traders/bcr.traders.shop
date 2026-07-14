@@ -22,13 +22,21 @@ export async function notifyOrderEvent(
   try {
     const supabase = createAdminClient()
 
+    // Select '*' rather than an explicit column list. The LIVE orders table has
+    // drifted from the migrations (see migration 008) and may be missing optional
+    // columns like discount / coupon_code / estimated_delivery / custom_message /
+    // notes. Enumerating a missing column makes the whole query error → null order
+    // → the status-update email silently never sends (the classic "placed email
+    // arrives but status updates don't" bug). '*' returns whatever exists; every
+    // optional field below is read defensively with `?? null`.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: order } = await (supabase as any)
+    const { data: order, error: orderErr } = await (supabase as any)
       .from('orders')
-      .select('id, user_id, order_number, items, address, subtotal, delivery_fee, discount, coupon_code, total, created_at, estimated_delivery, custom_message, notes')
+      .select('*')
       .eq('id', orderId)
       .maybeSingle()
 
+    if (orderErr) { console.error(`[notifyOrderEvent] order fetch failed for ${orderId}:`, orderErr.message); return }
     if (!order) return
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,6 +76,8 @@ export async function notifyOrderEvent(
       confirmedByName,
       status,
       notes: order.notes ?? null,
+      gstin: order.gstin ?? null,
+      gstBusinessName: order.gst_business_name ?? null,
     }
 
     const resend = await import('./index')

@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { notifyOrderEvent } from '@/lib/resend/notify'
 import type { AuthMetadata } from '@/types'
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Email the customer + eligible admins that the order is out for delivery (PRD #4).
-  void notifyOrderEvent(body.order_id, 'shipping')
+  after(() => notifyOrderEvent(body.order_id, 'shipping'))
 
   return NextResponse.json({ ok: true })
 }

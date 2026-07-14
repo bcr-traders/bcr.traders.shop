@@ -41,10 +41,10 @@ export default function ReviewPopup({ productId, productName, onClose }: Props) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-surface rounded-xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full sm:max-w-md bg-surface rounded-t-2xl sm:rounded-xl shadow-xl overflow-hidden max-h-[90dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant flex-shrink-0">
           <h3 className="font-headline-md text-headline-md text-on-surface">Write a Review</h3>
           <button
             onClick={onClose}
@@ -55,7 +55,10 @@ export default function ReviewPopup({ productId, productName, onClose }: Props) 
           </button>
         </div>
 
-        <div className="px-5 py-4">
+        <div
+          className="px-5 py-4 overflow-y-auto"
+          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        >
           {submitted ? (
             <div className="text-center py-8">
               <span

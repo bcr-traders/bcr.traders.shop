@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 
 interface Props {
   value: string
@@ -26,10 +27,34 @@ export default function OtpInput({ value, onChange, length = 4, autoFocus, onCom
   const digits = Array.from({ length }, (_, i) => value[i] ?? '')
   const activeIndex = Math.min(value.length, length - 1)
 
+  // Keep the caret pinned to the end of the value. The boxes are transparent, so
+  // caret position is invisible — but it still governs where a typed digit lands
+  // and whether Backspace has anything before it to delete. When the field is
+  // re-focused while already full (e.g. after a wrong-OTP error moved focus to
+  // the submit button), browsers often drop the caret at position 0, which makes
+  // Backspace appear "broken". Forcing it to the end fixes both problems.
+  const caretToEnd = () => {
+    const el = inputRef.current
+    if (!el) return
+    requestAnimationFrame(() => {
+      try { el.setSelectionRange(el.value.length, el.value.length) } catch {}
+    })
+  }
+
   const commit = (raw: string) => {
     const clean = raw.replace(/\D/g, '').slice(0, length)
     onChange(clean)
     if (clean.length === length) onComplete?.(clean)
+  }
+
+  // Delete from the end regardless of caret position, so editing/correcting a
+  // wrong code always works even if the browser parked the caret at the start.
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault()
+      if (value.length > 0) onChange(value.slice(0, -1))
+      caretToEnd()
+    }
   }
 
   return (
@@ -38,8 +63,10 @@ export default function OtpInput({ value, onChange, length = 4, autoFocus, onCom
       <input
         ref={inputRef}
         value={value}
-        onChange={(e) => commit(e.target.value)}
-        onFocus={() => setFocused(true)}
+        onChange={(e) => { commit(e.target.value); caretToEnd() }}
+        onKeyDown={handleKeyDown}
+        onFocus={() => { setFocused(true); caretToEnd() }}
+        onClick={caretToEnd}
         onBlur={() => setFocused(false)}
         type="text"
         inputMode="numeric"

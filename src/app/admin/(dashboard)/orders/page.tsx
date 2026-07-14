@@ -11,7 +11,7 @@ export default async function OrdersPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
     .from('orders')
-    .select('id, status, total, created_at, address, items, payment_method')
+    .select('id, order_number, status, total, created_at, address, items, payment_method')
     .order('created_at', { ascending: false })
     .limit(300)
 
