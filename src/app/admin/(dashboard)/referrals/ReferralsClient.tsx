@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Loader2, Gift, Users, Coins, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { referralBenefitText, type ReferralConfig, type DiscountType } from '@/lib/referral/config'
+import { referralBenefitText, type ReferralConfig, type DiscountType } from '@/lib/referral/shared'
 
 const inputCls =
   'w-full px-4 py-3 rounded-xl border-2 border-table-border bg-surface-card text-sm font-bold text-on-surface focus:outline-none focus:border-primary transition-colors'
