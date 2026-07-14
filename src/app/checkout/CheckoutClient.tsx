@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft, Loader2, Package, MapPin,
-  Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt,
+  Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt, Gift,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/lib/utils'
@@ -52,10 +52,28 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [error, setError] = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [validCouponCode, setValidCouponCode] = useState<string | null>(null)
+  // Referral: field the referee enters + the buyer's own auto-applied credit.
+  const [referralInput, setReferralInput] = useState('')
+  const [referralApplied, setReferralApplied] = useState<{ code: string; type: 'percentage' | 'flat'; value: number; max: number | null } | null>(null)
+  const [referralError, setReferralError] = useState('')
+  const [referralChecking, setReferralChecking] = useState(false)
+  const [referralEligible, setReferralEligible] = useState(false)
+  const [myCredit, setMyCredit] = useState(0)
 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
-  const grandTotal = Math.max(0, subtotal - couponDiscount)
+  const referralDiscount = referralApplied
+    ? Math.max(0, Math.min(
+        referralApplied.type === 'percentage'
+          ? (referralApplied.max != null
+              ? Math.min(Math.round(subtotal * referralApplied.value / 100), referralApplied.max)
+              : Math.round(subtotal * referralApplied.value / 100))
+          : referralApplied.value,
+        subtotal,
+      ))
+    : 0
+  const creditApplied = Math.min(myCredit, Math.max(0, subtotal - couponDiscount - referralDiscount))
+  const grandTotal = Math.max(0, subtotal - couponDiscount - referralDiscount - creditApplied)
   // Address + serviceability gate the button. The email is captured in a popup
   // at "Place Order" (PRD #3/#4) — every order/status update is sent to it.
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -115,6 +133,37 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
     })()
   }, [items.length, router])
 
+  // Referral status: the buyer's own accrued credit + whether they can still
+  // redeem someone's code (new customers, first order).
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/referral/me')
+        if (!res.ok) return
+        const d = await res.json() as { credit?: number; eligibleForReferee?: boolean; enabled?: boolean }
+        setMyCredit(Number(d.credit ?? 0))
+        setReferralEligible(!!d.enabled && !!d.eligibleForReferee)
+      } catch { /* ignore */ }
+    })()
+  }, [])
+
+  const applyReferral = async () => {
+    const code = referralInput.trim()
+    if (!code) return
+    setReferralChecking(true); setReferralError('')
+    try {
+      const res = await fetch(`/api/referral/validate?code=${encodeURIComponent(code)}`)
+      const d = await res.json() as { valid: boolean; message?: string; code?: string; referee_type?: 'percentage' | 'flat'; referee_value?: number; max_discount?: number | null }
+      if (!d.valid) { setReferralApplied(null); setReferralError(d.message ?? 'Invalid referral code.'); return }
+      setReferralApplied({ code: d.code!, type: d.referee_type ?? 'flat', value: d.referee_value ?? 0, max: d.max_discount ?? null })
+      setReferralError('')
+    } catch {
+      setReferralError('Could not check the code. Try again.')
+    } finally {
+      setReferralChecking(false)
+    }
+  }
+
   useEffect(() => {
     setPincodeResult(null)
     setIsBulk(false)
@@ -146,6 +195,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           email: email.trim() || undefined,
           gstin: gstEnabled ? gstin.trim().toUpperCase() || undefined : undefined,
           gst_business_name: gstEnabled ? gstBusinessName.trim() || undefined : undefined,
+          referral_code: referralApplied?.code || undefined,
         }),
       })
       const json = await res.json()
@@ -160,6 +210,14 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               ? `${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} no longer available and ${names.length === 1 ? 'was' : 'were'} removed from your cart. Please review your order and try again.`
               : (json.error ?? 'Some items are no longer available.'),
           )
+          setIsPlacing(false)
+          return
+        }
+        // Referral no longer valid — clear it so they can place the order without it.
+        if (json.error_code === 'referral_invalid') {
+          setReferralApplied(null)
+          setReferralError(json.error ?? 'Referral code could not be applied.')
+          setError('Your referral code could not be applied. It has been removed — please place your order again.')
           setIsPlacing(false)
           return
         }
@@ -450,6 +508,51 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
             )}
           </section>
 
+          {/* ── Referral code (new customers) ── */}
+          {referralEligible && (
+            <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+              <h2 className="font-black text-sm uppercase tracking-widest text-primary flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                  <Gift size={14} className="text-white" />
+                </div>
+                Referral Code
+                <span className="text-[10px] normal-case tracking-normal text-on-surface-variant/50 font-medium">(optional)</span>
+              </h2>
+              {referralApplied ? (
+                <div className="flex items-center justify-between gap-3 rounded-xl border-2 border-primary bg-primary/5 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-black text-primary uppercase tracking-wider">{referralApplied.code} applied</p>
+                    <p className="text-xs font-bold text-on-surface-variant/60 mt-0.5">−₹{referralDiscount.toFixed(0)} off your first order</p>
+                  </div>
+                  <button
+                    onClick={() => { setReferralApplied(null); setReferralInput(''); setReferralError('') }}
+                    className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant border-2 border-table-border rounded-xl px-3 py-1.5 hover:border-error/40 hover:text-error transition-colors"
+                  >Remove</button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-stretch gap-2">
+                    <input
+                      value={referralInput}
+                      onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => { if (e.key === 'Enter') applyReferral() }}
+                      placeholder="FRIEND'S CODE"
+                      className="flex-1 min-w-0 border-2 border-table-border focus:border-primary rounded-xl px-4 py-2.5 text-sm bg-background placeholder:text-on-surface-variant/30 focus:outline-none transition-colors font-black tracking-widest uppercase"
+                    />
+                    <button
+                      onClick={applyReferral}
+                      disabled={!referralInput.trim() || referralChecking}
+                      className="shrink-0 px-5 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40 active:scale-95 flex items-center gap-1.5"
+                    >
+                      {referralChecking ? <Loader2 size={13} className="animate-spin" /> : null} Apply
+                    </button>
+                  </div>
+                  {referralError && <p className="text-xs font-bold text-error mt-2">{referralError}</p>}
+                  <p className="text-[11px] font-medium text-on-surface-variant/50 mt-2">Have a friend&apos;s referral code? Apply it for a discount on your first order.</p>
+                </>
+              )}
+            </section>
+          )}
 
           {/* ── Order Notes (mobile) ── */}
           <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 lg:hidden">
@@ -527,6 +630,18 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                       Coupon {validCouponCode ? `(${validCouponCode})` : 'Discount'}
                     </span>
                     <span className="text-emerald-300 font-black">−₹{couponDiscount.toFixed(0)}</span>
+                  </div>
+                )}
+                {referralDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50 font-medium">Referral ({referralApplied?.code})</span>
+                    <span className="text-emerald-300 font-black">−₹{referralDiscount.toFixed(0)}</span>
+                  </div>
+                )}
+                {creditApplied > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50 font-medium">Referral reward</span>
+                    <span className="text-emerald-300 font-black">−₹{creditApplied.toFixed(0)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pb-3 border-b border-white/15">

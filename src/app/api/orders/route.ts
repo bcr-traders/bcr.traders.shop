@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cleanGstin } from '@/lib/validations/gst'
 import { isSpiceProduct, pricePerSelection, unitsPerSelection, spiceUnitLabel, HANGER, PACK } from '@/lib/products/spices'
+import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
+import { generateUniqueReferralCode } from '@/lib/referral/code'
 import type { AuthMetadata } from '@/types'
 import type { CartItem, Address, OrderItem } from '@/types/database.types'
 import type { OrderEmailData } from '@/lib/resend'
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string }
   try {
     body = await request.json()
   } catch {
@@ -198,7 +200,50 @@ export async function POST(request: Request) {
     appliedCoupon = { id: c!.id, uses_count: c!.uses_count }
   }
 
-  const total = subtotal + deliveryFee - discountAmt
+  // ── Referral program ──────────────────────────────────────────────────────
+  // (a) A new customer (0 prior orders) redeeming a code gets the "taker"
+  //     discount on this first order; the referrer is credited afterwards.
+  // (b) The buyer's own accrued referral credit auto-applies to this order.
+  const referralCfg = await getReferralConfig()
+  let refereeDiscount = 0
+  let referrerIdToCredit: string | null = null
+  let redeemedCode: string | null = null
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: priorOrderCount } = await (adminDb as any)
+    .from('orders').select('id', { count: 'exact', head: true }).eq('user_id', profileId)
+  const isFirstOrder = (priorOrderCount ?? 0) === 0
+
+  if (referralCfg.enabled && body.referral_code?.trim() && isFirstOrder) {
+    const code = body.referral_code.trim().toUpperCase()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: refProfile } = await (adminDb as any)
+      .from('profiles').select('id, referral_code').eq('referral_code', code).maybeSingle()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: alreadyReferred } = await (adminDb as any)
+      .from('referrals').select('id').eq('referee_id', profileId).maybeSingle()
+    const minOk = referralCfg.min_order_value == null || subtotal >= referralCfg.min_order_value
+    if (refProfile && refProfile.id !== profileId && !alreadyReferred && minOk) {
+      refereeDiscount = computeRefereeDiscount(subtotal, referralCfg)
+      referrerIdToCredit = refProfile.id as string
+      redeemedCode = refProfile.referral_code as string
+    } else {
+      return Response.json(
+        { error: 'This referral code cannot be applied to your order.', error_code: 'referral_invalid' },
+        { status: 400 },
+      )
+    }
+  }
+
+  // Buyer's own accrued credit (earned from referring others) auto-applies here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: buyerProfile } = await (adminDb as any)
+    .from('profiles').select('referral_code, referral_credit').eq('id', profileId).maybeSingle()
+  const availableCredit = Math.max(0, Number(buyerProfile?.referral_credit ?? 0))
+  const referralCreditApplied = Math.min(availableCredit, Math.max(0, subtotal - discountAmt - refereeDiscount))
+
+  const totalDiscount = discountAmt + refereeDiscount + referralCreditApplied
+  const total = Math.max(0, subtotal - totalDiscount) + deliveryFee
 
   const { data: order, error } = await adminDb
     .from('orders')
@@ -208,7 +253,7 @@ export async function POST(request: Request) {
       address,
       subtotal,
       delivery_fee: deliveryFee,
-      discount: discountAmt,
+      discount: totalDiscount,
       coupon_code: appliedCouponCode,
       total,
       payment_method: 'cod',
@@ -228,6 +273,39 @@ export async function POST(request: Request) {
 
   const { id: orderId, order_number: orderNumber, created_at: createdAt } =
     order as { id: string; order_number: string; created_at: string }
+
+  // ── Referral: give the buyer their own code now that they've purchased ──
+  // Done synchronously so it exists when the order-success celebration loads.
+  if (referralCfg.enabled && !buyerProfile?.referral_code) {
+    try {
+      const newCode = await generateUniqueReferralCode(adminDb, address.name)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminDb as any).from('profiles').update({ referral_code: newCode }).eq('id', profileId)
+    } catch (e) { console.error('Referral code generation failed:', e) }
+  }
+
+  // Settle referral rewards after the response: spend the buyer's applied credit,
+  // and (if they redeemed a code) record the referral + credit the referrer.
+  if (referralCfg.enabled && (referralCreditApplied > 0 || referrerIdToCredit)) {
+    after(async () => {
+      try {
+        const db = createAdminClient()
+        if (referralCreditApplied > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (db as any).from('profiles').update({ referral_credit: Math.max(0, availableCredit - referralCreditApplied) }).eq('id', profileId)
+        }
+        if (referrerIdToCredit) {
+          const reward = computeReferrerReward(subtotal, referralCfg)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (db as any).from('referrals').insert({ referrer_id: referrerIdToCredit, referee_id: profileId, code: redeemedCode, order_id: orderId, reward_amount: reward })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: rp } = await (db as any).from('profiles').select('referral_credit').eq('id', referrerIdToCredit).maybeSingle()
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (db as any).from('profiles').update({ referral_credit: Number(rp?.referral_credit ?? 0) + reward }).eq('id', referrerIdToCredit)
+        }
+      } catch (e) { console.error('Referral settlement failed:', e) }
+    })
+  }
 
   // Decrement stock immediately to prevent overselling
   void decrementStock(orderItems)

@@ -59,6 +59,7 @@ export default function AdminSidebar({ role, onClose, className, badges, name }:
         { href: '/admin/products',   label: 'Products',        icon: 'inventory_2',           show: can('manage_products') },
         { href: '/admin/categories', label: 'Categories',      icon: 'category',              show: can('manage_categories') },
         { href: '/admin/coupons',    label: 'Coupons',         icon: 'local_offer',           show: can('manage_coupons') },
+        { href: '/admin/referrals',  label: 'Referrals',       icon: 'redeem',                show: isSuperAdmin || can('manage_coupons') },
       ],
     },
     {

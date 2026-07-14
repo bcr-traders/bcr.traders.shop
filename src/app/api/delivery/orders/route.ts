@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth/server'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { AuthMetadata } from '@/types'
+import { isDeliveryEnabled } from '@/lib/settings/delivery'
 
 export async function GET() {
   const { userId, sessionClaims } = await auth()
@@ -10,6 +11,9 @@ export async function GET() {
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'delivery' || !meta.admin_profile_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (!(await isDeliveryEnabled())) {
+    return NextResponse.json({ error: 'The delivery panel is currently disabled.' }, { status: 403 })
   }
 
   const supabase = createAdminClient()

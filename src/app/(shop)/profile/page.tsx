@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 import ProfileForm from './ProfileForm'
+import ReferralCard from '@/components/account/ReferralCard'
+import { getReferralConfig, referralBenefitText } from '@/lib/referral/config'
 
 export const metadata: Metadata = {
   title: 'My Profile — BCR Traders',
@@ -17,11 +19,14 @@ export default async function ProfilePage() {
   if (!userId) redirect('/login')
 
   const supabase = createAdminClient()
-  const { data: profile } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('name, phone, email')
+    .select('name, phone, email, referral_code, referral_credit')
     .eq('id', userId)
     .maybeSingle()
+
+  const referralCfg = await getReferralConfig()
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +49,14 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pb-16">
+      <div className="max-w-2xl mx-auto px-4 pb-16 space-y-6">
+        {referralCfg.enabled && (
+          <ReferralCard
+            code={(profile?.referral_code as string | null) ?? null}
+            credit={Number(profile?.referral_credit ?? 0)}
+            benefit={referralBenefitText(referralCfg)}
+          />
+        )}
         <ProfileForm
           initialName={profile?.name ?? ''}
           initialEmail={profile?.email ?? ''}

@@ -17,6 +17,7 @@ type Settings = {
   admin_notification_email: string
   otp_expiry_minutes: string
   razorpay_enabled: boolean
+  delivery_enabled: boolean
 }
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
@@ -110,6 +111,7 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       admin_notification_email: settings.admin_notification_email.trim(),
       otp_expiry_minutes: settings.otp_expiry_minutes ? parseInt(settings.otp_expiry_minutes, 10) : 10,
       razorpay_enabled: settings.razorpay_enabled,
+      delivery_enabled: settings.delivery_enabled,
     }
 
     const res = await fetch('/api/cms', {
@@ -328,6 +330,24 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         <p className="font-bold text-[10px] text-on-surface-variant mt-4">
           COD (Cash on Delivery) is always available regardless of this toggle.
         </p>
+      </Section>
+
+      {/* ── Delivery panel ── */}
+      <Section title="Delivery Panel" sub="Turn the delivery-person portal on or off">
+        <Toggle
+          checked={settings.delivery_enabled}
+          onChange={v => set('delivery_enabled', v)}
+          label="Delivery Person Portal"
+          sub="When off, delivery staff can't log in or use the /delivery panel. No data or code is removed — flip this on anytime to re-enable it."
+        />
+        {!settings.delivery_enabled && (
+          <div className="flex items-start gap-3 px-5 py-4 bg-amber-50 border-2 border-amber-200 rounded-xl mt-4">
+            <Info size={20} strokeWidth={2.5} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="font-bold text-xs text-amber-900 leading-relaxed">
+              The delivery panel is currently <b>disabled</b>. Delivery persons cannot access it. Everything is preserved and can be re-enabled here whenever you need it.
+            </p>
+          </div>
+        )}
       </Section>
 
       {/* ── Bottom save ── */}

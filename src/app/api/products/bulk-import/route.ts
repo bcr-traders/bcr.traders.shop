@@ -40,6 +40,12 @@ const RowSchema = z.object({
   units_per_pack: z.coerce.number().int().positive().optional(),
   unit_type:      z.string().optional(),
   price_per_pack: z.coerce.number().nonnegative().optional(),
+  // Box → pack → unit (non-spice) and spices (hanger/pack).
+  packs_per_box:    z.coerce.number().int().positive().optional(),
+  units_per_hanger: z.coerce.number().int().positive().optional(),
+  hangers_per_pack: z.coerce.number().int().positive().optional(),
+  // Optional explicit image filename/URL; otherwise matched by product name.
+  image:          z.string().optional(),
 }).refine((d) => !!(d.category_slug || d.category_name), {
   message: 'category_slug or Product Category is required',
 }).refine((d) => d.price !== undefined || (d.price_per_pack !== undefined && d.units_per_pack !== undefined), {
@@ -64,6 +70,9 @@ const HEADER_ALIASES: Record<string, string> = {
   packaging_form: 'packaging_form',
   pack_type: 'pack_type',
   units_per_pack: 'units_per_pack',
+  packs_per_box: 'packs_per_box',
+  units_per_hanger: 'units_per_hanger',
+  hangers_per_pack: 'hangers_per_pack',
   unit_type: 'unit_type',
   price: 'price',
   selling_price: 'price',
@@ -75,6 +84,10 @@ const HEADER_ALIASES: Record<string, string> = {
   stock_quantity: 'stock_qty',
   description: 'description',
   sku: 'sku',
+  image: 'image',
+  image_name: 'image',
+  image_file: 'image',
+  image_url: 'image',
 }
 
 function normalizeHeader(h: string): string {
@@ -86,7 +99,14 @@ function cleanNumeric(v: string): string {
   return v.replace(/[₹,\s]/g, '')
 }
 
-const NUMERIC_FIELDS = new Set(['price', 'mrp', 'stock_qty', 'units_per_pack', 'price_per_pack'])
+const NUMERIC_FIELDS = new Set(['price', 'mrp', 'stock_qty', 'units_per_pack', 'price_per_pack', 'packs_per_box', 'units_per_hanger', 'hangers_per_pack'])
+
+// Normalise a name/filename for image ↔ product matching: strip extension,
+// lowercase, and drop every non-alphanumeric char so "Freedom Rice Bran 1ltr
+// Pouch.jpg" and "freedom-rice-bran-1ltr-pouch" collapse to the same key.
+function normalizeForMatch(s: string): string {
+  return s.replace(/\.[a-z0-9]+$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '')
+}
 
 function parseCSV(text: string): Record<string, string>[] {
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(Boolean)
@@ -162,7 +182,42 @@ export async function POST(req: NextRequest) {
     nameMap[c.name.trim().toLowerCase()] = c.id
   }
 
+  // Build an image lookup from the product-images bucket. Images uploaded with a
+  // filename matching the product's item name (e.g. "Freedom Rice Bran 1ltr
+  // Pouch.jpg") are auto-attached — normalised so spaces/case/punctuation don't
+  // matter. Paginates through the whole bucket.
+  const imageMap: Record<string, string> = {}
+  try {
+    for (let offset = 0; ; offset += 1000) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: files } = await (supabase as any).storage
+        .from('product-images')
+        .list('', { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } })
+      const list = (files ?? []) as Array<{ name: string; id?: string | null }>
+      for (const f of list) {
+        if (!f.name || f.id === null) continue // skip folders
+        const key = normalizeForMatch(f.name)
+        if (!key || imageMap[key]) continue
+        const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(f.name)
+        imageMap[key] = publicUrl
+      }
+      if (list.length < 1000) break
+    }
+  } catch { /* bucket unavailable — proceed without auto image matching */ }
+
+  // Resolve a product row to an image URL: explicit `image` cell wins (a full URL
+  // is used as-is, otherwise treated as a filename), else match by product name.
+  const resolveImage = (row: { name: string; image?: string }): string | null => {
+    if (row.image && row.image.trim()) {
+      const v = row.image.trim()
+      if (/^https?:\/\//i.test(v)) return v
+      return imageMap[normalizeForMatch(v)] ?? null
+    }
+    return imageMap[normalizeForMatch(row.name)] ?? null
+  }
+
   let created = 0
+  let imagesMatched = 0
   const errors: Array<{ row: number; reason: string; data: Record<string, string> }> = []
 
   for (let i = 0; i < rawRows.length; i++) {
@@ -195,31 +250,38 @@ export async function POST(req: NextRequest) {
       ? Math.round((row.price_per_pack / row.units_per_pack) * 100) / 100
       : row.price!
 
+    const imageUrl = resolveImage(row)
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: insertError } = await (supabase as any).from('products').insert({
-      name:            row.name,
-      slug:            slugify(row.name),
-      category_id:     categoryId,
+      name:             row.name,
+      slug:             slugify(row.name),
+      category_id:      categoryId,
       price,
-      mrp:             row.mrp ?? null,
-      unit:            row.unit,
-      stock_qty:       row.stock_qty,
-      description:     row.description ?? null,
-      sku:             row.sku ?? null,
-      brand:           row.brand ?? null,
-      packaging_form:  row.packaging_form ?? null,
-      pack_type:       row.pack_type ?? null,
-      units_per_pack:  row.units_per_pack ?? null,
-      unit_type:       row.unit_type ?? null,
-      price_per_pack:  row.price_per_pack ?? null,
-      is_active:       true,
-      is_featured:     false,
+      mrp:              row.mrp ?? null,
+      unit:             row.unit,
+      stock_qty:        row.stock_qty,
+      description:      row.description ?? null,
+      sku:              row.sku ?? null,
+      brand:            row.brand ?? null,
+      packaging_form:   row.packaging_form ?? null,
+      pack_type:        row.pack_type ?? null,
+      units_per_pack:   row.units_per_pack ?? null,
+      packs_per_box:    row.packs_per_box ?? null,
+      units_per_hanger: row.units_per_hanger ?? null,
+      hangers_per_pack: row.hangers_per_pack ?? null,
+      unit_type:        row.unit_type ?? null,
+      price_per_pack:   row.price_per_pack ?? null,
+      images:           imageUrl ? [imageUrl] : [],
+      is_active:        true,
+      is_featured:      false,
     })
 
     if (insertError) {
       errors.push({ row: rowNum, reason: insertError.message, data: raw })
     } else {
       created++
+      if (imageUrl) imagesMatched++
     }
   }
 
@@ -228,6 +290,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     created,
+    images_matched: imagesMatched,
     failed:    errors.length,
     errors:    errors.map(({ row, reason }) => ({ row, reason })),
     error_csv: errorCsvB64,

@@ -4,6 +4,7 @@ import { randomInt } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendSms } from '@/lib/message-central'
 import type { AuthMetadata } from '@/types'
+import { isDeliveryEnabled } from '@/lib/settings/delivery'
 
 export async function POST(req: NextRequest) {
   const { userId, sessionClaims } = await auth()
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'delivery' || !meta.admin_profile_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (!(await isDeliveryEnabled())) {
+    return NextResponse.json({ error: 'The delivery panel is currently disabled.' }, { status: 403 })
   }
 
   let body: { order_id: string }

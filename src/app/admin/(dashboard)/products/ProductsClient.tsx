@@ -163,10 +163,15 @@ export default function ProductsClient({
     form.append('file', file)
     const res = await fetch('/api/products/bulk-import', { method: 'POST', body: form })
     if (res.ok) {
-      showToast('Products imported successfully', 'success')
+      const d = await res.json().catch(() => ({})) as { created?: number; images_matched?: number; failed?: number }
+      const parts = [`${d.created ?? 0} products imported`]
+      if (d.images_matched) parts.push(`${d.images_matched} images auto-matched`)
+      if (d.failed) parts.push(`${d.failed} rows failed`)
+      showToast(parts.join(' · '), d.failed ? 'error' : 'success')
       window.location.reload()
     } else {
-      showToast('Failed to import products', 'error')
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      showToast(d.error ?? 'Failed to import products', 'error')
     }
     setImporting(false)
     if (importRef.current) importRef.current.value = ''

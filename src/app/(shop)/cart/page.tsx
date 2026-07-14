@@ -57,9 +57,16 @@ function CartItemRow({ item, onQtyChange, onRemove }: {
           <h4 className="text-sm font-black text-primary leading-snug line-clamp-2">
             {item.name}
           </h4>
-          <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 border border-table-border rounded-full px-2 py-0.5">
-            {item.unit}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+            <span className="inline-block text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 border border-table-border rounded-full px-2 py-0.5">
+              {item.unit}
+            </span>
+            {item.units_each && item.units_each > 1 && (
+              <span className="inline-block text-[10px] font-black uppercase tracking-wider text-primary bg-primary/8 rounded-full px-2 py-0.5">
+                {(item.quantity * item.units_each).toLocaleString('en-IN')} units total
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">

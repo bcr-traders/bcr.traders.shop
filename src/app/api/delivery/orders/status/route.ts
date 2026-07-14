@@ -3,6 +3,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { notifyOrderEvent } from '@/lib/resend/notify'
 import type { AuthMetadata } from '@/types'
+import { isDeliveryEnabled } from '@/lib/settings/delivery'
 
 // Delivery persons can only advance an order to 'shipping' / 'out_for_delivery'
 export async function PATCH(req: NextRequest) {
@@ -12,6 +13,9 @@ export async function PATCH(req: NextRequest) {
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   if (meta?.role !== 'delivery' || !meta.admin_profile_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (!(await isDeliveryEnabled())) {
+    return NextResponse.json({ error: 'The delivery panel is currently disabled.' }, { status: 403 })
   }
 
   let body: { order_id: string }

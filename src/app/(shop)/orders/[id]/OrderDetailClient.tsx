@@ -21,6 +21,7 @@ import {
   Loader2,
   AlertTriangle,
   XCircle,
+  Copy,
 } from 'lucide-react'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import ReviewPopup from '@/components/product/ReviewPopup'
@@ -96,22 +97,62 @@ function OrderItemRow({ item }: { item: OrderItem }) {
 }
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
+// Party-popper confetti burst — lightweight, no dependency. Pieces are computed
+// once at module load (not during render, to stay pure) and flutter down as the
+// overlay appears.
+const CONFETTI_COLORS = ['#26170c', '#c99a5b', '#e8c07d', '#7c3aed', '#16a34a', '#dc2626', '#2563eb']
+const CONFETTI_PIECES = Array.from({ length: 42 }, (_, i) => ({
+  left: Math.random() * 100,
+  delay: Math.random() * 0.25,
+  duration: 1.6 + Math.random() * 1.4,
+  size: 6 + Math.random() * 8,
+  rotate: Math.random() * 720 - 360,
+  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+}))
+
+function Confetti() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden z-20" aria-hidden="true">
+      {CONFETTI_PIECES.map((p, i) => (
+        <motion.span
+          key={i}
+          className="absolute top-0 rounded-[2px]"
+          style={{ left: `${p.left}%`, width: p.size, height: p.size * 0.6, backgroundColor: p.color }}
+          initial={{ y: -20, opacity: 0, rotate: 0 }}
+          animate={{ y: ['-5%', '110%'], opacity: [0, 1, 1, 0], rotate: p.rotate }}
+          transition={{ duration: p.duration, delay: p.delay, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function SuccessOverlay({
   order,
   onDismiss,
+  referralCode = null,
+  referralBenefit = null,
 }: {
   order: Order
   onDismiss: () => void
+  referralCode?: string | null
+  referralBenefit?: string | null
 }) {
   const orderId = order.order_number || `BCR-${order.id.slice(0, 8).toUpperCase()}`
+  const [copiedCode, setCopiedCode] = useState(false)
+  const copyCode = async () => {
+    if (!referralCode) return
+    try { await navigator.clipboard.writeText(referralCode); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 1800) } catch {}
+  }
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      <Confetti />
       <motion.div
         className="w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl overflow-hidden border border-table-border flex flex-col items-center text-center relative"
         initial={{ scale: 0.85, y: 30, opacity: 0 }}
@@ -189,6 +230,31 @@ function SuccessOverlay({
             </div>
           </motion.div>
 
+          {/* Referral code reveal */}
+          {referralCode && (
+            <motion.div
+              className="w-full rounded-xl border-2 border-primary bg-primary/5 p-4 mb-6 text-left"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.55, type: 'spring', damping: 14 }}
+            >
+              <p className="text-sm font-black text-primary flex items-center gap-1.5">
+                🎉 Here&apos;s your referral code!
+              </p>
+              {referralBenefit && (
+                <p className="text-xs font-medium text-on-surface-variant/70 mt-0.5">{referralBenefit} — share it with friends.</p>
+              )}
+              <div className="flex items-stretch gap-2 mt-3">
+                <div className="flex-1 min-w-0 rounded-lg bg-surface border-2 border-primary/20 px-3 py-2.5 flex items-center">
+                  <span className="font-black text-lg tracking-[0.18em] text-primary truncate">{referralCode}</span>
+                </div>
+                <button onClick={copyCode} className="shrink-0 w-11 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors active:scale-95" aria-label="Copy referral code">
+                  {copiedCode ? <Check size={17} /> : <Copy size={17} />}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Actions */}
           <motion.div
             className="w-full flex flex-col sm:flex-row gap-3"
@@ -228,9 +294,13 @@ function SuccessOverlay({
 export default function OrderDetailClient({
   order,
   isNew,
+  referralCode = null,
+  referralBenefit = null,
 }: {
   order: Order
   isNew: boolean
+  referralCode?: string | null
+  referralBenefit?: string | null
 }) {
   const router = useRouter()
   const addItem = useCartStore((s) => s.addItem)
@@ -338,7 +408,7 @@ export default function OrderDetailClient({
   return (
     <>
       <AnimatePresence>
-        {showSuccess && <SuccessOverlay order={order} onDismiss={handleDismissSuccess} />}
+        {showSuccess && <SuccessOverlay order={order} onDismiss={handleDismissSuccess} referralCode={referralCode} referralBenefit={referralBenefit} />}
       </AnimatePresence>
 
       {showReview && currentReviewItem && (

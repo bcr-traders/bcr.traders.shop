@@ -36,6 +36,8 @@ export default async function SettingsPage() {
     admin_notification_email: str(raw.admin_notification_email, ''),
     otp_expiry_minutes:       num(raw.otp_expiry_minutes, 10),
     razorpay_enabled:         bool(raw.razorpay_enabled, false),
+    // Delivery panel is off by default — it's re-enabled from this page.
+    delivery_enabled:         bool(raw.delivery_enabled, false),
   }
 
   return <SettingsClient initialSettings={initialSettings} />

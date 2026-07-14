@@ -49,9 +49,17 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const discount = mrp && mrp > price ? Math.round((1 - price / mrp) * 100) : null
   const outOfStock = product.stock_qty === 0
 
-  // Box-sold products (PRD #1/#2): reuse the existing pack fields — no new schema.
-  const soldByBox = !isSpice && product.pack_type === 'Box' && !!product.units_per_pack
-  const unitsPerBox = product.units_per_pack ?? null
+  // Sold-by-pack (non-spice): a product sold as a Box / Box-Bale / Tin-Can /
+  // Hanger / Bag etc. holding multiple units. Shows per-pack pricing and the
+  // total unit count. Triggers whenever there's a real pack (units_per_pack > 1);
+  // single-unit products (Piece, a 1-unit Bag) fall through to plain quantity.
+  // A box can further hold packs_per_box packs (2-level), defaulting to 1.
+  const packsPerBox = product.packs_per_box ?? 1
+  const unitsPerBox = product.units_per_pack != null ? packsPerBox * product.units_per_pack : null
+  const soldByBox = !isSpice && !!unitsPerBox && unitsPerBox > 1
+  // Label for the pack the customer buys ("Box", "Hanger", …) and the unit inside.
+  const packLabel = product.pack_type || product.unit || 'Pack'
+  const innerUnitLabel = product.unit_type || 'units'
   // Clamp any typed quantity to available stock (never accept an invalid amount).
   // For spices, stock_qty is measured in units, so the cap is how many whole
   // hangers/packs those units allow.
@@ -84,6 +92,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
     price,
     mrp,
     unit: isSpice ? spiceUnitLabel(packaging, unitsPerHanger, hangersPerPack) : unit,
+    units_each: isSpice ? unitsEach : (soldByBox && unitsPerBox ? unitsPerBox : undefined),
     image: product.images?.[0] ?? null,
     slug: product.slug,
   })
@@ -129,7 +138,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           max={product.stock_qty || undefined}
           value={cartItem.quantity}
           onChange={(e) => { const n = parseInt(e.target.value, 10); updateQuantity(cartItem.id, clampQty(Number.isNaN(n) ? 1 : n)) }}
-          aria-label={soldByBox ? 'Number of boxes' : 'Quantity'}
+          aria-label={soldByBox ? `Number of ${packLabel}` : 'Quantity'}
           className="w-14 bg-transparent text-center font-black text-sm tracking-widest outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button onClick={() => updateQuantity(cartItem.id, clampQty(cartItem.quantity + 1))} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Add one more">
@@ -170,15 +179,12 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
             )}
           </div>
 
-          {/* Units per box + per-box price — only for box-sold products, bilingual (PRD #2). */}
+          {/* Units contained in one pack — shown for pack-sold products. */}
           {soldByBox && unitsPerBox && (
             <p className="mt-2 text-[12px] font-bold text-on-surface-variant/75">
-              {tField(`${unitsPerBox} units per box`, `ବାକ୍ସ ପିଛା ${unitsPerBox} ୟୁନିଟ୍`)}
+              {`1 ${packLabel} = ${unitsPerBox} ${innerUnitLabel}`}
               {product.price_per_pack ? (
-                <span className="text-primary">
-                  {' · '}
-                  {tField(`₹${product.price_per_pack}/box`, `₹${product.price_per_pack}/ବାକ୍ସ`)}
-                </span>
+                <span className="text-primary">{` · ₹${product.price_per_pack}/${packLabel}`}</span>
               ) : null}
             </p>
           )}
@@ -294,7 +300,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
             {isSpice
               ? (packaging === PACK ? tField('Number of packs', 'ପ୍ୟାକ୍ ସଂଖ୍ୟା') : tField('Number of hangers', 'ହାଙ୍ଗର ସଂଖ୍ୟା'))
-              : soldByBox ? tField('Boxes required', 'ଆବଶ୍ୟକ ବାକ୍ସ') : tField('Quantity', 'ପରିମାଣ')}
+              : soldByBox ? `Number of ${packLabel}` : tField('Quantity', 'ପରିମାଣ')}
           </p>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -329,10 +335,10 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
                 }}
                 onBlur={() => { const n = parseInt(qtyInput, 10); if (Number.isNaN(n) || n < 1) setQtyInput(String(currentQty)) }}
                 placeholder={soldByBox ? '100' : '10'}
-                aria-label={soldByBox ? 'Type number of boxes' : 'Type quantity'}
+                aria-label={soldByBox ? `Type number of ${packLabel}` : 'Type quantity'}
                 className="w-24 h-12 px-3 rounded-xl border-2 border-primary/40 bg-surface text-center font-black text-lg text-primary placeholder:text-on-surface-variant/30 outline-none focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              {soldByBox && <span className="text-sm font-bold text-on-surface-variant">{tField('boxes', 'ବାକ୍ସ')}</span>}
+              {soldByBox && <span className="text-sm font-bold text-on-surface-variant">{packLabel}</span>}
             </div>
           </div>
 
@@ -346,7 +352,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
                   `${currentQty} ${packaging === PACK ? 'ପ୍ୟାକ୍' : 'ହାଙ୍ଗର'} = ମୋଟ ${currentQty * unitsEach} ୟୁନିଟ୍`,
                 )}</>
               ) : soldByBox && unitsPerBox ? (
-                <><br />{tField(`${currentQty * unitsPerBox} total units`, `ମୋଟ ${currentQty * unitsPerBox} ୟୁନିଟ୍`)}</>
+                <><br />{`${currentQty} × ${unitsPerBox} = ${currentQty * unitsPerBox} ${innerUnitLabel}`}</>
               ) : null}
             </div>
             <div className="text-right">
@@ -367,10 +373,12 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         {product.is_featured && (
           <span className="px-3 py-1.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider">Featured</span>
         )}
-        {product.units_per_pack && product.pack_type && (
+        {soldByBox && unitsPerBox && (
           <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
-            {product.pack_type} of {product.units_per_pack} {product.unit_type ?? 'Units'}
-            {product.price_per_pack && ` — ₹${product.price_per_pack}/pack`}
+            {product.packs_per_box && product.packs_per_box > 1
+              ? `${packLabel} = ${product.packs_per_box} packs × ${product.units_per_pack} = ${unitsPerBox} ${innerUnitLabel}`
+              : `${packLabel} of ${unitsPerBox} ${innerUnitLabel}`}
+            {product.price_per_pack ? ` — ₹${product.price_per_pack}/${packLabel}` : ''}
           </span>
         )}
       </div>

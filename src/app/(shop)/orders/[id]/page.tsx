@@ -42,5 +42,23 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
 
   if (error || !data) notFound()
 
-  return <OrderDetailClient order={data as unknown as Order} isNew={isNew === '1'} />
+  // Referral code to celebrate on a brand-new order (generated at checkout).
+  const { getReferralConfig, referralBenefitText } = await import('@/lib/referral/config')
+  const referralCfg = await getReferralConfig()
+  let referralCode: string | null = null
+  if (referralCfg.enabled && isNew === '1') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: prof } = await (supabase as any)
+      .from('profiles').select('referral_code').eq('id', profileId).maybeSingle()
+    referralCode = (prof?.referral_code as string | null) ?? null
+  }
+
+  return (
+    <OrderDetailClient
+      order={data as unknown as Order}
+      isNew={isNew === '1'}
+      referralCode={referralCode}
+      referralBenefit={referralCfg.enabled ? referralBenefitText(referralCfg) : null}
+    />
+  )
 }

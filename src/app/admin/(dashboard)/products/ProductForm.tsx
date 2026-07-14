@@ -40,6 +40,7 @@ type FormState = {
   packaging_form: string
   pack_type: string
   units_per_pack: string
+  packs_per_box: string
   unit_type: string
   price_per_pack: string
   units_per_hanger: string
@@ -130,6 +131,7 @@ export default function ProductForm({
     packaging_form: product?.packaging_form ?? '',
     pack_type: product?.pack_type ?? '',
     units_per_pack: product?.units_per_pack?.toString() ?? '',
+    packs_per_box: product?.packs_per_box?.toString() ?? '',
     unit_type: product?.unit_type ?? '',
     price_per_pack: product?.price_per_pack?.toString() ?? '',
     units_per_hanger: product?.units_per_hanger?.toString() ?? '',
@@ -345,6 +347,8 @@ export default function ProductForm({
       packaging_form: form.packaging_form.trim() || null,
       pack_type: form.pack_type || null,
       units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
+      // Packs per box only applies to non-spice products.
+      packs_per_box: !isSpiceCategory && form.packs_per_box ? parseInt(form.packs_per_box, 10) : null,
       unit_type: form.unit_type || null,
       price_per_pack: form.price_per_pack ? parseFloat(form.price_per_pack) : null,
       // Spices (hanger/pack). Only stored for spice products; cleared otherwise.
@@ -638,7 +642,7 @@ export default function ProductForm({
                     className={inputCls}
                   />
                 </Field>
-                <Field label="Pack Type" hint="Outer carton type">
+                <Field label="Pack Type" hint="How the product is sold">
                   <select
                     value={form.pack_type}
                     onChange={e => set('pack_type', e.target.value)}
@@ -646,13 +650,27 @@ export default function ProductForm({
                   >
                     <option value="">—</option>
                     <option value="Box">Box</option>
+                    <option value="Box/Bale">Box/Bale</option>
                     <option value="Bag">Bag</option>
+                    <option value="Tin/Can">Tin/Can</option>
+                    <option value="Hanger">Hanger</option>
+                    <option value="Piece">Piece</option>
                   </select>
                 </Field>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Units per Pack" hint="Number of individual units inside one box/bag">
+                <Field label="Packs per Box" hint="How many packs are inside one box">
+                  <input
+                    type="number"
+                    value={form.packs_per_box}
+                    min={1}
+                    onChange={e => set('packs_per_box', e.target.value)}
+                    placeholder="12"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Units / Pieces per Pack" hint="How many individual units are inside one pack">
                   <input
                     type="number"
                     value={form.units_per_pack}
@@ -662,15 +680,38 @@ export default function ProductForm({
                     className={inputCls}
                   />
                 </Field>
-                <Field label="Unit Type" hint="What each unit is called">
+              </div>
+
+              {form.units_per_pack && (
+                <p className="text-[11px] font-bold text-primary">
+                  {form.packs_per_box && parseInt(form.packs_per_box, 10) > 1 ? (
+                    <>Total units per {form.pack_type || 'pack'} = {parseInt(form.packs_per_box, 10)} packs × {parseInt(form.units_per_pack || '0', 10)} = <b>{parseInt(form.packs_per_box, 10) * parseInt(form.units_per_pack || '0', 10)} {form.unit_type || 'units'}</b></>
+                  ) : (
+                    <>1 {form.pack_type || 'pack'} = <b>{parseInt(form.units_per_pack || '0', 10)} {form.unit_type || 'units'}</b></>
+                  )}
+                </p>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Unit Type" hint="What each unit inside is called">
                   <select
                     value={form.unit_type}
                     onChange={e => set('unit_type', e.target.value)}
                     className={inputCls}
                   >
                     <option value="">—</option>
+                    <option value="Piece">Piece</option>
                     <option value="Pieces">Pieces</option>
                     <option value="Packet">Packet</option>
+                    <option value="Pack">Pack</option>
+                    <option value="Bag">Bag</option>
+                    <option value="Sachet">Sachet</option>
+                    <option value="Pouch">Pouch</option>
+                    <option value="Bottle">Bottle</option>
+                    <option value="Bottle/Pouch">Bottle/Pouch</option>
+                    <option value="Jar">Jar</option>
+                    <option value="Tin">Tin</option>
+                    <option value="Tin/Can">Tin/Can</option>
                   </select>
                 </Field>
               </div>

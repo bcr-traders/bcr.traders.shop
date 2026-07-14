@@ -27,10 +27,15 @@ export async function POST(req: NextRequest) {
   const { key, value } = await req.json() as { key: string; value: unknown }
   if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 })
 
+  // Only write the columns the CMS actually needs. The LIVE cms_content table has
+  // drifted from the migrations and is missing `is_active` (and possibly other
+  // optional columns) — writing one that doesn't exist fails the whole upsert
+  // ("Could not find the 'is_active' column ... in the schema cache"). key + value
+  // are all that's required; any updated_at column with a default fills itself.
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('cms_content')
-    .upsert({ key, value, is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    .upsert({ key, value }, { onConflict: 'key' })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

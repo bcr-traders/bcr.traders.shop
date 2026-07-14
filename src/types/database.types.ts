@@ -36,8 +36,11 @@ export interface Category {
   created_at: string
 }
 
-export type PackType = 'Box' | 'Bag'
-export type UnitType = 'Pieces' | 'Packet'
+// Outer packaging the wholesaler sells a product as.
+export type PackType = 'Box' | 'Box/Bale' | 'Bag' | 'Tin/Can' | 'Hanger' | 'Piece'
+// What a single unit inside a pack is called. Free-form — many values in use
+// (Bag, Piece, Bottle/Pouch, Tin/Can, Bottle, Pouch, Jar, Tin, Pack, Sachet, …).
+export type UnitType = string
 
 /** A selectable weight/size option, e.g. { label: '10kg', price: 480, mrp: 520 }. */
 export interface ProductVariant {
@@ -71,6 +74,9 @@ export interface Product {
   packaging_form: string | null
   pack_type: PackType | null
   units_per_pack: number | null
+  // Box → pack → unit (non-spice). packs_per_box × units_per_pack = units/box.
+  // Null packs_per_box means 1 pack per box (backward compatible).
+  packs_per_box: number | null
   unit_type: UnitType | null
   price_per_pack: number | null
   // Spices only: buyer picks hangers/packs. `price` is the per-hanger price;
@@ -126,8 +132,9 @@ export interface CmsContent {
   id: string
   key: string
   value: Json
-  is_active: boolean
-  updated_at: string
+  // Optional: absent on the drifted live cms_content table — never require it on write.
+  is_active?: boolean
+  updated_at?: string
 }
 
 // ── Address ────────────────────────────────────────────────────────────────
@@ -212,6 +219,7 @@ export interface CartItem {
   id: string              // unique cart line key — productId, or `${productId}::${variant}`
   product_id?: string     // real product id (falls back to `id` when absent)
   variant?: string | null // selected variant label, if any
+  units_each?: number     // units contained in one purchased item (box/hanger/pack), if applicable
   name: string
   price: number
   mrp: number | null
