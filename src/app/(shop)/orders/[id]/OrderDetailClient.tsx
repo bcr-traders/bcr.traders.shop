@@ -147,7 +147,7 @@ function SuccessOverlay({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-hidden"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -416,7 +416,7 @@ export default function OrderDetailClient({
       )}
 
       {showCancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-md bg-surface rounded-3xl border-2 border-table-border shadow-2xl p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center flex-shrink-0">

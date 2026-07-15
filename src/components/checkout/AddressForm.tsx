@@ -85,8 +85,10 @@ export default function AddressForm({ profileId, onSaved, onClose, address }: Pr
     }
   }
 
+  // z-[60] sits above the mobile bottom nav (z-50) — otherwise the nav renders
+  // over the sheet and the Save button can't be tapped.
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full sm:max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-table-border flex-shrink-0">
@@ -110,7 +112,7 @@ export default function AddressForm({ profileId, onSaved, onClose, address }: Pr
         {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-5 px-6 py-5 overflow-y-auto"
+          className="flex flex-col gap-5 px-6 pt-5 pb-[max(20px,env(safe-area-inset-bottom))] overflow-y-auto"
         >
           {/* Label picker */}
           <div>
