@@ -82,7 +82,10 @@ export default function AdminSidebar({ role, onClose, className, badges, name }:
       items: [
         { href: '/admin/profiles',  label: 'Admin Profiles', icon: 'manage_accounts', show: isSuperAdmin || can('manage_admin_profiles') },
         { href: '/admin/analytics', label: 'Analytics',      icon: 'bar_chart',       show: can('view_analytics') },
-        { href: '/admin/settings',  label: 'Settings',       icon: 'settings',        show: isSuperAdmin },
+        // Settings live in cms_content and /api/cms already accepts admin or
+        // super_admin — gate the link on the same permission so it isn't hidden
+        // from admins who can actually use it.
+        { href: '/admin/settings',  label: 'Settings',       icon: 'settings',        show: isSuperAdmin || can('manage_cms') },
       ],
     },
   ]

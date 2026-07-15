@@ -144,7 +144,7 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
             Settings.
           </h1>
           <p className="font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mt-2">
-            Store configuration — super admin only
+            Store configuration
           </p>
         </div>
         <button
