@@ -148,6 +148,90 @@ export function AddressCardSkeleton() {
   )
 }
 
+// ── Generic building blocks ──────────────────────────────────────────────────
+
+/** A rows × cols table placeholder (admin lists). */
+export function TableSkeleton({ rows = 8, cols = 5 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="rounded-2xl border-2 border-table-border bg-surface-card overflow-hidden">
+      {/* Header band */}
+      <div className="flex gap-4 px-5 py-4 bg-primary">
+        {Array.from({ length: cols }).map((_, i) => (
+          <Skeleton key={i} className="h-3 flex-1 bg-white/20" />
+        ))}
+      </div>
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex gap-4 px-5 py-4 border-b border-table-border last:border-b-0">
+          {Array.from({ length: cols }).map((_, c) => (
+            <Skeleton key={c} className="h-4 flex-1" />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Stat tiles row (dashboard/analytics). */
+export function StatCardsSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-2xl border-2 border-table-border bg-surface-card p-5 space-y-2">
+          <Skeleton className="h-2.5 w-20" />
+          <Skeleton className="h-7 w-24" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Stacked form fields inside a card. */
+export function FormSkeleton({ fields = 6 }: { fields?: number }) {
+  return (
+    <div className="rounded-2xl border-2 border-table-border bg-surface-card p-6 space-y-5">
+      {Array.from({ length: fields }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-2.5 w-24" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+        </div>
+      ))}
+      <Skeleton className="h-12 w-40 rounded-xl ml-auto" />
+    </div>
+  )
+}
+
+/** Simple stacked card list (wishlist, saved lists, addresses). */
+export function CardListSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-2xl border-2 border-table-border bg-surface-card p-4 flex gap-4 items-center">
+          <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+          <Skeleton className="h-9 w-24 rounded-xl" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Dark hero strip used at the top of most shop pages. */
+export function HeroStripSkeleton() {
+  return (
+    <div className="relative overflow-hidden bg-primary border-b-2 border-primary mb-6">
+      <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
+      <div className="relative z-10 px-4 max-w-4xl mx-auto py-8 md:py-10 space-y-2">
+        <Skeleton className="h-2.5 w-16 bg-white/20" />
+        <Skeleton className="h-8 w-48 bg-white/20" />
+        <Skeleton className="h-3 w-28 bg-white/20" />
+      </div>
+    </div>
+  )
+}
+
 // ── Product detail ───────────────────────────────────────────────────────────
 
 export function ProductDetailSkeleton() {
