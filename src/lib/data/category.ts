@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { PRODUCT_CARD_COLUMNS } from './columns'
 import type { Category, Product } from '@/types/database.types'
 
 export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest'
@@ -32,10 +31,11 @@ export async function getCategoryProducts({
 }: GetCategoryProductsOptions): Promise<{ products: Product[]; total: number }> {
   const supabase = await createClient()
 
-  // Card columns only — the grid never renders descriptions/meta/keywords.
+  // select('*') on purpose — the live schema has drifted, and naming a column
+  // that doesn't exist fails the whole query and empties the grid.
   let query = supabase
     .from('products')
-    .select(PRODUCT_CARD_COLUMNS, { count: 'exact' })
+    .select('*', { count: 'exact' })
     .eq('category_id', categoryId)
     .eq('is_active', true)
 

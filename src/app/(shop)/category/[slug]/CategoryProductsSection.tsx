@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import ProductGrid from '@/components/product/ProductGrid'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
-import { PRODUCT_CARD_COLUMNS } from '@/lib/data/columns'
 import type { Product } from '@/types/database.types'
 import type { SortOption } from '@/lib/data/category'
 
@@ -33,10 +32,11 @@ async function fetchProducts(
 ): Promise<{ products: Product[]; total: number }> {
   const supabase = createClient()
 
-  // Card columns only — keeps the filter/sort round trip small.
+  // select('*') on purpose — the live schema has drifted; naming a column that
+  // doesn't exist fails the whole query and empties the grid.
   let query = supabase
     .from('products')
-    .select(PRODUCT_CARD_COLUMNS, { count: 'exact' })
+    .select('*', { count: 'exact' })
     .eq('category_id', categoryId)
     .eq('is_active', true)
 

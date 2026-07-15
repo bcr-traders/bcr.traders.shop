@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { PRODUCT_CARD_COLUMNS } from '@/lib/data/columns'
 import ProductCard from '@/components/product/ProductCard'
 import SearchControls from '@/components/search/SearchControls'
 import type { Product, Category } from '@/types/database.types'
@@ -37,10 +36,11 @@ async function getSearchData(q: string, category: string, featured: boolean) {
   const supabase = await createClient()
   const db = supabase as any
 
-  // Card columns only — a 60-row grid never renders descriptions/meta/keywords.
+  // select('*') on purpose — the live schema has drifted; naming a column that
+  // doesn't exist fails the whole query and empties the results.
   let productQuery = db
     .from('products')
-    .select(PRODUCT_CARD_COLUMNS)
+    .select('*')
     .eq('is_active', true)
     .order('display_order')
     .limit(60)

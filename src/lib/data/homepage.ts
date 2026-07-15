@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { PRODUCT_CARD_COLUMNS } from './columns'
 import type {
   Banner,
   Category,
@@ -56,14 +55,18 @@ export async function getHomepageData(): Promise<HomepageData> {
         .select('*')
         .eq('is_active', true)
         .order('display_order'),
+      // NOTE: select('*') on purpose. The live schema has drifted from the
+      // migrations, and naming a column that doesn't exist makes PostgREST fail
+      // the WHOLE query — which silently emptied the categories (and every
+      // category row) on the home page. Never enumerate columns against this DB.
       supabase
         .from('categories')
-        .select('id, name, name_or, slug, image_url, icon, display_order, is_active, parent_id, created_at')
+        .select('*')
         .eq('is_active', true)
         .order('display_order'),
       supabase
         .from('products')
-        .select(PRODUCT_CARD_COLUMNS)
+        .select('*')
         .eq('is_active', true)
         .order('display_order')
         .limit(MAX_ACTIVE_PRODUCTS),
