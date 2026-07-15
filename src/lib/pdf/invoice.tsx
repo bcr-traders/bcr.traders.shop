@@ -99,17 +99,20 @@ const styles = StyleSheet.create({
   thPrice: { flex: 1.3, textAlign: 'right' },
   tableRow: {
     flexDirection: 'row',
-    padding: '8 8',
+    padding: '10 8',
     borderBottom: '1 solid #f0e9dc',
     alignItems: 'flex-start',
   },
   tableRowAlt: { backgroundColor: '#fbf7ef' },
-  tdSl: { width: 24, fontSize: 9, color: '#81756e' },
-  tdItem: { flex: 3, fontSize: 10, color: '#1c1c17' },
-  tdUnit: { fontSize: 8, color: '#81756e', marginTop: 2 },
-  tdNum: { flex: 1, fontSize: 10, color: '#1c1c17', textAlign: 'center' },
-  tdPrice: { flex: 1.3, fontSize: 10, color: '#1c1c17', textAlign: 'right' },
-  tdPriceBold: { flex: 1.3, fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1c17', textAlign: 'right' },
+  tdSl: { width: 24, fontSize: 9, color: '#81756e', lineHeight: 1.4 },
+  // The item cell is a column View; its children must NOT set `flex`, or the
+  // name collapses to zero height and the unit renders on top of it.
+  tdItemCell: { flex: 3, paddingRight: 8 },
+  tdItem: { fontSize: 10, color: '#1c1c17', lineHeight: 1.35 },
+  tdUnit: { fontSize: 8, color: '#81756e', marginTop: 3, lineHeight: 1.3 },
+  tdNum: { flex: 1, fontSize: 10, color: '#1c1c17', textAlign: 'center', lineHeight: 1.4 },
+  tdPrice: { flex: 1.3, fontSize: 10, color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
+  tdPriceBold: { flex: 1.3, fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
 
   // Totals
   totalsContainer: { marginLeft: 'auto', width: 220 },
@@ -215,11 +218,11 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
             <Text style={[styles.th, styles.thPrice]}>Amount</Text>
           </View>
           {data.items.map((item, i) => (
-            <View key={i} style={[styles.tableRow, ...(i % 2 === 1 ? [styles.tableRowAlt] : [])]}>
+            <View key={i} wrap={false} style={[styles.tableRow, ...(i % 2 === 1 ? [styles.tableRowAlt] : [])]}>
               <Text style={styles.tdSl}>{i + 1}</Text>
-              <View style={{ flex: 3 }}>
+              <View style={styles.tdItemCell}>
                 <Text style={styles.tdItem}>{item.name}</Text>
-                <Text style={styles.tdUnit}>{item.unit}</Text>
+                {item.unit ? <Text style={styles.tdUnit}>{item.unit}</Text> : null}
               </View>
               <Text style={styles.tdNum}>{item.quantity}</Text>
               <Text style={styles.tdPrice}>{fmt(item.price)}</Text>
