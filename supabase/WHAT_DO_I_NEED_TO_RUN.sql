@@ -55,7 +55,12 @@ WITH checks(sort, migration, feature, ok) AS (
     (10, '016_referrals.sql',
         'profiles.referral_code / referral_credit',
         EXISTS (SELECT 1 FROM information_schema.columns
-                 WHERE table_name='profiles' AND column_name='referral_code'))
+                 WHERE table_name='profiles' AND column_name='referral_code')),
+
+    (11, '025_fix_orders_status_check.sql',
+        'ORDER STATUS — allows Packed/Shipping, not just up to Confirmed',
+        COALESCE((SELECT pg_get_constraintdef(oid) LIKE '%''packed''%'
+                    FROM pg_constraint WHERE conname = 'orders_status_check'), true))
 )
 SELECT
   CASE WHEN ok THEN '  ok  ' ELSE '>> RUN' END AS status,
