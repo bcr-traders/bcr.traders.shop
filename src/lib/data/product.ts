@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { sanitizeRichText } from '@/lib/sanitize'
 import type { Category, Product, ProductFAQ, ProductReview } from '@/types/database.types'
 
 export interface RatingStats {
@@ -37,6 +38,14 @@ export async function getProductBySlug(slug: string): Promise<ProductPageData | 
   return { product, category }
 }
 
+/**
+ * FAQ answers are rich text rendered with dangerouslySetInnerHTML on the public
+ * product page. Sanitize HERE — the renderer is a client component and can't
+ * import the server-only sanitizer, so cleaning at this choke point guarantees
+ * every consumer gets safe HTML. Without this, anything stored in an answer
+ * (a fake login form, a bogus download button, phishing markup) renders live —
+ * stored XSS, and exactly what gets a site flagged as a "deceptive page".
+ */
 export async function getProductFAQs(productId: string): Promise<ProductFAQ[]> {
   const supabase = await createClient()
   const { data } = await supabase
@@ -45,7 +54,12 @@ export async function getProductFAQs(productId: string): Promise<ProductFAQ[]> {
     .eq('product_id', productId)
     .eq('is_active', true)
     .order('display_order')
-  return (data ?? []) as unknown as ProductFAQ[]
+  const faqs = (data ?? []) as unknown as ProductFAQ[]
+  return faqs.map((f) => ({
+    ...f,
+    answer: sanitizeRichText(f.answer),
+    answer_or: f.answer_or ? sanitizeRichText(f.answer_or) : f.answer_or,
+  }))
 }
 
 export async function getProductReviews(

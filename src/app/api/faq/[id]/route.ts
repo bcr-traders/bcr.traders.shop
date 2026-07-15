@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { buildFaqRow } from '@/lib/faq'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 
@@ -19,9 +20,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const err = await guard(); if (err) return err
   const { id } = await params
   const body = await req.json()
+  const update = buildFaqRow(body)
+  if (!Object.keys(update).length) return NextResponse.json({ error: 'No valid fields' }, { status: 400 })
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any).from('product_faqs').update(body).eq('id', id)
+  const { error } = await (supabase as any).from('product_faqs').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { buildFaqRow } from '@/lib/faq'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 
@@ -30,12 +31,18 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { id } = await params
   const body = await req.json()
+  // Whitelist + sanitize: never spread the raw body (mass assignment), and the
+  // answer fields are rendered as HTML on the public product page.
+  const row = buildFaqRow(body)
+  if (typeof row.question !== 'string' || !row.question) {
+    return NextResponse.json({ error: 'Question is required' }, { status: 400 })
+  }
   const supabase = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('product_faqs')
-    .insert({ ...body, product_id: id })
+    .insert({ ...row, product_id: id })
     .select()
     .single()
 

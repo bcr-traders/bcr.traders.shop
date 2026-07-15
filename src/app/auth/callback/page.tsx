@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { isSafeInternalPath } from '@/lib/validators'
 import { Loader2 } from 'lucide-react'
 
 // This page is the landing spot for implicit-flow magic links
@@ -13,13 +14,29 @@ import { Loader2 } from 'lucide-react'
 // before this client component ever runs and establishes the session.
 export const dynamic = 'force-dynamic'
 
+/**
+ * Only ever redirect to an internal path.
+ *
+ * `next` comes straight from the query string and this page is public, so an
+ * attacker can link to /auth/callback?next=https://evil.example directly —
+ * bypassing the server route's check — and our trusted domain forwards the
+ * visitor to their page. That's an open redirect: a standard phishing
+ * amplifier, and the kind of thing that gets a site flagged for social
+ * engineering. Reuses the same validator the server callback uses, which also
+ * rejects absolute URLs, protocol-relative "//evil.com", backslash tricks and
+ * "javascript:" payloads.
+ */
+function safeNext(raw: string | null): string {
+  return isSafeInternalPath(raw) ? raw : '/'
+}
+
 function CallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const next = searchParams.get('next') || '/'
+    const next = safeNext(searchParams.get('next'))
     const supabase = createClient()
 
     let cancelled = false
