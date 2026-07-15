@@ -2,7 +2,7 @@ import { after } from 'next/server'
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cleanGstin } from '@/lib/validations/gst'
-import { isSpiceProduct, pricePerSelection, unitsPerSelection, spiceUnitLabel, HANGER, PACK } from '@/lib/products/spices'
+import { findBuyOption } from '@/lib/products/packaging'
 import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
 import { generateUniqueReferralCode } from '@/lib/referral/code'
 import type { AuthMetadata } from '@/types'
@@ -98,11 +98,16 @@ export async function POST(request: Request) {
   const productIds = [...new Set(items.map((i) => i.product_id ?? i.id))]
   const { data: dbProducts } = await adminDb
     .from('products')
-    .select('id, name, price, mrp, unit, images, slug, is_active, variants, units_per_hanger, hangers_per_pack')
+    .select('id, name, price, mrp, unit, images, slug, is_active, variants, pack_type, unit_type, units_per_pack, pieces_per_secondary, secondary_price, secondary_mrp')
     .in('id', productIds)
 
   type DbVariant = { label: string; price: number; mrp: number | null }
-  type DbProduct = { id: string; name: string; price: number; mrp: number | null; unit: string; images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null; units_per_hanger: number | null; hangers_per_pack: number | null }
+  type DbProduct = {
+    id: string; name: string; price: number; mrp: number | null; unit: string
+    images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null
+    pack_type: string | null; unit_type: string | null; units_per_pack: number | null
+    pieces_per_secondary: number | null; secondary_price: number | null; secondary_mrp: number | null
+  }
 
   const productMap = new Map<string, DbProduct>(
     ((dbProducts as DbProduct[] | null) ?? []).map((p) => [p.id, p]),
@@ -122,15 +127,16 @@ export async function POST(request: Request) {
     let mrp = product.mrp ?? null
     let unit = product.unit
     let stockUnits = i.quantity
-    if (isSpiceProduct(product) && (i.variant === HANGER || i.variant === PACK)) {
-      // Spices: price the hanger/pack authoritatively from the DB per-hanger
-      // price; total stock units = quantity × units in the chosen packaging.
-      const uph = product.units_per_hanger ?? 0
-      const hpp = product.hangers_per_pack ?? 0
-      price = pricePerSelection(i.variant, product.price, hpp)
-      mrp = product.mrp != null ? pricePerSelection(i.variant, product.mrp, hpp) : null
-      unit = spiceUnitLabel(i.variant, uph, hpp)
-      stockUnits = i.quantity * unitsPerSelection(i.variant, uph, hpp)
+    // Packaging levels (Box / Hanger / Pack / Tin): price the chosen level
+    // authoritatively from the DB — never trust the client's price.
+    const buyOption = findBuyOption(product, i.variant)
+    if (buyOption) {
+      price = buyOption.price
+      mrp = buyOption.mrp
+      unit = buyOption.pieces != null
+        ? `${buyOption.label} · ${buyOption.pieces} pieces`
+        : buyOption.label
+      stockUnits = i.quantity
     } else if (i.variant) {
       const variant = (product.variants ?? []).find((v) => v.label === i.variant)
       if (!variant) { unavailableIds.push(i.id); continue }

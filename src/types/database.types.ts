@@ -72,10 +72,16 @@ export interface Product {
   meta_description: string | null
   brand: string | null
   packaging_form: string | null
+  // Packaging: pack_type = biggest unit sold (Box); unit_type = the lower unit a
+  // customer may also buy (Hanger/Pack/Tin); units_per_pack = how many lower
+  // units per box; pieces_per_secondary = pieces inside one lower unit.
   pack_type: PackType | null
   units_per_pack: number | null
-  // Box → pack → unit (non-spice). packs_per_box × units_per_pack = units/box.
-  // Null packs_per_box means 1 pack per box (backward compatible).
+  pieces_per_secondary: number | null
+  /** Optional price for one lower unit; derived from price ÷ units_per_pack when null. */
+  secondary_price: number | null
+  secondary_mrp: number | null
+  // Legacy box → pack → unit split (kept for backward compatibility).
   packs_per_box: number | null
   unit_type: UnitType | null
   price_per_pack: number | null

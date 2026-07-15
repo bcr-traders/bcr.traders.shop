@@ -8,10 +8,7 @@ import { useAuthPromptStore } from '@/store/authPromptStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { cn } from '@/lib/utils'
 import { useT } from '@/hooks/useT'
-import {
-  isSpiceProduct, pricePerSelection, unitsPerSelection, spiceUnitLabel,
-  HANGER, PACK, type SpicePackaging,
-} from '@/lib/products/spices'
+import { getBuyOptions, describeSelection, type BuyOption } from '@/lib/products/packaging'
 import type { Product, ProductVariant } from '@/types/database.types'
 
 /**
@@ -21,13 +18,15 @@ import type { Product, ProductVariant } from '@/types/database.types'
  * separate lines.
  */
 export default function ProductBuyPanel({ product }: { product: Product }) {
-  // Spices are sold by hanger/pack instead of weight/size variants.
-  const isSpice = isSpiceProduct(product)
-  const unitsPerHanger = product.units_per_hanger ?? 0
-  const hangersPerPack = product.hangers_per_pack ?? 0
-  const [packaging, setPackaging] = useState<SpicePackaging>(HANGER)
+  // Packaging levels the customer may buy at: the box, and (when configured) the
+  // lower unit — Hanger / Pack / Tin. Never single pieces.
+  const buyOptions = getBuyOptions(product)
+  const hasLevels = buyOptions.length > 1
+  const [levelIdx, setLevelIdx] = useState(0)
+  const activeOption: BuyOption = buyOptions[Math.min(levelIdx, buyOptions.length - 1)]
 
-  const variants: ProductVariant[] = isSpice ? [] : (product.variants ?? [])
+  // Weight/size variants (legacy) only apply when there's no packaging split.
+  const variants: ProductVariant[] = hasLevels ? [] : (product.variants ?? [])
   const hasVariants = variants.length > 0
   const [selIdx, setSelIdx] = useState(0)
   const [qty, setQty] = useState(1)
@@ -36,40 +35,22 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const [qtyInput, setQtyInput] = useState('1')
   const active: ProductVariant | null = hasVariants ? variants[Math.min(selIdx, variants.length - 1)] : null
 
-  // Units contained in one hanger/pack, for the spice unit calculation.
-  const unitsEach = isSpice ? unitsPerSelection(packaging, unitsPerHanger, hangersPerPack) : 0
+  // Pieces contained in ONE of the selected unit (null until the admin sets it).
+  const piecesEach = activeOption.pieces
 
-  const price = isSpice
-    ? pricePerSelection(packaging, product.price, hangersPerPack)
-    : (active?.price ?? product.price)
-  const mrp = isSpice
-    ? (product.mrp != null ? pricePerSelection(packaging, product.mrp, hangersPerPack) : null)
-    : (active?.mrp ?? product.mrp)
-  const unit = isSpice ? packaging : (active?.label ?? product.unit)
+  const price = hasLevels ? activeOption.price : (active?.price ?? product.price)
+  const mrp = hasLevels ? activeOption.mrp : (active?.mrp ?? product.mrp)
+  const unit = hasLevels ? activeOption.label : (active?.label ?? product.unit)
   const discount = mrp && mrp > price ? Math.round((1 - price / mrp) * 100) : null
   const outOfStock = product.stock_qty === 0
 
-  // Sold-by-pack (non-spice): a product sold as a Box / Box-Bale / Tin-Can /
-  // Hanger / Bag etc. holding multiple units. Shows per-pack pricing and the
-  // total unit count. Triggers whenever there's a real pack (units_per_pack > 1);
-  // single-unit products (Piece, a 1-unit Bag) fall through to plain quantity.
-  // A box can further hold packs_per_box packs (2-level), defaulting to 1.
-  const packsPerBox = product.packs_per_box ?? 1
-  const unitsPerBox = product.units_per_pack != null ? packsPerBox * product.units_per_pack : null
-  const soldByBox = !isSpice && !!unitsPerBox && unitsPerBox > 1
-  // Label for the pack the customer buys ("Box", "Hanger", …) and the unit inside.
-  const packLabel = product.pack_type || product.unit || 'Pack'
-  const innerUnitLabel = product.unit_type || 'units'
+  const packLabel = activeOption.label
+  const innerUnitLabel = 'Pieces'
   // Clamp any typed quantity to available stock (never accept an invalid amount).
-  // For spices, stock_qty is measured in units, so the cap is how many whole
-  // hangers/packs those units allow.
   const clampQty = (n: number) => {
     if (!Number.isFinite(n) || n < 1) return 1
     if (product.stock_qty <= 0) return 1
-    const cap = isSpice && unitsEach > 0
-      ? Math.max(1, Math.floor(product.stock_qty / unitsEach))
-      : product.stock_qty
-    return Math.min(Math.floor(n), cap)
+    return Math.min(Math.floor(n), product.stock_qty)
   }
 
   const { tField } = useT()
@@ -79,20 +60,23 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
   const showAuthPrompt = useAuthPromptStore((s) => s.show)
   const { isSignedIn, isLoaded } = useSupabaseUser()
 
-  const lineId = isSpice
-    ? `${product.id}::${packaging}`
+  // Each packaging level is its own cart line (a Box and a Hanger are separate).
+  const lineId = hasLevels
+    ? `${product.id}::${activeOption.label}`
     : active ? `${product.id}::${active.label}` : product.id
   const cartItem = useCartStore((s) => s.items.find((i) => i.id === lineId))
 
   const buildItem = () => ({
     id: lineId,
     product_id: product.id,
-    variant: isSpice ? packaging : (active?.label ?? null),
+    variant: hasLevels ? activeOption.label : (active?.label ?? null),
     name: product.name,
     price,
     mrp,
-    unit: isSpice ? spiceUnitLabel(packaging, unitsPerHanger, hangersPerPack) : unit,
-    units_each: isSpice ? unitsEach : (soldByBox && unitsPerBox ? unitsPerBox : undefined),
+    unit: hasLevels
+      ? (piecesEach ? `${activeOption.label} · ${piecesEach} pieces` : activeOption.label)
+      : unit,
+    units_each: hasLevels ? (piecesEach ?? undefined) : undefined,
     image: product.images?.[0] ?? null,
     slug: product.slug,
   })
@@ -138,7 +122,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           max={product.stock_qty || undefined}
           value={cartItem.quantity}
           onChange={(e) => { const n = parseInt(e.target.value, 10); updateQuantity(cartItem.id, clampQty(Number.isNaN(n) ? 1 : n)) }}
-          aria-label={soldByBox ? `Number of ${packLabel}` : 'Quantity'}
+          aria-label={hasLevels ? `Number of ${packLabel}` : 'Quantity'}
           className="w-14 bg-transparent text-center font-black text-sm tracking-widest outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button onClick={() => updateQuantity(cartItem.id, clampQty(cartItem.quantity + 1))} className="w-11 h-full flex items-center justify-center rounded-full hover:bg-white/15 active:scale-95 transition" aria-label="Add one more">
@@ -180,9 +164,9 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           </div>
 
           {/* Units contained in one pack — shown for pack-sold products. */}
-          {soldByBox && unitsPerBox && (
+          {hasLevels && piecesEach != null && (
             <p className="mt-2 text-[12px] font-bold text-on-surface-variant/75">
-              {`1 ${packLabel} = ${unitsPerBox} ${innerUnitLabel}`}
+              {`1 ${packLabel} = ${piecesEach.toLocaleString('en-IN')} ${innerUnitLabel}`}
               {product.price_per_pack ? (
                 <span className="text-primary">{` · ₹${product.price_per_pack}/${packLabel}`}</span>
               ) : null}
@@ -204,21 +188,19 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* ── Spices: Hanger / Pack selector ── */}
-      {isSpice && (
+      {/* ── Buy by: Box / Hanger / Pack / Tin ── */}
+      {hasLevels && (
         <div className="mb-6">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
             {tField('Buy by', 'କିଣନ୍ତୁ')}
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {([HANGER, PACK] as SpicePackaging[]).map((opt) => {
-              const isSel = packaging === opt
-              const optUnits = unitsPerSelection(opt, unitsPerHanger, hangersPerPack)
-              const optPrice = pricePerSelection(opt, product.price, hangersPerPack)
+            {buyOptions.map((opt, i) => {
+              const isSel = i === levelIdx
               return (
                 <button
-                  key={opt}
-                  onClick={() => setPackaging(opt)}
+                  key={opt.label}
+                  onClick={() => setLevelIdx(i)}
                   aria-pressed={isSel}
                   className={cn(
                     'relative flex flex-col items-start gap-1 px-4 pt-4 pb-3 rounded-2xl border-2 transition-all duration-200 active:scale-95 text-left',
@@ -228,15 +210,18 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
                   {isSel && (
                     <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-black">✓</span>
                   )}
-                  <span className={cn('font-black text-sm', isSel ? 'text-primary' : 'text-on-surface')}>
-                    {opt === HANGER ? tField('Hanger', 'ହାଙ୍ଗର') : tField('Pack', 'ପ୍ୟାକ୍')}
+                  <span className={cn('font-black text-sm', isSel ? 'text-primary' : 'text-on-surface')}>{opt.label}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span className={cn('font-black text-base', isSel ? 'text-primary' : 'text-on-surface')}>₹{opt.price}</span>
+                    {opt.mrp && opt.mrp > opt.price && (
+                      <span className="text-xs text-on-surface-variant/40 line-through">₹{opt.mrp}</span>
+                    )}
                   </span>
-                  <span className={cn('font-black text-base', isSel ? 'text-primary' : 'text-on-surface')}>₹{optPrice}</span>
-                  <span className="text-[11px] font-bold text-on-surface-variant/60">
-                    {opt === PACK
-                      ? tField(`${hangersPerPack} hangers · ${optUnits} units`, `${hangersPerPack} ହାଙ୍ଗର · ${optUnits} ୟୁନିଟ୍`)
-                      : tField(`${optUnits} units`, `${optUnits} ୟୁନିଟ୍`)}
-                  </span>
+                  {opt.pieces != null && (
+                    <span className="text-[11px] font-bold text-on-surface-variant/60">
+                      {opt.pieces.toLocaleString('en-IN')} pieces
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -298,9 +283,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
       {!outOfStock && (
         <div className="mb-5 rounded-2xl border-2 border-table-border p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
-            {isSpice
-              ? (packaging === PACK ? tField('Number of packs', 'ପ୍ୟାକ୍ ସଂଖ୍ୟା') : tField('Number of hangers', 'ହାଙ୍ଗର ସଂଖ୍ୟା'))
-              : soldByBox ? `Number of ${packLabel}` : tField('Quantity', 'ପରିମାଣ')}
+            {hasLevels ? `Number of ${packLabel}s` : tField('Quantity', 'ପରିମାଣ')}
           </p>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -334,11 +317,11 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
                   if (!Number.isNaN(parsed) && parsed >= 1) setQtyValue(clampQty(parsed))
                 }}
                 onBlur={() => { const n = parseInt(qtyInput, 10); if (Number.isNaN(n) || n < 1) setQtyInput(String(currentQty)) }}
-                placeholder={soldByBox ? '100' : '10'}
-                aria-label={soldByBox ? `Type number of ${packLabel}` : 'Type quantity'}
+                placeholder={hasLevels ? '10' : '10'}
+                aria-label={hasLevels ? `Type number of ${packLabel}` : 'Type quantity'}
                 className="w-24 h-12 px-3 rounded-xl border-2 border-primary/40 bg-surface text-center font-black text-lg text-primary placeholder:text-on-surface-variant/30 outline-none focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              {soldByBox && <span className="text-sm font-bold text-on-surface-variant">{packLabel}</span>}
+              {hasLevels && <span className="text-sm font-bold text-on-surface-variant">{packLabel}s</span>}
             </div>
           </div>
 
@@ -346,13 +329,9 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
           <div className="mt-4 pt-3 border-t border-table-border flex items-end justify-between gap-3">
             <div className="text-[11px] font-bold text-on-surface-variant/70 leading-snug">
               <span>{currentQty} × ₹{price}</span>
-              {isSpice ? (
-                <><br />{tField(
-                  `${currentQty} ${packaging === PACK ? 'pack' : 'hanger'}${currentQty > 1 ? 's' : ''} = ${currentQty * unitsEach} total units`,
-                  `${currentQty} ${packaging === PACK ? 'ପ୍ୟାକ୍' : 'ହାଙ୍ଗର'} = ମୋଟ ${currentQty * unitsEach} ୟୁନିଟ୍`,
-                )}</>
-              ) : soldByBox && unitsPerBox ? (
-                <><br />{`${currentQty} × ${unitsPerBox} = ${currentQty * unitsPerBox} ${innerUnitLabel}`}</>
+              {hasLevels ? (
+                // e.g. "3 Hangers = 180 Pieces"
+                <><br />{describeSelection(currentQty, activeOption, innerUnitLabel)}</>
               ) : null}
             </div>
             <div className="text-right">
@@ -365,7 +344,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
 
       {/* ── Badges ── */}
       <div className="flex items-center gap-2 flex-wrap mb-5">
-        {!hasVariants && !isSpice && (
+        {!hasVariants && !hasLevels && (
           <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
             {product.unit}{product.unit_or && ` / ${product.unit_or}`}
           </span>
@@ -373,12 +352,10 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         {product.is_featured && (
           <span className="px-3 py-1.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider">Featured</span>
         )}
-        {soldByBox && unitsPerBox && (
+        {hasLevels && product.unit_type && product.units_per_pack && (
           <span className="px-3 py-1.5 border border-table-border rounded-xl font-black text-[11px] uppercase tracking-wider text-on-surface-variant">
-            {product.packs_per_box && product.packs_per_box > 1
-              ? `${packLabel} = ${product.packs_per_box} packs × ${product.units_per_pack} = ${unitsPerBox} ${innerUnitLabel}`
-              : `${packLabel} of ${unitsPerBox} ${innerUnitLabel}`}
-            {product.price_per_pack ? ` — ₹${product.price_per_pack}/${packLabel}` : ''}
+            {`1 ${product.pack_type ?? 'Box'} = ${product.units_per_pack} ${product.unit_type}s`}
+            {product.pieces_per_secondary ? ` × ${product.pieces_per_secondary} = ${(product.units_per_pack * product.pieces_per_secondary).toLocaleString('en-IN')} pieces` : ''}
           </span>
         )}
       </div>

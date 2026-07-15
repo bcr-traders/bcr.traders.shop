@@ -40,6 +40,9 @@ type FormState = {
   packaging_form: string
   pack_type: string
   units_per_pack: string
+  pieces_per_secondary: string
+  secondary_price: string
+  secondary_mrp: string
   packs_per_box: string
   unit_type: string
   price_per_pack: string
@@ -131,6 +134,9 @@ export default function ProductForm({
     packaging_form: product?.packaging_form ?? '',
     pack_type: product?.pack_type ?? '',
     units_per_pack: product?.units_per_pack?.toString() ?? '',
+    pieces_per_secondary: product?.pieces_per_secondary?.toString() ?? '',
+    secondary_price: product?.secondary_price?.toString() ?? '',
+    secondary_mrp: product?.secondary_mrp?.toString() ?? '',
     packs_per_box: product?.packs_per_box?.toString() ?? '',
     unit_type: product?.unit_type ?? '',
     price_per_pack: product?.price_per_pack?.toString() ?? '',
@@ -199,15 +205,9 @@ export default function ProductForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.name])
 
-  // Auto-calculate Selling Price from Price per Pack ÷ Units per Pack
-  useEffect(() => {
-    const pack = parseFloat(form.price_per_pack)
-    const units = parseInt(form.units_per_pack, 10)
-    if (pack > 0 && units > 0) {
-      set('price', (pack / units).toFixed(2))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.price_per_pack, form.units_per_pack])
+  // NOTE: the old "Selling Price = Price per Pack ÷ Units per Pack" auto-calc was
+  // removed. `price` is now the price of one full box, entered directly; the
+  // lower unit's price is derived from it (see lib/products/packaging.ts).
 
 
   // ── Image Upload ─────────────────────────────────────────────────────────────
@@ -347,6 +347,9 @@ export default function ProductForm({
       packaging_form: form.packaging_form.trim() || null,
       pack_type: form.pack_type || null,
       units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
+      pieces_per_secondary: form.pieces_per_secondary ? parseInt(form.pieces_per_secondary, 10) : null,
+      secondary_price: form.secondary_price ? parseFloat(form.secondary_price) : null,
+      secondary_mrp: form.secondary_mrp ? parseFloat(form.secondary_mrp) : null,
       // Packs per box only applies to non-spice products.
       packs_per_box: !isSpiceCategory && form.packs_per_box ? parseInt(form.packs_per_box, 10) : null,
       unit_type: form.unit_type || null,
@@ -660,78 +663,116 @@ export default function ProductForm({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Packs per Box" hint="How many packs are inside one box">
-                  <input
-                    type="number"
-                    value={form.packs_per_box}
-                    min={1}
-                    onChange={e => set('packs_per_box', e.target.value)}
-                    placeholder="12"
-                    className={inputCls}
-                  />
-                </Field>
-                <Field label="Units / Pieces per Pack" hint="How many individual units are inside one pack">
-                  <input
-                    type="number"
-                    value={form.units_per_pack}
-                    min={1}
-                    onChange={e => set('units_per_pack', e.target.value)}
-                    placeholder="10"
-                    className={inputCls}
-                  />
-                </Field>
-              </div>
-
-              {form.units_per_pack && (
-                <p className="text-[11px] font-bold text-primary">
-                  {form.packs_per_box && parseInt(form.packs_per_box, 10) > 1 ? (
-                    <>Total units per {form.pack_type || 'pack'} = {parseInt(form.packs_per_box, 10)} packs × {parseInt(form.units_per_pack || '0', 10)} = <b>{parseInt(form.packs_per_box, 10) * parseInt(form.units_per_pack || '0', 10)} {form.unit_type || 'units'}</b></>
-                  ) : (
-                    <>1 {form.pack_type || 'pack'} = <b>{parseInt(form.units_per_pack || '0', 10)} {form.unit_type || 'units'}</b></>
-                  )}
-                </p>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Unit Type" hint="What each unit inside is called">
+                <Field label="Lower Unit" hint="The smaller unit a customer can also buy — leave blank if the box is sold whole">
                   <select
                     value={form.unit_type}
                     onChange={e => set('unit_type', e.target.value)}
                     className={inputCls}
                   >
-                    <option value="">—</option>
-                    <option value="Piece">Piece</option>
-                    <option value="Pieces">Pieces</option>
-                    <option value="Packet">Packet</option>
+                    <option value="">— None (sold as a whole {form.pack_type || 'box'}) —</option>
+                    <option value="Hanger">Hanger</option>
                     <option value="Pack">Pack</option>
-                    <option value="Bag">Bag</option>
-                    <option value="Sachet">Sachet</option>
+                    <option value="Tin">Tin</option>
                     <option value="Pouch">Pouch</option>
+                    <option value="Packet">Packet</option>
+                    <option value="Sachet">Sachet</option>
                     <option value="Bottle">Bottle</option>
                     <option value="Bottle/Pouch">Bottle/Pouch</option>
+                    <option value="Bag">Bag</option>
                     <option value="Jar">Jar</option>
-                    <option value="Tin">Tin</option>
-                    <option value="Tin/Can">Tin/Can</option>
+                    <option value="Piece">Piece</option>
                   </select>
+                </Field>
+                {form.unit_type && (
+                  <Field label={`${form.unit_type}s per ${form.pack_type || 'Box'}`} hint={`How many ${form.unit_type.toLowerCase()}s are in one ${(form.pack_type || 'box').toLowerCase()}`}>
+                    <input
+                      type="number"
+                      value={form.units_per_pack}
+                      min={1}
+                      onChange={e => set('units_per_pack', e.target.value)}
+                      placeholder="10"
+                      className={inputCls}
+                    />
+                  </Field>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field
+                  label={form.unit_type ? `Pieces per ${form.unit_type}` : `Pieces per ${form.pack_type || 'Box'}`}
+                  hint={form.unit_type ? `How many pieces are inside one ${form.unit_type.toLowerCase()}` : 'How many pieces are inside one box'}
+                >
+                  <input
+                    type="number"
+                    value={form.pieces_per_secondary}
+                    min={1}
+                    onChange={e => set('pieces_per_secondary', e.target.value)}
+                    placeholder="60"
+                    className={inputCls}
+                  />
                 </Field>
               </div>
 
-              <Field label="Price per Pack (₹)" hint="MRP/cost for one full box or bag — auto-fills Selling Price below">
-                <input
-                  type="number"
-                  value={form.price_per_pack}
-                  min={0}
-                  step="0.01"
-                  onChange={e => set('price_per_pack', e.target.value)}
-                  placeholder="0.00"
-                  className={inputCls}
-                />
-              </Field>
+              {/* Live total — exactly what the customer will see. */}
+              {(() => {
+                const per = parseInt(form.units_per_pack || '0', 10)
+                const each = parseInt(form.pieces_per_secondary || '0', 10)
+                const box = form.pack_type || 'Box'
+                if (form.unit_type && per > 0 && each > 0) {
+                  return (
+                    <p className="text-[11px] font-bold text-primary bg-primary/5 border-2 border-primary/15 rounded-xl px-4 py-2.5">
+                      1 {box} = {per} {form.unit_type}s × {each} pieces = <b>{(per * each).toLocaleString('en-IN')} pieces</b>
+                      {' · '}1 {form.unit_type} = <b>{each} pieces</b>
+                    </p>
+                  )
+                }
+                if (!form.unit_type && each > 0) {
+                  return (
+                    <p className="text-[11px] font-bold text-primary bg-primary/5 border-2 border-primary/15 rounded-xl px-4 py-2.5">
+                      1 {box} = <b>{each.toLocaleString('en-IN')} pieces</b>
+                    </p>
+                  )
+                }
+                return (
+                  <p className="text-[11px] font-bold text-on-surface-variant/60">
+                    Fill the counts above to see the total pieces per {box.toLowerCase()}.
+                  </p>
+                )
+              })()}
+
+              {/* Optional price for the lower unit. */}
+              {form.unit_type && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Field label={`Price per ${form.unit_type} (₹)`} hint="Optional — leave blank to split the box price evenly">
+                    <input
+                      type="number" min={0} step="0.01"
+                      value={form.secondary_price}
+                      onChange={e => set('secondary_price', e.target.value)}
+                      placeholder={form.price && form.units_per_pack ? (parseFloat(form.price) / parseInt(form.units_per_pack, 10)).toFixed(2) : '0.00'}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label={`MRP per ${form.unit_type} (₹)`} hint="Optional — strikethrough price for one unit">
+                    <input
+                      type="number" min={0} step="0.01"
+                      value={form.secondary_mrp}
+                      onChange={e => set('secondary_mrp', e.target.value)}
+                      placeholder="0.00"
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+              )}
+
             </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label={isSpiceCategory ? 'Price per Hanger (₹)' : 'Selling Price (₹)'} required hint={!isSpiceCategory && form.price_per_pack && form.units_per_pack ? 'Auto-calculated from Price per Pack ÷ Units per Pack — you can still override' : undefined}>
+              <Field
+                label={isSpiceCategory ? 'Price per Hanger (₹)' : `Selling Price per ${form.pack_type || 'Box'} (₹)`}
+                required
+                hint={isSpiceCategory ? undefined : 'What the customer pays for one full box'}
+              >
                 <input
                   type="number"
                   value={form.price}
@@ -742,7 +783,7 @@ export default function ProductForm({
                   className={inputCls}
                 />
               </Field>
-              <Field label="MRP (₹)" hint="Optional — shows as strikethrough when set">
+              <Field label={isSpiceCategory ? 'MRP (₹)' : `MRP per ${form.pack_type || 'Box'} (₹)`} hint="Optional — shows as strikethrough when set">
                 <input
                   type="number"
                   value={form.mrp}
