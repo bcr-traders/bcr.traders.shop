@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { PRODUCT_CARD_COLUMNS } from './columns'
 import type {
   Banner,
   Category,
@@ -35,10 +36,20 @@ function parseCmsValue<T>(
   return validate(v) ? (v as unknown as T) : null
 }
 
+/** Products shown per category row on the home page. */
+const PER_CATEGORY_LIMIT = 8
+/** Safety bound on the single product fetch (catalogue is ~200 rows). */
+const MAX_ACTIVE_PRODUCTS = 1000
+
 export async function getHomepageData(): Promise<HomepageData> {
   const supabase = await createClient()
 
-  const [bannersRes, categoriesRes, featuredRes, couponsRes, cmsRes] =
+  // ONE round trip. Previously this ran 5 queries, waited, then fired another
+  // query per category (≈15 queries over 2 sequential round trips) — a
+  // waterfall, because the per-category fetches needed the category ids first.
+  // Fetching every active product once removes that dependency entirely; the
+  // featured row and each category row are derived in memory below.
+  const [bannersRes, categoriesRes, productsRes, couponsRes, cmsRes] =
     await Promise.all([
       supabase
         .from('banners')
@@ -47,16 +58,15 @@ export async function getHomepageData(): Promise<HomepageData> {
         .order('display_order'),
       supabase
         .from('categories')
-        .select('*')
+        .select('id, name, name_or, slug, image_url, icon, display_order, is_active, parent_id, created_at')
         .eq('is_active', true)
         .order('display_order'),
       supabase
         .from('products')
-        .select('*')
-        .eq('is_featured', true)
+        .select(PRODUCT_CARD_COLUMNS)
         .eq('is_active', true)
         .order('display_order')
-        .limit(12),
+        .limit(MAX_ACTIVE_PRODUCTS),
       supabase.from('coupons').select('*').eq('is_active', true),
       supabase.from('cms_content').select('*'),
     ])
@@ -64,8 +74,8 @@ export async function getHomepageData(): Promise<HomepageData> {
   const allBanners = bannersRes.data ?? []
   const banners = allBanners.filter((b) => b.placement === 'hero')
   const promoCards = allBanners.filter((b) => b.placement === 'mid_page').slice(0, 4)
-  const categories = categoriesRes.data ?? []
-  const featuredProducts = featuredRes.data ?? []
+  const categories = (categoriesRes.data ?? []) as unknown as Category[]
+  const allProducts = (productsRes.data ?? []) as unknown as Product[]
   const coupons = couponsRes.data ?? []
 
   const cmsMap: Record<string, unknown> = {}
@@ -73,23 +83,14 @@ export async function getHomepageData(): Promise<HomepageData> {
     cmsMap[row.key] = row.value
   })
 
-  // Per-category products (parallel)
+  // Derived in memory — no extra queries.
+  const featuredProducts = allProducts.filter((p) => p.is_featured).slice(0, 12)
+
   const categoryProducts: Record<string, Product[]> = {}
-  if (categories.length > 0) {
-    const perCatResults = await Promise.all(
-      categories.map((cat) =>
-        supabase
-          .from('products')
-          .select('*')
-          .eq('category_id', cat.id)
-          .eq('is_active', true)
-          .order('display_order')
-          .limit(8)
-      )
-    )
-    categories.forEach((cat, i) => {
-      categoryProducts[cat.id] = perCatResults[i].data ?? []
-    })
+  for (const cat of categories) categoryProducts[cat.id] = []
+  for (const p of allProducts) {
+    const bucket = p.category_id ? categoryProducts[p.category_id] : undefined
+    if (bucket && bucket.length < PER_CATEGORY_LIMIT) bucket.push(p)
   }
 
   const announcement = parseCmsValue<SiteAnnouncement>(

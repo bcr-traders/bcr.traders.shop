@@ -15,5 +15,14 @@ export default async function OrdersPage() {
     .order('created_at', { ascending: false })
     .limit(300)
 
-  return <OrdersClient initialOrders={data ?? []} />
+  // The table only shows how MANY items an order has, so collapse `items` to a
+  // count here. Otherwise every line (name, price, image URL…) of 300 orders is
+  // serialised into the payload shipped to the browser.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orders = ((data ?? []) as any[]).map(({ items, ...o }) => ({
+    ...o,
+    item_count: Array.isArray(items) ? items.length : 0,
+  }))
+
+  return <OrdersClient initialOrders={orders} />
 }

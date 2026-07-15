@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { PRODUCT_CARD_COLUMNS } from './columns'
 import type { Category, Product } from '@/types/database.types'
 
 export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest'
@@ -31,9 +32,10 @@ export async function getCategoryProducts({
 }: GetCategoryProductsOptions): Promise<{ products: Product[]; total: number }> {
   const supabase = await createClient()
 
+  // Card columns only — the grid never renders descriptions/meta/keywords.
   let query = supabase
     .from('products')
-    .select('*', { count: 'exact' })
+    .select(PRODUCT_CARD_COLUMNS, { count: 'exact' })
     .eq('category_id', categoryId)
     .eq('is_active', true)
 
@@ -58,5 +60,5 @@ export async function getCategoryProducts({
   const from = (page - 1) * PAGE_SIZE
   const { data, count } = await query.range(from, from + PAGE_SIZE - 1)
 
-  return { products: data ?? [], total: count ?? 0 }
+  return { products: (data ?? []) as unknown as Product[], total: count ?? 0 }
 }

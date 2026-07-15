@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { PRODUCT_CARD_COLUMNS } from '@/lib/data/columns'
 import ProductCard from '@/components/product/ProductCard'
 import SearchControls from '@/components/search/SearchControls'
 import type { Product, Category } from '@/types/database.types'
@@ -36,9 +37,10 @@ async function getSearchData(q: string, category: string, featured: boolean) {
   const supabase = await createClient()
   const db = supabase as any
 
+  // Card columns only — a 60-row grid never renders descriptions/meta/keywords.
   let productQuery = db
     .from('products')
-    .select('*')
+    .select(PRODUCT_CARD_COLUMNS)
     .eq('is_active', true)
     .order('display_order')
     .limit(60)

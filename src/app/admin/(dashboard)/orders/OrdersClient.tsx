@@ -13,7 +13,8 @@ type OrderRow = {
   total: number
   created_at: string
   address: { name?: string; phone?: string } | null
-  items: unknown[] | null
+  /** Number of lines in the order — the full `items` JSON is never sent here. */
+  item_count: number
   payment_method: string
 }
 
@@ -79,7 +80,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         new Date(o.created_at).toLocaleDateString('en-IN'),
         `"${(addr?.name ?? '').replace(/"/g, '""')}"`,
         addr?.phone ?? '',
-        o.items?.length ?? 0,
+        o.item_count,
         o.total,
         o.payment_method.toUpperCase(),
         o.status,
@@ -214,7 +215,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
               <tbody>
                 {filtered.map((order, idx) => {
                   const addr = order.address as { name?: string; phone?: string } | null
-                  const itemCount = order.items?.length ?? 0
+                  const itemCount = order.item_count
                   return (
                     <tr
                       key={order.id}

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import ProductGrid from '@/components/product/ProductGrid'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
+import { PRODUCT_CARD_COLUMNS } from '@/lib/data/columns'
 import type { Product } from '@/types/database.types'
 import type { SortOption } from '@/lib/data/category'
 
@@ -32,9 +33,10 @@ async function fetchProducts(
 ): Promise<{ products: Product[]; total: number }> {
   const supabase = createClient()
 
+  // Card columns only — keeps the filter/sort round trip small.
   let query = supabase
     .from('products')
-    .select('*', { count: 'exact' })
+    .select(PRODUCT_CARD_COLUMNS, { count: 'exact' })
     .eq('category_id', categoryId)
     .eq('is_active', true)
 
@@ -58,7 +60,7 @@ async function fetchProducts(
 
   const from = (page - 1) * PAGE_SIZE
   const { data, count } = await query.range(from, from + PAGE_SIZE - 1)
-  return { products: data ?? [], total: count ?? 0 }
+  return { products: (data ?? []) as unknown as Product[], total: count ?? 0 }
 }
 
 export default function CategoryProductsSection({ categoryId, initialProducts, initialTotal }: Props) {
