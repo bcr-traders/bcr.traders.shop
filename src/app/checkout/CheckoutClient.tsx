@@ -221,7 +221,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           setIsPlacing(false)
           return
         }
-        throw new Error(json.error ?? 'Failed to place order')
+        throw new Error(json.detail ? `${json.error}: ${json.detail}` : (json.error ?? 'Failed to place order'))
       }
       clearCart()
       router.push(`/orders/${json.order_id}?new=1`)

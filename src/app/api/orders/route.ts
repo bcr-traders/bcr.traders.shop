@@ -260,15 +260,19 @@ export async function POST(request: Request) {
       status: 'placed',
       notes: notes?.trim() || null,
       is_bulk: is_bulk ?? false,
-      gstin: gstin,
-      gst_business_name: gstBusinessName,
+      // Only reference the GST columns when the buyer actually asked for a GST
+      // invoice. Naming a column that doesn't exist on the live table fails the
+      // WHOLE insert, so a plain order must never depend on them.
+      ...(gstin ? { gstin, gst_business_name: gstBusinessName } : {}),
     })
     .select('id, order_number, created_at')
     .single()
 
   if (error) {
+    // Surface the real Postgres message — "Failed to create order" alone makes
+    // schema/permission problems impossible to diagnose from the client.
     console.error('Order creation failed:', error.message)
-    return Response.json({ error: 'Failed to create order' }, { status: 500 })
+    return Response.json({ error: 'Failed to create order', detail: error.message }, { status: 500 })
   }
 
   const { id: orderId, order_number: orderNumber, created_at: createdAt } =
