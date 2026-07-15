@@ -19,6 +19,32 @@
 
 BEGIN;
 
+-- Prerequisite check. Without 021 the pack_type CHECK constraint still rejects
+-- 'Pack'/'Bottle' and this import dies on the first PACKS product with an
+-- opaque "violates check constraint products_pack_type_check" (error 23514).
+-- Fail immediately with an actionable message instead.
+DO $$
+DECLARE
+  v_def TEXT;
+BEGIN
+  SELECT pg_get_constraintdef(oid) INTO v_def
+    FROM pg_constraint WHERE conname = 'products_pack_type_check';
+
+  IF v_def IS NOT NULL AND v_def NOT LIKE '%''Pack''%' THEN
+    RAISE EXCEPTION
+      'Run 021_pack_type_add_pack_bottle.sql before this migration. The pack_type check constraint does not allow ''Pack'' yet, so importing the PACKS products would fail.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_name = 'products' AND column_name = 'pieces_per_secondary'
+  ) THEN
+    RAISE EXCEPTION
+      'Run 020_packaging_levels.sql before this migration. The products.pieces_per_secondary column does not exist yet.';
+  END IF;
+END;
+$$;
+
 UPDATE products SET pack_type='Box', units_per_hanger=NULL, hangers_per_pack=NULL, unit_type=NULL, units_per_pack=NULL, pieces_per_secondary=20 WHERE name = 'Alpha 375g';
 UPDATE products SET pack_type='Box', units_per_hanger=NULL, hangers_per_pack=NULL, unit_type=NULL, units_per_pack=NULL, pieces_per_secondary=10 WHERE name = 'Alpha 750g';
 UPDATE products SET pack_type='Box', units_per_hanger=NULL, hangers_per_pack=NULL, unit_type=NULL, units_per_pack=NULL, pieces_per_secondary=16 WHERE name = 'Alpha 750g (1x16)';
