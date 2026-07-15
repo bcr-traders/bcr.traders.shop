@@ -85,7 +85,8 @@ export default function OrderDetailClient({
       setOrder(prev => ({ ...prev, status: newStatus }))
       showToast(`Status updated to ${STATUS_LABEL[newStatus]}`)
     } else {
-      showToast('Failed to update status')
+      const d = await res.json().catch(() => ({})) as { error?: string; detail?: string }
+      showToast(d.detail ? `${d.error}: ${d.detail}` : (d.error ?? 'Failed to update status'))
     }
     setUpdatingStatus(false)
   }
