@@ -161,9 +161,12 @@ function SuccessOverlay({
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       >
         {/* Top accent bar */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary z-30" />
 
-        <div className="p-8 flex flex-col items-center">
+        {/* Scrolls within itself on short screens: the receipt, invoice button
+            and referral block together are taller than a small phone viewport,
+            and the page behind is locked. */}
+        <div className="w-full p-6 sm:p-8 flex flex-col items-center max-h-[88vh] overflow-y-auto overscroll-contain">
           {/* Animated checkmark */}
           <motion.div
             className="relative w-24 h-24 mb-5"
@@ -229,6 +232,19 @@ function SuccessOverlay({
               </div>
             </div>
           </motion.div>
+
+          {/* Invoice — same endpoint the order page below uses. `download` so it
+              saves the PDF rather than navigating away from this celebration. */}
+          <motion.a
+            href={`/api/orders/${order.id}/invoice`}
+            download
+            className="w-full h-12 mb-6 rounded-xl border-2 border-primary/25 bg-primary/[0.04] text-primary text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary/40 active:scale-95 transition-all"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+          >
+            <Download size={16} /> Download Invoice
+          </motion.a>
 
           {/* Referral code reveal */}
           {referralCode && (
@@ -320,10 +336,13 @@ export default function OrderDetailClient({
   const [showReview, setShowReview] = useState(false)
 
   useEffect(() => {
-    if (!isNew) return
+    // Wait for the success celebration to be dismissed first — otherwise this
+    // fires 3s in and covers it. (Never noticed before, because the redirect
+    // race in checkout meant the celebration never appeared at all.)
+    if (!isNew || showSuccess) return
     const t = setTimeout(() => setShowReview(true), 3000)
     return () => clearTimeout(t)
-  }, [isNew])
+  }, [isNew, showSuccess])
 
   function handleDismissSuccess() {
     setShowSuccess(false)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -28,6 +28,10 @@ interface PincodeResult {
 
 export default function CheckoutClient({ profileId, initialEmail = '' }: Props) {
   const router = useRouter()
+  // True once the order is placed, so clearing the cart can't bounce the
+  // customer home before the success page loads. A ref, not state: it must be
+  // readable by the effect on the very next render, without scheduling another.
+  const orderPlacedRef = useRef(false)
   const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -119,6 +123,12 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   // Load addresses via the server API — the `addresses` table is service-role
   // only, so the browser client can't read it (permission denied).
   useEffect(() => {
+    // An empty cart means the customer wandered in with nothing to buy — send
+    // them home. But NOT right after a successful order: placeOrder clears the
+    // cart, which re-runs this effect, and the redirect then raced (and beat)
+    // the push to the order-success page. Placing an order is the one time the
+    // cart is legitimately empty here.
+    if (orderPlacedRef.current) return
     if (items.length === 0) { router.replace('/'); return }
     void (async () => {
       try {
@@ -223,6 +233,8 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
         }
         throw new Error(json.detail ? `${json.error}: ${json.detail}` : (json.error ?? 'Failed to place order'))
       }
+      // Set BEFORE clearCart so the empty-cart redirect above can't fire.
+      orderPlacedRef.current = true
       clearCart()
       router.push(`/orders/${json.order_id}?new=1`)
     } catch (e) {
