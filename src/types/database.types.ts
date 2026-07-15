@@ -36,8 +36,9 @@ export interface Category {
   created_at: string
 }
 
-// Outer packaging the wholesaler sells a product as.
-export type PackType = 'Box' | 'Box/Bale' | 'Bag' | 'Tin/Can' | 'Hanger' | 'Piece'
+// Outer packaging the wholesaler sells a product as (matches the Vyapar sheet's
+// "Unit" column: BOX / PACKS / BAGS / CANS / Hanger / PIECES / BOTTLES).
+export type PackType = 'Box' | 'Box/Bale' | 'Bag' | 'Tin/Can' | 'Hanger' | 'Piece' | 'Pack' | 'Bottle'
 // What a single unit inside a pack is called. Free-form — many values in use
 // (Bag, Piece, Bottle/Pouch, Tin/Can, Bottle, Pouch, Jar, Tin, Pack, Sachet, …).
 export type UnitType = string

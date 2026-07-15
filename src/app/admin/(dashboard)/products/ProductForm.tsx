@@ -654,9 +654,11 @@ export default function ProductForm({
                     <option value="">—</option>
                     <option value="Box">Box</option>
                     <option value="Box/Bale">Box/Bale</option>
+                    <option value="Pack">Pack</option>
                     <option value="Bag">Bag</option>
                     <option value="Tin/Can">Tin/Can</option>
                     <option value="Hanger">Hanger</option>
+                    <option value="Bottle">Bottle</option>
                     <option value="Piece">Piece</option>
                   </select>
                 </Field>
