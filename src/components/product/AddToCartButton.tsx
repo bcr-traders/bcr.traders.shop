@@ -42,7 +42,13 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   // on ADD, so the customer can bulk-order without opening the product page.
   // For plain unit products, ADD stays an instant add-one.
   const soldByBox = hasLevels || (product.pack_type === 'Box' && !!product.units_per_pack)
-  const unitsPerBox = opt.pieces ?? product.units_per_pack ?? 0
+  // Pieces contained in ONE of the selected level. Only fall back to
+  // units_per_pack for single-level products, where it legacy-means
+  // pieces-per-box. Once a product HAS levels, units_per_pack counts lower units
+  // (e.g. 20 hangers per box), not pieces — printing it against the lower unit's
+  // label claims "1 Hanger = 1,200 pieces". Better to show no count than a wrong
+  // one, so this is 0 (hidden) when the admin hasn't filled the pieces in.
+  const unitsPerBox = opt.pieces ?? (hasLevels ? 0 : product.units_per_pack) ?? 0
   const pricePerBox = opt.price
   /** "Box" / "Hanger" / "Pack" — whatever level is selected. */
   const unitWord = hasLevels ? opt.label : tField('box', 'ବାକ୍ସ')
