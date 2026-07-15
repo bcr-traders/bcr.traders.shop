@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { notifyOrderEvent } from '@/lib/resend/notify'
 import { NextRequest, NextResponse, after } from 'next/server'
 import type { AuthMetadata } from '@/types'
-import type { OrderItem } from '@/types/database.types'
+import { restoreStockForOrder } from '@/lib/orders/stock'
 
 export async function PATCH(
   _req: NextRequest,
@@ -55,34 +55,13 @@ export async function PATCH(
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
 
-  // Restore stock — best-effort, fire-and-forget style
-  void restoreStock(order.items as OrderItem[], supabase)
+  // Use the shared helper the cancel/status routes use. Its predecessor here
+  // restored `quantity`, but the order route decrements `stock_units` — for a
+  // packaged product those differ, so a return used to put back the wrong count.
+  after(() => restoreStockForOrder(id))
 
   // Email the customer + eligible admins that the order was returned (PRD #4).
   after(() => notifyOrderEvent(id, 'returned'))
 
   return NextResponse.json({ ok: true, returned_at: now })
-}
-
-async function restoreStock(
-  items: OrderItem[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
-) {
-  for (const item of items) {
-    try {
-      const { data: product } = await supabase
-        .from('products')
-        .select('stock_qty')
-        .eq('id', item.product_id)
-        .maybeSingle()
-      if (!product) continue
-      await supabase
-        .from('products')
-        .update({ stock_qty: product.stock_qty + item.quantity })
-        .eq('id', item.product_id)
-    } catch {
-      // Non-fatal — log in production
-    }
-  }
 }

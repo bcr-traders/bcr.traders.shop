@@ -1,11 +1,22 @@
 import { createAdminClient } from '@/lib/supabase/server'
 
-export async function recordOtpSend(verificationId: string, phoneDigits: string) {
+/**
+ * Bind a verificationId to a phone number.
+ *
+ * `expiryMinutes` must match what the gateway was told, otherwise this binding
+ * becomes the real ceiling and the admin's setting still wouldn't apply.
+ */
+export async function recordOtpSend(
+  verificationId: string,
+  phoneDigits: string,
+  expiryMinutes = 10,
+) {
   const admin = createAdminClient()
+  const minutes = Math.min(60, Math.max(1, Math.round(expiryMinutes) || 10))
   await admin.from('otp_verifications').insert({
     verification_id: verificationId,
     phone_digits: phoneDigits,
-    expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + minutes * 60 * 1000).toISOString(),
   })
 }
 

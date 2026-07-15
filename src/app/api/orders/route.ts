@@ -98,7 +98,11 @@ export async function POST(request: Request) {
   const productIds = [...new Set(items.map((i) => i.product_id ?? i.id))]
   const { data: dbProducts } = await adminDb
     .from('products')
-    .select('id, name, price, mrp, unit, images, slug, is_active, variants, pack_type, unit_type, units_per_pack, pieces_per_secondary, secondary_price, secondary_mrp')
+    // select('*') on purpose. The live schema has drifted, and naming a column
+    // that doesn't exist (pieces_per_secondary/secondary_price only exist once
+    // migration 020 runs) makes PostgREST fail the WHOLE query — which would
+    // break EVERY order. '*' also picks up the spice hanger/pack columns.
+    .select('*')
     .in('id', productIds)
 
   type DbVariant = { label: string; price: number; mrp: number | null }
@@ -107,6 +111,7 @@ export async function POST(request: Request) {
     images: string[] | null; slug: string; is_active: boolean; variants: DbVariant[] | null
     pack_type: string | null; unit_type: string | null; units_per_pack: number | null
     pieces_per_secondary: number | null; secondary_price: number | null; secondary_mrp: number | null
+    units_per_hanger: number | null; hangers_per_pack: number | null
   }
 
   const productMap = new Map<string, DbProduct>(
@@ -317,33 +322,39 @@ export async function POST(request: Request) {
     })
   }
 
-  // Decrement stock immediately to prevent overselling
-  void decrementStock(orderItems)
+  // Everything below runs AFTER the response is sent, and every one of them must
+  // use `after()` rather than a bare `void`: on serverless the runtime may freeze
+  // or kill the function the moment the response returns, dropping any promise
+  // that isn't registered. A dropped `void` here means stock silently never
+  // decrements (overselling) or a coupon is never counted.
+  after(() => decrementStock(orderItems))
 
   // Record coupon usage atomically so concurrent orders can't push a coupon past
   // its max_uses (migration 014). Falls back to a plain update if the function
-  // isn't present yet.
+  // isn't present yet. Migration 024 drops the old AFTER INSERT trigger that
+  // used to double-count this.
   if (appliedCoupon) {
     const cid = appliedCoupon.id
     const prevCount = appliedCoupon.uses_count ?? 0
-    void (async () => {
+    after(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (adminDb as any).rpc('increment_coupon_use', { p_coupon_id: cid })
       if (error) {
         await adminDb.from('coupons').update({ uses_count: prevCount + 1 }).eq('id', cid)
       }
-    })()
+    })
   }
 
   // Mark this customer's abandoned cart as recovered (best-effort).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  void (adminDb as any).from('abandoned_carts').update({ is_recovered: true }).eq('user_id', profileId)
+  after(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminDb as any).from('abandoned_carts').update({ is_recovered: true }).eq('user_id', profileId)
+  })
 
-  // Emails + low stock check run AFTER the response is sent. `after()` (vs a bare
-  // `void`) is what makes this reliable on serverless: the platform keeps the
-  // function alive until the callback finishes, so the email actually goes out
-  // promptly instead of being frozen/dropped when the response returns.
-  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, discountAmt, appliedCouponCode, total, profileId))
+  // `totalDiscount`, not `discountAmt` — the order was inserted with the coupon
+  // AND referral discounts combined, so passing the coupon share alone makes the
+  // email/invoice fail to add up against the total the customer actually pays.
+  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, totalDiscount, appliedCouponCode, total, profileId))
 
   return Response.json({ order_id: orderId }, { status: 201 })
 }

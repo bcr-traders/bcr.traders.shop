@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sendOtp } from '@/lib/message-central'
 import { recordOtpSend } from '@/lib/auth/otp-store'
+import { getOtpExpiryMinutes } from '@/lib/settings/otp'
 import { normalizeIndianPhone } from '@/lib/validators'
 import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
@@ -26,13 +27,17 @@ export async function POST(request: Request) {
     const perIpHour = await rateLimit({ key: `otp:send:ip:hour:${ip}`, limit: 30, windowSec: 3600 })
     if (!perIpHour.ok) return rateLimitResponse(perIpHour)
 
-    const result = await sendOtp(phoneDigits)
+    // OTP validity is admin-configurable (Settings → OTP expiry). Both the SMS
+    // gateway and our own binding below must use the SAME value, or whichever is
+    // shorter silently wins.
+    const expiryMinutes = await getOtpExpiryMinutes()
+    const result = await sendOtp(phoneDigits, expiryMinutes)
 
     if (result.success && result.verificationId) {
       await rateLimit({ key: `otp:send:phone:short:${phoneDigits}`, limit: 1, windowSec: 30 }).catch(() => {})
 
       try {
-        await recordOtpSend(result.verificationId, phoneDigits)
+        await recordOtpSend(result.verificationId, phoneDigits, expiryMinutes)
       } catch (err) {
         console.error('[OTP Send] Failed to record OTP binding — refusing send:', err)
         return NextResponse.json(

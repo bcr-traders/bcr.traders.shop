@@ -104,7 +104,11 @@ export async function sendSms(phone: string, message: string): Promise<void> {
 /**
  * Send a phone-verification OTP. Returns a verificationId to pass to verifyOtp.
  */
-export async function sendOtp(phone: string): Promise<{
+export async function sendOtp(
+  phone: string,
+  /** OTP validity in MINUTES. Comes from Admin → Settings. */
+  expiryMinutes = 10,
+): Promise<{
   success: boolean
   verificationId?: string
   message?: string
@@ -115,10 +119,16 @@ export async function sendOtp(phone: string): Promise<{
   let token = await getAuthToken()
   if (!token) return { success: false, message: 'OTP service not configured.' }
 
+  // Message Central's otpExpiry is in MINUTES (roughly 1–60), NOT seconds.
+  // This previously sent otpExpiry=600 believing it was seconds; 600 is far
+  // outside the accepted range, so the gateway ignored it and applied its own
+  // short default — which is why codes died after ~2 minutes no matter what the
+  // admin configured. Clamp to a range the gateway will actually accept.
+  const otpExpiry = Math.min(60, Math.max(1, Math.round(expiryMinutes) || 10))
+
   const mobile = digitsOnly(phone)
   const doSend = async (authToken: string) => {
-    // otpExpiry is in seconds — 600 = 10 minutes.
-    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=600`
+    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=${otpExpiry}`
     return fetch(url, { method: 'POST', headers: { authToken, 'Content-Type': 'application/json' } })
   }
 

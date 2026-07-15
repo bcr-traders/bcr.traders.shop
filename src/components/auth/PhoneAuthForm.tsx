@@ -117,12 +117,27 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
 
       setVerificationId(otpData.verificationId)
       setStep('otp')
+      // Clear any digits already typed — this same handler backs "Resend OTP",
+      // and the old code is now dead, so leaving it in the boxes would only
+      // invite the customer to submit a code that can no longer work.
+      setOtp('')
       setMessage(`OTP sent to +91 ${digits}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  /**
+   * "Resend OTP" — wipe the typed digits immediately, before the request goes
+   * out. Clearing only after the response leaves the dead code sitting in the
+   * boxes while the SMS is on its way (and keeps it there if the send fails).
+   */
+  function handleResend(e: React.MouseEvent<HTMLButtonElement>) {
+    setOtp('')
+    setError(null)
+    void sendOtp(e as unknown as React.FormEvent)
   }
 
   async function verifyOtp(e: React.FormEvent) {
@@ -347,7 +362,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
 
           <button
             type="button"
-            onClick={sendOtp as unknown as () => void}
+            onClick={handleResend}
             disabled={loading}
             className="text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors self-center"
           >

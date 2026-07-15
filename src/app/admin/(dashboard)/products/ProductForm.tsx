@@ -595,35 +595,35 @@ export default function ProductForm({
             {isSpiceCategory && (
               <div className="p-5 bg-primary/5 rounded-2xl border-2 border-primary/20 space-y-4">
                 <div>
-                  <p className="font-black text-[10px] text-primary uppercase tracking-widest">Spices — Hanger / Pack</p>
+                  <p className="font-black text-[10px] text-primary uppercase tracking-widest">Spices — Box → Hanger → Piece</p>
                   <p className="font-medium text-[11px] text-on-surface-variant mt-1">
-                    Spices are sold by <b>hanger</b> and <b>pack</b>. Set how many units make a hanger and how many hangers make a pack. The <b>Selling Price below is the price per hanger</b> — the pack price is calculated automatically.
+                    The customer buys a whole <b>box</b> or individual <b>hangers</b> (never single pieces). Set how many pieces make a hanger and how many hangers make a box. The <b>Selling Price below is the price per hanger</b> — the box price is calculated automatically.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Units per Hanger" required hint="How many single units are in one hanger">
+                  <Field label="Pieces per Hanger" required hint="How many pieces are in one hanger">
                     <input
                       type="number" min={1}
                       value={form.units_per_hanger}
                       onChange={e => set('units_per_hanger', e.target.value)}
-                      placeholder="10"
+                      placeholder="60"
                       className={inputCls}
                     />
                   </Field>
-                  <Field label="Hangers per Pack" required hint="How many hangers make one pack">
+                  <Field label="Hangers per Box" required hint="How many hangers make one box">
                     <input
                       type="number" min={1}
                       value={form.hangers_per_pack}
                       onChange={e => set('hangers_per_pack', e.target.value)}
-                      placeholder="12"
+                      placeholder="20"
                       className={inputCls}
                     />
                   </Field>
                 </div>
                 {form.price && form.units_per_hanger && form.hangers_per_pack && (
                   <p className="text-[11px] font-bold text-primary">
-                    1 hanger = ₹{parseFloat(form.price || '0').toFixed(2)} · {form.units_per_hanger} units &nbsp;|&nbsp;
-                    1 pack = ₹{(parseFloat(form.price || '0') * parseInt(form.hangers_per_pack || '0', 10)).toFixed(2)} · {parseInt(form.units_per_hanger || '0', 10) * parseInt(form.hangers_per_pack || '0', 10)} units ({form.hangers_per_pack} hangers)
+                    1 hanger = ₹{parseFloat(form.price || '0').toFixed(2)} · {form.units_per_hanger} pieces &nbsp;|&nbsp;
+                    1 box = ₹{(parseFloat(form.price || '0') * parseInt(form.hangers_per_pack || '0', 10)).toFixed(2)} · {parseInt(form.units_per_hanger || '0', 10) * parseInt(form.hangers_per_pack || '0', 10)} pieces ({form.hangers_per_pack} hangers)
                   </p>
                 )}
               </div>

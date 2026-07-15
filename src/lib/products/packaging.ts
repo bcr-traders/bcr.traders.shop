@@ -22,6 +22,10 @@ export interface PackagingProduct {
   mrp?: number | null
   secondary_price?: number | null
   secondary_mrp?: number | null
+  // Spices (admin → "Spices — Hanger / Pack"): `price` is the price per HANGER
+  // and the pack price is derived. Takes precedence over the box model below.
+  units_per_hanger?: number | null
+  hangers_per_pack?: number | null
 }
 
 export type BuyLevel = 'box' | 'secondary'
@@ -39,13 +43,25 @@ export interface BuyOption {
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
+/**
+ * Spices configured via admin → "Spices — Hanger / Pack": the customer buys
+ * hangers or packs, `price` is per HANGER, and the pack price is derived.
+ */
+export function isSpiceHangerPack(p: PackagingProduct): boolean {
+  return (p.units_per_hanger ?? 0) > 0 && (p.hangers_per_pack ?? 0) > 0
+}
+
 /** True when the product has a smaller unit the customer can buy besides the box. */
 export function hasSecondaryUnit(p: PackagingProduct): boolean {
   return !!p.unit_type && (p.units_per_pack ?? 0) > 1
 }
 
-/** Total pieces inside one box — null until the admin fills the counts in. */
+/** Total pieces inside one box/pack — null until the admin fills the counts in. */
 export function piecesPerBox(p: PackagingProduct): number | null {
+  // Spices: the biggest unit is the Pack = hangers × units-per-hanger.
+  if (isSpiceHangerPack(p)) {
+    return (p.units_per_hanger as number) * (p.hangers_per_pack as number)
+  }
   const per = p.units_per_pack ?? null
   const each = p.pieces_per_secondary ?? null
   if (!hasSecondaryUnit(p)) return each // Box → pieces directly
@@ -58,6 +74,35 @@ export function piecesPerBox(p: PackagingProduct): number | null {
  * A product with no lower unit yields just the box/base option.
  */
 export function getBuyOptions(p: PackagingProduct): BuyOption[] {
+  // Spices — Box → Hanger → Piece. The customer buys a whole BOX or individual
+  // HANGERS (never single pieces), and `price` is the price of ONE HANGER, so
+  // the box price is derived: hangers-per-box × hanger price.
+  // e.g. 60 pieces/hanger × 20 hangers/box at ₹220/hanger
+  //      ->  1 Hanger = ₹220 · 60 pieces,  1 Box = ₹4,400 · 1,200 pieces.
+  if (isSpiceHangerPack(p)) {
+    const piecesPerHanger = p.units_per_hanger as number
+    const hangersPerBox = p.hangers_per_pack as number
+    // Honour the admin's own wording for the outer unit, but never let it be
+    // "Hanger" or we'd render two identical options.
+    const boxLabel = p.pack_type && p.pack_type !== 'Hanger' ? p.pack_type : 'Box'
+    return [
+      {
+        level: 'secondary',
+        label: 'Hanger',
+        price: p.price,
+        mrp: p.mrp ?? null,
+        pieces: piecesPerHanger,
+      },
+      {
+        level: 'box',
+        label: boxLabel,
+        price: round2(p.price * hangersPerBox),
+        mrp: p.mrp != null ? round2(p.mrp * hangersPerBox) : null,
+        pieces: piecesPerHanger * hangersPerBox,
+      },
+    ]
+  }
+
   const boxLabel = p.pack_type || 'Box'
   const options: BuyOption[] = [
     { level: 'box', label: boxLabel, price: p.price, mrp: p.mrp ?? null, pieces: piecesPerBox(p) },

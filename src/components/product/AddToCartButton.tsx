@@ -10,6 +10,7 @@ import { useOverlayStore } from '@/store/overlayStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { useT } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
+import { getBuyOptions } from '@/lib/products/packaging'
 import type { Product } from '@/types/database.types'
 
 interface Props {
@@ -24,20 +25,34 @@ interface Props {
 export default function AddToCartButton({ product, className, variant = 'icon', disabled }: Props) {
   const addItem       = useCartStore((s) => s.addItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
-  const cartItem      = useCartStore((s) => s.items.find((i) => i.id === product.id))
   const showAuthPrompt = useAuthPromptStore((s) => s.show)
   const { isSignedIn, isLoaded } = useSupabaseUser()
   const [flash, setFlash] = useState(false)
   const { t, tField } = useT()
 
-  // Box-sold products get a Blinkit-style quick-pick sheet (1 / 10 / custom
-  // boxes) on ADD, so the customer can bulk-order without opening the product
-  // page. For unit products, ADD stays an instant add-one.
-  const soldByBox = product.pack_type === 'Box' && !!product.units_per_pack
-  const unitsPerBox = product.units_per_pack ?? 0
-  const pricePerBox = product.price
+  // The levels this product can be bought at — e.g. Box, or Hanger/Pack for
+  // spices. Same source of truth as the product page, so prices and unit counts
+  // can't drift apart between the two.
+  const buyOptions = getBuyOptions(product)
+  const hasLevels = buyOptions.length > 1
+  const [levelIdx, setLevelIdx] = useState(0)
+  const opt = buyOptions[Math.min(levelIdx, buyOptions.length - 1)]
+
+  // Box/hanger products get a Blinkit-style quick-pick sheet (1 / 10 / custom)
+  // on ADD, so the customer can bulk-order without opening the product page.
+  // For plain unit products, ADD stays an instant add-one.
+  const soldByBox = hasLevels || (product.pack_type === 'Box' && !!product.units_per_pack)
+  const unitsPerBox = opt.pieces ?? product.units_per_pack ?? 0
+  const pricePerBox = opt.price
+  /** "Box" / "Hanger" / "Pack" — whatever level is selected. */
+  const unitWord = hasLevels ? opt.label : tField('box', 'ବାକ୍ସ')
+  const unitWordPlural = hasLevels ? `${opt.label}s` : tField('boxes', 'ବାକ୍ସ')
   const maxQty = product.stock_qty > 0 ? product.stock_qty : 9999
   const clampNum = (n: number) => Math.max(1, Math.min(Math.floor(n), maxQty))
+
+  // Each level is its own cart line (a Hanger and a Pack are separate).
+  const lineId = hasLevels ? `${product.id}::${opt.label}` : product.id
+  const cartItem = useCartStore((s) => s.items.find((i) => i.id === lineId))
 
   const [showSheet, setShowSheet] = useState(false)
   const [qtyStr, setQtyStr] = useState('1')
@@ -71,15 +86,22 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
 
   const addToCart = (quantity: number) => {
     addItem({
-      id: product.id,
+      id: lineId,
+      product_id: product.id,
+      // Mirrors ProductBuyPanel so the cart line and the server-side price
+      // lookup agree on which level was bought.
+      variant: hasLevels ? opt.label : null,
       name: product.name,
-      price: product.price,
-      mrp: product.mrp,
-      unit: product.unit,
+      price: hasLevels ? opt.price : product.price,
+      mrp: hasLevels ? opt.mrp : product.mrp,
+      unit: hasLevels
+        ? (opt.pieces ? `${opt.label} · ${opt.pieces} pieces` : opt.label)
+        : product.unit,
+      units_each: hasLevels ? (opt.pieces ?? undefined) : undefined,
       image: product.images?.[0] ?? null,
       slug: product.slug,
     })
-    if (quantity > 1) updateQuantity(product.id, quantity)
+    if (quantity > 1) updateQuantity(lineId, quantity)
     setFlash(true)
     setTimeout(() => setFlash(false), 800)
   }
@@ -143,7 +165,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               <div className="flex-1 min-w-0">
                 <p className="font-black text-sm text-primary leading-tight line-clamp-2">{tField(product.name, product.name_or)}</p>
                 <p className="text-[11px] font-bold text-on-surface-variant/60 mt-0.5">
-                  {tField(`${unitsPerBox} units/box`, `ବାକ୍ସ ପିଛା ${unitsPerBox} ୟୁନିଟ୍`)} · ₹{fmt(pricePerBox)}/{tField('box', 'ବାକ୍ସ')}
+                  {unitsPerBox ? `${fmt(unitsPerBox)} units/${unitWord} · ` : ''}₹{fmt(pricePerBox)}/{unitWord}
                 </p>
               </div>
               <button onClick={() => setShowSheet(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary transition-colors flex-shrink-0" aria-label="Close">
@@ -151,8 +173,39 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               </button>
             </div>
 
+            {/* Level picker — e.g. Hanger vs Pack for spices. */}
+            {hasLevels && (
+              <>
+                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mb-2">
+                  {tField('Buy by', 'କିଣନ୍ତୁ')}
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {buyOptions.map((o, i) => {
+                    const sel = i === levelIdx
+                    return (
+                      <button
+                        key={o.label}
+                        onClick={() => { setLevelIdx(i); setQtyStr('1') }}
+                        aria-pressed={sel}
+                        className={cn(
+                          'flex flex-col items-start gap-0.5 rounded-2xl border-2 p-3 text-left transition-all active:scale-95',
+                          sel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
+                        )}
+                      >
+                        <span className="font-black text-sm text-primary">{o.label}</span>
+                        <span className="font-black text-base text-primary">₹{fmt(o.price)}</span>
+                        {o.pieces != null && (
+                          <span className="text-[10px] font-bold text-on-surface-variant/60">{fmt(o.pieces)} {tField('units', 'ୟୁନିଟ୍')}</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
             <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mb-2">
-              {tField('Select number of boxes', 'ବାକ୍ସ ସଂଖ୍ୟା ବାଛନ୍ତୁ')}
+              {`Select number of ${unitWordPlural}`}
             </p>
 
             {/* Quick options: 1 box / 10 boxes */}
@@ -168,9 +221,11 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
                       sel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
                     )}
                   >
-                    <span className="font-black text-sm text-primary">{n} {n === 1 ? tField('box', 'ବାକ୍ସ') : tField('boxes', 'ବାକ୍ସ')}</span>
+                    <span className="font-black text-sm text-primary">{n} {n === 1 ? unitWord : unitWordPlural}</span>
                     <span className="font-black text-base text-primary">₹{fmt(n * pricePerBox)}</span>
-                    <span className="text-[10px] font-bold text-on-surface-variant/60">{fmt(n * unitsPerBox)} {tField('units', 'ୟୁନିଟ୍')}</span>
+                    {unitsPerBox > 0 && (
+                      <span className="text-[10px] font-bold text-on-surface-variant/60">{fmt(n * unitsPerBox)} {tField('units', 'ୟୁନିଟ୍')}</span>
+                    )}
                   </button>
                 )
               })}
@@ -179,7 +234,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
             {/* Custom number of boxes */}
             <div className="rounded-2xl border-2 border-primary/25 bg-primary/[0.04] p-3 mb-4">
               <label htmlFor="box-sheet-custom" className="block text-[10px] font-black uppercase tracking-widest text-primary mb-2">
-                {tField('Or enter custom boxes', 'କିମ୍ବା ନିଜ ବାକ୍ସ ସଂଖ୍ୟା ଲେଖନ୍ତୁ')}
+                {`Or enter custom ${unitWordPlural}`}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -191,10 +246,10 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
                   onChange={(e) => setQtyStr(e.target.value.replace(/[^0-9]/g, ''))}
                   onBlur={() => setQtyStr(String(qtyNum))}
                   placeholder="100"
-                  aria-label="Number of boxes"
+                  aria-label={`Number of ${unitWordPlural}`}
                   className="w-24 h-12 px-3 rounded-xl border-2 border-primary/40 bg-surface text-center font-black text-lg text-primary placeholder:text-on-surface-variant/30 outline-none focus:border-primary"
                 />
-                <span className="text-sm font-bold text-on-surface-variant">{tField('boxes', 'ବାକ୍ସ')}</span>
+                <span className="text-sm font-bold text-on-surface-variant">{unitWordPlural}</span>
                 <div className="ml-auto text-right">
                   <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50">{tField('Total', 'ମୋଟ')}</p>
                   <p className="text-xl font-black text-primary leading-none mt-0.5">₹{fmt(qtyNum * pricePerBox)}</p>
@@ -207,7 +262,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
               onClick={confirmSheet}
               className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-black text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors active:scale-95 shadow-sm"
             >
-              {tField(`Add ${qtyNum} ${qtyNum === 1 ? 'box' : 'boxes'}`, `${qtyNum} ${qtyNum === 1 ? 'ବାକ୍ସ' : 'ବାକ୍ସ'} ଯୋଡ଼ନ୍ତୁ`)} · ₹{fmt(qtyNum * pricePerBox)}
+              {`Add ${qtyNum} ${qtyNum === 1 ? unitWord : unitWordPlural}`} · ₹{fmt(qtyNum * pricePerBox)}
             </button>
           </motion.div>
         </motion.div>

@@ -70,7 +70,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     )
   }
 
-  void restoreStockForOrder(id)
+  // `after()`, not a bare `void`: on serverless a dropped promise here means the
+  // customer's stock is never given back and the product stays falsely sold out.
+  after(() => restoreStockForOrder(id))
   after(() => notifyOrderEvent(id, 'cancelled'))
 
   return NextResponse.json({ ok: true })

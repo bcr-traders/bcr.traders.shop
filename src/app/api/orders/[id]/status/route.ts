@@ -83,7 +83,7 @@ export async function PATCH(
     STOCK_RESTORED_STATUSES.includes(body.status) &&
     !STOCK_RESTORED_STATUSES.includes(prevStatus)
   ) {
-    void restoreStockForOrder(id)
+    after(() => restoreStockForOrder(id))
   }
 
   // Notify the customer AND every eligible admin/super-admin on each status
