@@ -65,11 +65,12 @@ export function ProductSectionSkeleton({ count = 5 }: { count?: number }) {
   )
 }
 
+// Sizes mirror CategoryStrip so the layout doesn't jump when the real strip loads.
 export function CategorySkeleton() {
   return (
-    <div className="flex flex-col items-center gap-2 flex-shrink-0">
-      <Skeleton className="w-16 h-16 rounded-full" />
-      <Skeleton className="h-3 w-14" />
+    <div className="flex flex-col items-center gap-2.5 flex-shrink-0 w-[92px] sm:w-[112px]">
+      <Skeleton className="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full" />
+      <Skeleton className="h-3 w-16" />
     </div>
   )
 }
@@ -77,8 +78,8 @@ export function CategorySkeleton() {
 /** Blinkit-style horizontal category strip placeholder. */
 export function CategoryStripSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-      <div className="flex gap-4 md:gap-6 overflow-hidden py-2">
+    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-5">
+      <div className="flex gap-4 sm:gap-6 overflow-hidden pb-3">
         {Array.from({ length: count }).map((_, i) => (
           <CategorySkeleton key={i} />
         ))}
