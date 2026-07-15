@@ -4,16 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/types/database.types'
-
-type TimelineEntry = {
-  id: string
-  order_id: string
-  status?: string
-  title: string
-  message?: string
-  estimated_delivery?: string
-  created_at: string
-}
+import type { TimelineEntry } from '@/lib/orders/timeline'
 
 const STATUS_LABEL: Record<string, string> = {
   placed:    'Placed',
@@ -22,9 +13,10 @@ const STATUS_LABEL: Record<string, string> = {
   shipping:  'Out for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+  returned:  'Returned',
 }
 
-const ALL_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled']
+const ALL_STATUSES: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipping', 'delivered', 'cancelled', 'returned']
 
 export default function TimelineClient({
   orderId,
@@ -71,6 +63,7 @@ export default function TimelineClient({
         title: form.title.trim(),
         message: form.message.trim() || undefined,
         estimated_delivery: form.estimated_delivery.trim() || undefined,
+        send_email: form.send_email,
       }),
     })
 
@@ -78,10 +71,10 @@ export default function TimelineClient({
       const entry = await res.json() as TimelineEntry
       setTimeline(prev => [entry, ...prev])
       setForm(prev => ({ ...prev, title: '', message: '', estimated_delivery: '' }))
-      showToast('Timeline update added!')
+      showToast(form.send_email ? 'Timeline update added — email sent to customer' : 'Timeline update added!')
     } else {
-      const data = await res.json() as { error?: string }
-      setError(data.error ?? 'Failed to add update')
+      const data = await res.json().catch(() => ({})) as { error?: string; detail?: string }
+      setError(data.detail ? `${data.error}: ${data.detail}` : (data.error ?? 'Failed to add update'))
     }
 
     setSubmitting(false)

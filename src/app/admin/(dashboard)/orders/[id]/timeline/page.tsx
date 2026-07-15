@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
+import { mapTimelineRow } from '@/lib/orders/timeline'
 import TimelineClient from './TimelineClient'
 
 export const metadata: Metadata = { title: 'Order Timeline | BCR Admin' }
@@ -31,7 +32,11 @@ export default async function TimelinePage({
     .eq('order_id', id)
     .order('created_at', { ascending: false })
 
-  const timeline = timelineRes.error?.code === '42P01' ? [] : (timelineRes.data ?? [])
+  // Map DB columns (description / estimated_time) → the UI's field names.
+  const timeline = timelineRes.error?.code === '42P01'
+    ? []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : ((timelineRes.data ?? []) as any[]).map(mapTimelineRow)
   const tableExists = !timelineRes.error || timelineRes.error.code !== '42P01'
 
   return (
