@@ -231,7 +231,7 @@ export default function ProductsClient({
             placeholder="Search name or SKU…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
+            className="w-full pl-11 pr-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 

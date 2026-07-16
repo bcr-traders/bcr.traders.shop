@@ -10,7 +10,7 @@ import { useToastStore } from '@/store/toastStore'
 import type { Category } from '@/types/database.types'
 import { ArrowLeft, Loader2, AlertCircle, X, CloudUpload, Bold, Italic, List, ListOrdered } from 'lucide-react'
 
-const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
 
 function toSlug(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()

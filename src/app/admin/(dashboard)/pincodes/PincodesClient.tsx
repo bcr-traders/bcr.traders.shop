@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
 import type { PincodeRow } from './page'
 
-const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
 
 interface Props { initialRows: PincodeRow[] }
 
@@ -218,7 +218,7 @@ export default function PincodesClient({ initialRows }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search pincode, city, or area…"
-          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-table-border bg-surface font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant"
+          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-table-border bg-surface font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40"
         />
       </div>
 

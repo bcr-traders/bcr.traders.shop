@@ -80,7 +80,7 @@ function getTemplates(categoryName: string): FaqTemplate[] {
 
 type FaqRow = ProductFAQ
 
-const inputCls = 'w-full px-4 py-2.5 bg-surface-container rounded-xl border border-outline-variant font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+const inputCls = 'w-full px-4 py-2.5 bg-surface-container rounded-xl border border-outline-variant font-body-md text-body-md text-on-surface placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 

@@ -542,7 +542,7 @@ export default function ProductForm({
                     type="text"
                     value={form.sku}
                     onChange={e => set('sku', e.target.value)}
-                    placeholder="BCR-OIL-2025-0001"
+                    placeholder="e.g. BCR-OIL-2025-0001"
                     className={cn(inputCls, 'flex-1')}
                   />
                   <button
@@ -662,7 +662,7 @@ export default function ProductForm({
                       type="number" min={1}
                       value={form.units_per_hanger}
                       onChange={e => set('units_per_hanger', e.target.value)}
-                      placeholder="60"
+                      placeholder="e.g. 60"
                       className={inputCls}
                     />
                   </Field>
@@ -671,7 +671,7 @@ export default function ProductForm({
                       type="number" min={1}
                       value={form.hangers_per_pack}
                       onChange={e => set('hangers_per_pack', e.target.value)}
-                      placeholder="20"
+                      placeholder="e.g. 20"
                       className={inputCls}
                     />
                   </Field>
@@ -697,7 +697,7 @@ export default function ProductForm({
                     type="text"
                     value={form.packaging_form}
                     onChange={e => set('packaging_form', e.target.value)}
-                    placeholder="Pouch"
+                    placeholder="e.g. Pouch, Tin"
                     className={inputCls}
                   />
                 </Field>
@@ -748,7 +748,7 @@ export default function ProductForm({
                       value={form.units_per_pack}
                       min={1}
                       onChange={e => set('units_per_pack', e.target.value)}
-                      placeholder="10"
+                      placeholder="e.g. 10"
                       className={inputCls}
                     />
                   </Field>
@@ -765,7 +765,7 @@ export default function ProductForm({
                     value={form.pieces_per_secondary}
                     min={1}
                     onChange={e => set('pieces_per_secondary', e.target.value)}
-                    placeholder="60"
+                    placeholder="e.g. 60"
                     className={inputCls}
                   />
                 </Field>
@@ -815,7 +815,7 @@ export default function ProductForm({
                       type="number" min={0} step="0.01"
                       value={form.secondary_mrp}
                       onChange={e => set('secondary_mrp', e.target.value)}
-                      placeholder="0.00"
+                      placeholder="e.g. 250.00"
                       className={inputCls}
                     />
                   </Field>
@@ -837,7 +837,7 @@ export default function ProductForm({
                   min={0}
                   step="0.01"
                   onChange={e => set('price', e.target.value)}
-                  placeholder="0.00"
+                  placeholder="e.g. 250.00"
                   className={inputCls}
                 />
               </Field>
@@ -848,7 +848,7 @@ export default function ProductForm({
                   min={0}
                   step="0.01"
                   onChange={e => set('mrp', e.target.value)}
-                  placeholder="0.00"
+                  placeholder="e.g. 300.00"
                   className={inputCls}
                 />
               </Field>
@@ -860,7 +860,7 @@ export default function ProductForm({
                   type="text"
                   value={form.unit}
                   onChange={e => set('unit', e.target.value)}
-                  placeholder="1 kg"
+                  placeholder="e.g. 1 kg"
                   className={inputCls}
                 />
               </Field>
@@ -1469,4 +1469,8 @@ function SortableImage({
 
 // ── Shared styles ──────────────────────────────────────────────────────────────
 
-const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors'
+// Placeholders must not read as filled-in values. Without overriding the weight
+// and dimming the colour, an example like "Pouch" or "10" renders in the same
+// bold dark text as a real entry, and the admin can't tell an empty required
+// field from a completed one.
+const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
