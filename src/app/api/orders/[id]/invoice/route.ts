@@ -7,7 +7,9 @@ import type { OrderEmailData } from '@/lib/resend'
 function orderToEmailData(order: Order): OrderEmailData {
   return {
     orderId: order.id,
-    orderNumber: `BCR-${order.id.slice(0, 8).toUpperCase()}`,
+    // The real BCR/<FY>/<n> number, not a slice of the UUID. This is the GST
+    // invoice series the client asked for, and it must match the order.
+    orderNumber: order.order_number || `BCR-${order.id.slice(0, 8).toUpperCase()}`,
     items: order.items,
     address: order.address,
     subtotal: order.subtotal,
@@ -18,6 +20,10 @@ function orderToEmailData(order: Order): OrderEmailData {
     createdAt: order.created_at,
     status: order.status,
     notes: order.notes,
+    // The buyer's GST details. The template renders these conditionally, so
+    // omitting them here silently produced a GST invoice with no GST details.
+    gstin: order.gstin ?? null,
+    gstBusinessName: order.gst_business_name ?? null,
   }
 }
 
@@ -55,7 +61,9 @@ export async function GET(
   if (!data) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 
   const order = data as unknown as Order
-  const orderNumber = `BCR-${id.slice(0, 8).toUpperCase()}`
+  // Filename mirrors the invoice number. '/' is illegal in a filename, so
+  // BCR/2026-2027/12 becomes BCR-2026-2027-12.
+  const orderNumber = (order.order_number || `BCR-${id.slice(0, 8).toUpperCase()}`).replace(/\//g, '-')
 
   const { generateInvoicePdfBase64 } = await import('@/lib/pdf/invoice')
   let pdfBase64: string

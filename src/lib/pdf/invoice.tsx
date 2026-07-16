@@ -85,6 +85,24 @@ const styles = StyleSheet.create({
   paymentText: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#26170c' },
   paymentSub: { fontSize: 8, color: '#81756e', marginTop: 2 },
 
+  // GST non-cancellable notice. Warmer/red-tinted vs the cream payment box, so
+  // it reads as a condition of sale rather than another routine detail.
+  gstNoticeBox: {
+    backgroundColor: '#fdf2f2',
+    border: '1 solid #dc2626',
+    borderRadius: 4,
+    padding: '9 12',
+    marginTop: 16,
+  },
+  gstNoticeTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#dc2626',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  gstNoticeText: { fontSize: 8, color: '#7c2d2d', marginTop: 3, lineHeight: 1.45 },
+
   // Items table
   table: { marginBottom: 16 },
   tableHeader: {
@@ -254,6 +272,20 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
             <Text style={styles.grandValue}>{fmt(data.total)}</Text>
           </View>
         </View>
+
+        {/* ── GST invoice: non-cancellable notice ──
+            A GST bill lets the buyer claim input tax credit, so once it's issued
+            the order can't be cancelled at all. The cancel API enforces this;
+            the notice states it on the document the buyer keeps. */}
+        {data.gstin && (
+          <View style={styles.gstNoticeBox}>
+            <Text style={styles.gstNoticeTitle}>GST Invoice — Non-Cancellable</Text>
+            <Text style={styles.gstNoticeText}>
+              This order has been billed with GST details for input tax credit. Once placed, it
+              cannot be cancelled under any circumstances, by the customer or on request.
+            </Text>
+          </View>
+        )}
 
         {/* ── Footer ── */}
         <View style={styles.footer}>
