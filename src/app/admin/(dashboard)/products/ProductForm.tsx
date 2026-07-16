@@ -158,11 +158,23 @@ export default function ProductForm({
     setForm(prev => ({ ...prev, [key]: value }))
   }, [])
 
-  // Spices are sold by hanger/pack, not weight/size variants. Detect the chosen
-  // category by name/slug so the form swaps the packaging fields accordingly.
+  // How this product is packaged. It's a per-PRODUCT choice, not a per-category
+  // one: the Spices category holds both ₹5 sachets on hangers (Box → Hanger →
+  // Piece) and bigger 100gm/200gm/1kg sizes sold in packs (Box → Pack → Pieces).
+  // Keying off the category forced every spice into the hanger model and made
+  // the bigger sizes impossible to save.
   const selectedCategory = categories.find(c => c.id === form.category_id)
   const isSpiceCategory =
     /spice/i.test(selectedCategory?.name ?? '') || selectedCategory?.slug === 'spices'
+
+  // An existing product is whatever its data already says it is; everything else
+  // starts on the general Box → Pack → Pieces model and the admin switches to
+  // hanger for sachet strips. Inferred from the data, so no product can silently
+  // change model just by being opened.
+  const [packagingModel, setPackagingModel] = useState<'hanger' | 'pack'>(() =>
+    product?.units_per_hanger && product?.hangers_per_pack ? 'hanger' : 'pack',
+  )
+  const isHangerModel = packagingModel === 'hanger'
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -323,9 +335,12 @@ export default function ProductForm({
     if (!form.name.trim()) { setError('Product name is required'); setTab(0); return }
     if (!form.price || parseFloat(form.price) <= 0) { setError('Price must be greater than 0'); setTab(1); return }
     if (!form.unit.trim()) { setError('Unit is required'); setTab(1); return }
-    if (isSpiceCategory) {
-      if (!form.units_per_hanger || parseInt(form.units_per_hanger, 10) <= 0) { setError('Units per hanger is required for spices'); setTab(1); return }
-      if (!form.hangers_per_pack || parseInt(form.hangers_per_pack, 10) <= 0) { setError('Hangers per pack is required for spices'); setTab(1); return }
+    if (isHangerModel) {
+      if (!form.units_per_hanger || parseInt(form.units_per_hanger, 10) <= 0) { setError('Pieces per hanger is required'); setTab(1); return }
+      if (!form.hangers_per_pack || parseInt(form.hangers_per_pack, 10) <= 0) { setError('Hangers per box is required'); setTab(1); return }
+    } else if (form.unit_type && (!form.units_per_pack || parseInt(form.units_per_pack, 10) <= 0)) {
+      setError(`How many ${form.unit_type.toLowerCase()}s are in one ${(form.pack_type || 'box').toLowerCase()}? Enter a number, or clear the lower unit if the box is sold whole.`)
+      setTab(1); return
     }
 
     setSaving(true)
@@ -346,19 +361,21 @@ export default function ProductForm({
       stock_qty: parseInt(form.stock_qty, 10) || 0,
       packaging_form: form.packaging_form.trim() || null,
       pack_type: form.pack_type || null,
-      units_per_pack: form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
-      pieces_per_secondary: form.pieces_per_secondary ? parseInt(form.pieces_per_secondary, 10) : null,
-      secondary_price: form.secondary_price ? parseFloat(form.secondary_price) : null,
-      secondary_mrp: form.secondary_mrp ? parseFloat(form.secondary_mrp) : null,
-      // Packs per box only applies to non-spice products.
-      packs_per_box: !isSpiceCategory && form.packs_per_box ? parseInt(form.packs_per_box, 10) : null,
-      unit_type: form.unit_type || null,
-      price_per_pack: form.price_per_pack ? parseFloat(form.price_per_pack) : null,
-      // Spices (hanger/pack). Only stored for spice products; cleared otherwise.
-      units_per_hanger: isSpiceCategory && form.units_per_hanger ? parseInt(form.units_per_hanger, 10) : null,
-      hangers_per_pack: isSpiceCategory && form.hangers_per_pack ? parseInt(form.hangers_per_pack, 10) : null,
-      // Spices don't use weight/size variants — they're replaced by hanger/pack.
-      variants: isSpiceCategory ? [] : form.variants
+      // The two models are mutually exclusive — whichever isn't in use is
+      // written back as NULL. Leaving the other model's columns populated is how
+      // products ended up claiming things like "1 Sachet = 1,200 pieces".
+      units_per_pack: !isHangerModel && form.units_per_pack ? parseInt(form.units_per_pack, 10) : null,
+      pieces_per_secondary: !isHangerModel && form.pieces_per_secondary ? parseInt(form.pieces_per_secondary, 10) : null,
+      secondary_price: !isHangerModel && form.secondary_price ? parseFloat(form.secondary_price) : null,
+      secondary_mrp: !isHangerModel && form.secondary_mrp ? parseFloat(form.secondary_mrp) : null,
+      packs_per_box: !isHangerModel && form.packs_per_box ? parseInt(form.packs_per_box, 10) : null,
+      unit_type: !isHangerModel && form.unit_type ? form.unit_type : null,
+      price_per_pack: !isHangerModel && form.price_per_pack ? parseFloat(form.price_per_pack) : null,
+      units_per_hanger: isHangerModel && form.units_per_hanger ? parseInt(form.units_per_hanger, 10) : null,
+      hangers_per_pack: isHangerModel && form.hangers_per_pack ? parseInt(form.hangers_per_pack, 10) : null,
+      // Hanger products don't use weight/size variants — the hanger/box levels
+      // replace them.
+      variants: isHangerModel ? [] : form.variants
         .filter(v => v.label.trim() && v.price !== '' && !isNaN(parseFloat(v.price)))
         .map(v => ({
           label: v.label.trim(),
@@ -592,7 +609,46 @@ export default function ProductForm({
         {/* Tab 1: Pricing & Stock */}
         {tab === 1 && (
           <div className="space-y-6">
-            {isSpiceCategory && (
+            {/* Packaging model — a per-product choice. The Spices category holds
+                both ₹5 sachet strips and bigger 100gm/1kg sizes, and they are
+                packaged differently. */}
+            <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border space-y-3">
+              <div>
+                <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">Packaging</p>
+                <p className="font-medium text-[11px] text-on-surface-variant/70 mt-1">
+                  How is this product packed? The customer buys the whole box, or one of the smaller units inside it.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {([
+                  { id: 'pack' as const, title: 'Box → Pack → Pieces', sub: 'Bigger sizes. e.g. 1 box = 10 packs, 1 pack = 10 pieces. Customer buys a whole box or a number of packs.' },
+                  { id: 'hanger' as const, title: 'Box → Hanger → Piece', sub: 'Sachet strips. e.g. 1 box = 20 hangers, 1 hanger = 60 pieces. Customer buys a whole box or hangers.' },
+                ]).map(o => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setPackagingModel(o.id)}
+                    aria-pressed={packagingModel === o.id}
+                    className={cn(
+                      'text-left rounded-xl border-2 p-3 transition-all active:scale-[0.98]',
+                      packagingModel === o.id
+                        ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]'
+                        : 'border-table-border hover:border-primary/40',
+                    )}
+                  >
+                    <span className="block font-black text-[12px] text-primary">{o.title}</span>
+                    <span className="block font-medium text-[10px] text-on-surface-variant/70 mt-1 leading-snug">{o.sub}</span>
+                  </button>
+                ))}
+              </div>
+              {isSpiceCategory && !isHangerModel && (
+                <p className="text-[10px] font-bold text-on-surface-variant/60">
+                  Tip: ₹5 / ₹10 sachet strips usually use Box → Hanger → Piece.
+                </p>
+              )}
+            </div>
+
+            {isHangerModel && (
               <div className="p-5 bg-primary/5 rounded-2xl border-2 border-primary/20 space-y-4">
                 <div>
                   <p className="font-black text-[10px] text-primary uppercase tracking-widest">Spices — Box → Hanger → Piece</p>
@@ -629,7 +685,7 @@ export default function ProductForm({
               </div>
             )}
 
-            {!isSpiceCategory && (
+            {!isHangerModel && (
             <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border space-y-6">
               <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">
                 Wholesale Pack Details
@@ -771,9 +827,9 @@ export default function ProductForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Field
-                label={isSpiceCategory ? 'Price per Hanger (₹)' : `Selling Price per ${form.pack_type || 'Box'} (₹)`}
+                label={isHangerModel ? 'Price per Hanger (₹)' : `Selling Price per ${form.pack_type || 'Box'} (₹)`}
                 required
-                hint={isSpiceCategory ? undefined : 'What the customer pays for one full box'}
+                hint={isHangerModel ? undefined : 'What the customer pays for one full box'}
               >
                 <input
                   type="number"
@@ -785,7 +841,7 @@ export default function ProductForm({
                   className={inputCls}
                 />
               </Field>
-              <Field label={isSpiceCategory ? 'MRP (₹)' : `MRP per ${form.pack_type || 'Box'} (₹)`} hint="Optional — shows as strikethrough when set">
+              <Field label={isHangerModel ? 'MRP (₹)' : `MRP per ${form.pack_type || 'Box'} (₹)`} hint="Optional — shows as strikethrough when set">
                 <input
                   type="number"
                   value={form.mrp}
@@ -811,7 +867,7 @@ export default function ProductForm({
             </div>
 
             {/* ── Weight / Size Variants (not for spices — they use hanger/pack) ── */}
-            {!isSpiceCategory && (
+            {!isHangerModel && (
             <div className="space-y-3 rounded-2xl border-2 border-table-border bg-surface-card p-5">
               <div>
                 <p className="font-black text-xs text-primary uppercase tracking-widest">Weight / Size Variants</p>
@@ -866,7 +922,7 @@ export default function ProductForm({
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label={isSpiceCategory ? 'Stock Quantity (in units)' : 'Stock Quantity'} required>
+              <Field label={isHangerModel ? 'Stock Quantity (in units)' : 'Stock Quantity'} required>
                 <input
                   type="number"
                   value={form.stock_qty}
