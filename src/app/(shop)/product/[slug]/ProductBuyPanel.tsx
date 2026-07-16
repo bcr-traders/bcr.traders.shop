@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Plus, Minus } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, ChevronDown } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthPromptStore } from '@/store/authPromptStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
@@ -46,6 +46,10 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
 
   const packLabel = activeOption.label
   const innerUnitLabel = 'Pieces'
+  // Show the "Buy unit" dropdown for packaging-based products — those sold by a
+  // named unit (Box / Hanger / Pack …). Legacy weight/size products keep their
+  // own "Select pack size" cards, so they're excluded here.
+  const showUnitPicker = !hasVariants && (hasLevels || !!product.pack_type)
   // Clamp any typed quantity to available stock (never accept an invalid amount).
   const clampQty = (n: number) => {
     if (!Number.isFinite(n) || n < 1) return 1
@@ -188,43 +192,27 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* ── Buy by: Box / Hanger / Pack / Tin ── */}
-      {hasLevels && (
+      {/* ── Buy unit: Box / Hanger / Pack (dropdown) ── */}
+      {showUnitPicker && (
         <div className="mb-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
-            {tField('Buy by', 'କିଣନ୍ତୁ')}
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {buyOptions.map((opt, i) => {
-              const isSel = i === levelIdx
-              return (
-                <button
-                  key={opt.label}
-                  onClick={() => setLevelIdx(i)}
-                  aria-pressed={isSel}
-                  className={cn(
-                    'relative flex flex-col items-start gap-1 px-4 pt-4 pb-3 rounded-2xl border-2 transition-all duration-200 active:scale-95 text-left',
-                    isSel ? 'border-primary bg-primary/5 shadow-[0_0_0_3px_rgba(28,19,10,0.06)]' : 'border-table-border hover:border-primary/40',
-                  )}
-                >
-                  {isSel && (
-                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-black">✓</span>
-                  )}
-                  <span className={cn('font-black text-sm', isSel ? 'text-primary' : 'text-on-surface')}>{opt.label}</span>
-                  <span className="flex items-baseline gap-1.5">
-                    <span className={cn('font-black text-base', isSel ? 'text-primary' : 'text-on-surface')}>₹{opt.price}</span>
-                    {opt.mrp && opt.mrp > opt.price && (
-                      <span className="text-xs text-on-surface-variant/40 line-through">₹{opt.mrp}</span>
-                    )}
-                  </span>
-                  {opt.pieces != null && (
-                    <span className="text-[11px] font-bold text-on-surface-variant/60">
-                      {opt.pieces.toLocaleString('en-IN')} pieces
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+          <label htmlFor="buy-unit" className="block text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/60 mb-3">
+            {tField('Buy unit', 'କିଣିବା ୟୁନିଟ୍')}
+          </label>
+          <div className="relative">
+            <select
+              id="buy-unit"
+              value={levelIdx}
+              onChange={(e) => setLevelIdx(parseInt(e.target.value, 10))}
+              className="w-full h-14 pl-4 pr-11 rounded-2xl border-2 border-table-border bg-surface font-black text-sm text-primary appearance-none outline-none focus:border-primary transition-colors cursor-pointer"
+            >
+              {buyOptions.map((opt, i) => (
+                <option key={opt.label} value={i}>
+                  {opt.label} — ₹{opt.price}
+                  {opt.pieces != null ? ` · ${opt.pieces.toLocaleString('en-IN')} pieces` : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant" />
           </div>
         </div>
       )}
