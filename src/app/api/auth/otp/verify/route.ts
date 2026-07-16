@@ -46,10 +46,23 @@ export async function POST(request: Request) {
     const perIp = await rateLimit({ key: `otp:verify:ip:${ip}`, limit: 30, windowSec: 600 })
     if (!perIp.ok) return rateLimitResponse(perIp)
 
-    // 1. Verify OTP with Message Central
+    // 1. Verify OTP with Message Central. Distinguish an EXPIRED code from a
+    //    WRONG one using the gateway's own message, so an expiry problem is
+    //    obvious (and the customer is told to resend rather than re-check digits).
     const mcResult = await verifyOtp(verificationId, otp)
     if (!mcResult.success) {
-      return NextResponse.json({ error: 'Invalid or expired OTP.' }, { status: 400 })
+      const reason = (mcResult.message || '').toLowerCase()
+      const expired = /expire|timed?.?out|timeout/.test(reason)
+      console.warn('[OTP Verify] gateway rejected:', mcResult.message)
+      return NextResponse.json(
+        {
+          error: expired
+            ? 'Your OTP has expired. Tap “Resend OTP” to get a new one.'
+            : 'Incorrect OTP. Please check the code and try again.',
+          detail: mcResult.message,
+        },
+        { status: 400 },
+      )
     }
 
     // 2. Confirm the verificationId was issued for THIS phone (one-shot binding).

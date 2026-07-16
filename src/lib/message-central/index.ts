@@ -112,6 +112,8 @@ export async function sendOtp(
   success: boolean
   verificationId?: string
   message?: string
+  /** The validity the gateway actually applied, in seconds (from its response). */
+  timeoutSeconds?: number
 }> {
   const customerId = process.env.MESSAGE_CENTRAL_CUSTOMER_ID
   if (!customerId) return { success: false, message: 'OTP service not configured.' }
@@ -119,16 +121,16 @@ export async function sendOtp(
   let token = await getAuthToken()
   if (!token) return { success: false, message: 'OTP service not configured.' }
 
-  // Message Central's otpExpiry is in MINUTES (roughly 1–60), NOT seconds.
-  // This previously sent otpExpiry=600 believing it was seconds; 600 is far
-  // outside the accepted range, so the gateway ignored it and applied its own
-  // short default — which is why codes died after ~2 minutes no matter what the
-  // admin configured. Clamp to a range the gateway will actually accept.
-  const otpExpiry = Math.min(60, Math.max(1, Math.round(expiryMinutes) || 10))
+  // Message Central's `otpExpiry` is in SECONDS. The previous code sent it in
+  // MINUTES (1–60), so the gateway read that as 1–60 SECONDS and every OTP died
+  // in about a minute regardless of the admin's setting — exactly the "expires
+  // in 1–2 min" report. Convert minutes → seconds, and clamp to the gateway's
+  // accepted window (1–15 min).
+  const requestedSeconds = Math.min(900, Math.max(60, (Math.round(expiryMinutes) || 10) * 60))
 
   const mobile = digitsOnly(phone)
   const doSend = async (authToken: string) => {
-    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=${otpExpiry}`
+    const url = `${baseUrl()}/verification/v3/send?countryCode=91&customerId=${encodeURIComponent(customerId)}&flowType=SMS&mobileNumber=${mobile}&otpLength=4&otpExpiry=${requestedSeconds}`
     return fetch(url, { method: 'POST', headers: { authToken, 'Content-Type': 'application/json' } })
   }
 
@@ -151,7 +153,22 @@ export async function sendOtp(
     }
 
     if (data?.responseCode === 200 && data?.data?.verificationId) {
-      return { success: true, verificationId: String(data.data.verificationId) }
+      // The gateway echoes the validity it applied as `timeout` (seconds). Log
+      // when it doesn't match what we asked for, so a plan-level cap on OTP
+      // validity is visible instead of silently shortening every code.
+      const applied = Number(data?.data?.timeout)
+      if (Number.isFinite(applied)) {
+        if (Math.abs(applied - requestedSeconds) > 2) {
+          console.warn(`[Message Central] otpExpiry not honoured: requested ${requestedSeconds}s, gateway applied ${applied}s. The MC account/plan may cap OTP validity — raise it in the MC dashboard.`)
+        } else {
+          console.log(`[Message Central] OTP sent, validity ${applied}s.`)
+        }
+      }
+      return {
+        success: true,
+        verificationId: String(data.data.verificationId),
+        timeoutSeconds: Number.isFinite(applied) ? applied : undefined,
+      }
     }
     return { success: false, message: data?.message || `OTP failed (code: ${data?.responseCode})` }
   } catch (err) {

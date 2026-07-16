@@ -2,9 +2,13 @@ import { createAdminClient } from '@/lib/supabase/server'
 
 /** Fallback when the admin hasn't set one (matches the Settings page default). */
 export const DEFAULT_OTP_EXPIRY_MINUTES = 10
-/** Message Central rejects/ignores values outside a sane range. */
+/**
+ * Message Central caps OTP validity — its default is 60 seconds and it applies a
+ * gateway maximum. Keep the setting within 1–15 min; sendOtp sends this × 60 as
+ * the gateway's `otpExpiry` (seconds) and logs if the gateway shortens it.
+ */
 const MIN_MINUTES = 1
-const MAX_MINUTES = 60
+const MAX_MINUTES = 15
 
 /**
  * How long an OTP stays valid, from Admin → Settings (cms_content 'settings').
