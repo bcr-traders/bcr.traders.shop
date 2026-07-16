@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition, useRef, useEffect, useState } from 'react'
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback'
 import { Search, X } from 'lucide-react'
 import AnimatedSearchPlaceholder from '@/components/layout/AnimatedSearchPlaceholder'
 import type { Category } from '@/types/database.types'
@@ -26,7 +27,12 @@ export default function SearchControls({ categories, initialQ, initialCategory, 
   const terms = categories.length > 0 ? categories.map((c) => c.name) : DEFAULT_TERMS
 
   useEffect(() => {
-    if (inputRef.current) inputRef.current.value = initialQ
+    // Sync the box to the URL query, but never while the user is typing in it —
+    // the debounced navigation below lands a moment after each keystroke, and
+    // overwriting a focused input would drop characters typed during that gap.
+    if (inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.value = initialQ
+    }
     setHasValue(!!initialQ)
   }, [initialQ])
 
@@ -42,12 +48,17 @@ export default function SearchControls({ categories, initialQ, initialCategory, 
     [router]
   )
 
+  // Hold the query navigation back until the user pauses typing, so we fetch
+  // once per pause instead of once per keystroke. The placeholder toggle stays
+  // instant; only the network request is debounced.
+  const debouncedPush = useDebouncedCallback(push, 350)
+
   const handleInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setHasValue(!!e.target.value)
-      push(e.target.value, searchParams.get('category') ?? '')
+      debouncedPush(e.target.value, searchParams.get('category') ?? '')
     },
-    [push, searchParams]
+    [debouncedPush, searchParams]
   )
 
   const clearQ = () => {
