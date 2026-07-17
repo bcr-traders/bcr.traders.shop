@@ -182,7 +182,7 @@ export default async function HomePage() {
               View All
             </Link>
           </div>
-          <CategoryStrip categories={categories} />
+          <CategoryStrip categories={categories} mobileGrid />
         </section>
 
         {/* 5. Active coupon offers (premium coupon design) */}

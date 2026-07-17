@@ -17,16 +17,27 @@ type StripCategory = Pick<Category, 'id' | 'name' | 'name_or' | 'slug' | 'image_
 export default function CategoryStrip({
   categories,
   activeSlug,
+  mobileGrid = false,
 }: {
   categories: StripCategory[]
   activeSlug?: string
+  /** Homepage only: show a 3-per-row grid on phones (still a scroll strip from
+   *  `sm` up). Off by default so the category-page switcher stays a scroll row. */
+  mobileGrid?: boolean
 }) {
   const { tField } = useT()
   if (!categories.length) return null
 
   return (
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-5">
-      <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-3 -mx-1 px-1">
+      <div
+        className={cn(
+          'scrollbar-hide -mx-1 px-1',
+          mobileGrid
+            ? 'grid grid-cols-3 gap-x-3 gap-y-5 pb-1 sm:flex sm:gap-6 sm:overflow-x-auto sm:pb-3'
+            : 'flex gap-4 sm:gap-6 overflow-x-auto pb-3',
+        )}
+      >
         {categories.map((cat) => {
           const active = cat.slug === activeSlug
           const name = tField(cat.name, cat.name_or)
@@ -35,7 +46,10 @@ export default function CategoryStrip({
               key={cat.id}
               href={`/category/${cat.slug}`}
               aria-current={active ? 'page' : undefined}
-              className="flex flex-col items-center gap-2.5 flex-shrink-0 w-[92px] sm:w-[112px] group"
+              className={cn(
+                'flex flex-col items-center gap-2.5 group',
+                mobileGrid ? 'w-full sm:w-[112px] sm:flex-shrink-0' : 'flex-shrink-0 w-[92px] sm:w-[112px]',
+              )}
             >
               <div
                 className={cn(
