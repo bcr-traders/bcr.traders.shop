@@ -127,7 +127,7 @@ export async function sendOrderPlacedCustomer(data: OrderEmailData): Promise<voi
   await resend.emails.send({
     from: FROM,
     to: data.customerEmail,
-    subject: `Order Received! #${data.orderNumber} — BCR TRADERS`,
+    subject: `Order Placed! #${data.orderNumber} — BCR TRADERS`,
     html,
   })
 }

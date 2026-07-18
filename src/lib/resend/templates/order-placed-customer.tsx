@@ -18,7 +18,7 @@ export default function OrderPlacedCustomer({
   return (
     <Html lang="en">
       <Head />
-      <Preview>Order #{orderNumber} received — we'll confirm it soon!</Preview>
+      <Preview>Order #{orderNumber} placed — we'll confirm it soon!</Preview>
       <Body style={body}>
         <Container style={container}>
 
@@ -31,7 +31,7 @@ export default function OrderPlacedCustomer({
           {/* Hero */}
           <Section style={hero}>
             <Text style={heroIcon}>🛒</Text>
-            <Heading style={heroTitle}>Order Received!</Heading>
+            <Heading style={heroTitle}>Order Placed!</Heading>
             <Text style={heroText}>
               Thank you, <strong>{address.name}</strong>! Your order has been received.
             </Text>
