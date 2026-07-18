@@ -10,6 +10,18 @@ import { BCR_LOGO_PNG } from './logo'
 const fmt = (n: number) =>
   `Rs. ${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+// Qty column shows the unit with the count — "10 Boxes" — instead of a bare "10"
+// with the unit stacked under the item name. Uses just the unit LABEL (the part
+// before " · N pieces"), and pluralises it: 1 Box, 10 Boxes, 3 Hangers.
+function qtyWithUnit(quantity: number, unit: string | null | undefined): string {
+  const label = (unit ?? '').split('·')[0].trim()
+  if (!label) return String(quantity)
+  const plural = quantity === 1
+    ? label
+    : /(x|s|ch|sh)$/i.test(label) ? `${label}es` : `${label}s`
+  return `${quantity} ${plural}`
+}
+
 // ── Seller (issuer) details ─────────────────────────────────────────────────
 const SELLER = {
   name: 'BCR TRADERS',
@@ -240,9 +252,8 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
               <Text style={styles.tdSl}>{i + 1}</Text>
               <View style={styles.tdItemCell}>
                 <Text style={styles.tdItem}>{item.name}</Text>
-                {item.unit ? <Text style={styles.tdUnit}>{item.unit}</Text> : null}
               </View>
-              <Text style={styles.tdNum}>{item.quantity}</Text>
+              <Text style={styles.tdNum}>{qtyWithUnit(item.quantity, item.unit)}</Text>
               <Text style={styles.tdPrice}>{fmt(item.price)}</Text>
               <Text style={styles.tdPriceBold}>{fmt(item.price * item.quantity)}</Text>
             </View>
