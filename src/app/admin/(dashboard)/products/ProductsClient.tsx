@@ -461,8 +461,8 @@ export default function ProductsClient({
                   </td>
 
                   {/* Name */}
-                  <td className="py-4 px-5 border-r border-table-border max-w-[220px]">
-                    <p className="font-bold text-sm text-primary truncate">
+                  <td className="py-4 px-5 border-r border-table-border max-w-[260px] whitespace-normal align-top">
+                    <p className="font-bold text-sm text-primary break-words" title={product.name}>
                       {product.name}
                     </p>
                   </td>
