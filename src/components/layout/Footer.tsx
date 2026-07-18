@@ -41,7 +41,6 @@ export default async function Footer() {
               <li className="flex items-center gap-4 group/item hover:text-white transition-colors">
                 <Phone size={24} strokeWidth={2.5} className="group-hover/item:-rotate-12 transition-transform duration-300 flex-shrink-0" />
                 <span className="flex flex-col gap-1">
-                  <a href="tel:+919040011053" className="hover:text-white transition-colors">+91 90400 11053</a>
                   <a href="tel:+919019575211" className="hover:text-white transition-colors">+91 90195 75211</a>
                 </span>
               </li>
