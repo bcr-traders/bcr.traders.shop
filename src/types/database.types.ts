@@ -90,6 +90,9 @@ export interface Product {
   // pack price = hangers_per_pack × price. Null for non-spice products.
   units_per_hanger: number | null
   hangers_per_pack: number | null
+  // Optional per-product delivery charge (₹), applied only when enabled.
+  delivery_charge: number | null
+  delivery_charge_enabled: boolean
   variants: ProductVariant[]
   created_at: string
   updated_at: string

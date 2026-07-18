@@ -48,6 +48,8 @@ type FormState = {
   price_per_pack: string
   units_per_hanger: string
   hangers_per_pack: string
+  delivery_charge: string
+  delivery_charge_enabled: boolean
   variants: { label: string; price: string; mrp: string }[]
   description: string
   description_or: string
@@ -142,6 +144,8 @@ export default function ProductForm({
     price_per_pack: product?.price_per_pack?.toString() ?? '',
     units_per_hanger: product?.units_per_hanger?.toString() ?? '',
     hangers_per_pack: product?.hangers_per_pack?.toString() ?? '',
+    delivery_charge: product?.delivery_charge != null ? product.delivery_charge.toString() : '',
+    delivery_charge_enabled: product?.delivery_charge_enabled ?? false,
     variants: (product?.variants ?? []).map(v => ({
       label: v.label,
       price: v.price?.toString() ?? '',
@@ -389,6 +393,10 @@ export default function ProductForm({
       price_per_pack: !isHangerModel && form.price_per_pack ? parseFloat(form.price_per_pack) : null,
       units_per_hanger: isHangerModel && form.units_per_hanger ? parseInt(form.units_per_hanger, 10) : null,
       hangers_per_pack: isHangerModel && form.hangers_per_pack ? parseInt(form.hangers_per_pack, 10) : null,
+      // Per-product delivery charge. The amount is kept even when the toggle is
+      // off (so re-enabling doesn't lose it); the flag controls whether it applies.
+      delivery_charge: form.delivery_charge ? parseFloat(form.delivery_charge) : 0,
+      delivery_charge_enabled: form.delivery_charge_enabled,
       // Hanger products don't use weight/size variants — the hanger/box levels
       // replace them.
       variants: isHangerModel ? [] : form.variants
@@ -955,6 +963,27 @@ export default function ProductForm({
                   className={inputCls}
                 />
               </Field>
+            </div>
+
+            {/* Per-product delivery charge — toggle on/off, set the amount. */}
+            <div className="p-5 bg-surface-card rounded-2xl border-2 border-table-border space-y-4">
+              <ToggleField
+                label="Delivery Charge"
+                sub="Charge a delivery fee for this product. Off = no delivery charge."
+                checked={form.delivery_charge_enabled}
+                onChange={v => set('delivery_charge_enabled', v)}
+              />
+              {form.delivery_charge_enabled && (
+                <Field label="Delivery Charge (₹)" hint="Amount added for delivering this product">
+                  <input
+                    type="number" min={0} step="0.01"
+                    value={form.delivery_charge}
+                    onChange={e => set('delivery_charge', e.target.value)}
+                    placeholder="e.g. 40.00"
+                    className={inputCls}
+                  />
+                </Field>
+              )}
             </div>
 
             {/* Price preview */}
