@@ -1,14 +1,17 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
 import type { Product } from '@/types/database.types'
-import { 
-  Upload, Download, Plus, Search, Star, X, CheckSquare, Square, 
-  ArrowUp, ArrowDown, ChevronsUpDown, Edit3, MessageCircleQuestion, MessageSquare, Image as ImageIcon
+import {
+  Upload, Download, Plus, Search, Star, X, CheckSquare, Square,
+  ArrowUp, ArrowDown, ChevronsUpDown, Edit3, MessageCircleQuestion, MessageSquare, Image as ImageIcon,
+  ChevronLeft, ChevronRight
 } from 'lucide-react'
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
 type SortField = 'name' | 'price' | 'stock_qty' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -35,6 +38,11 @@ export default function ProductsClient({
   const [stockDraft, setStockDraft] = useState('')
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [importing, setImporting] = useState(false)
+  // Pagination — default 10 per page so the admin sees a short table instead of
+  // scrolling a long one to reach the sideways scrollbar. Page size is
+  // adjustable (10/25/50/100).
+  const [pageSize, setPageSize] = useState(10)
+  const [page, setPage] = useState(1)
   const importRef = useRef<HTMLInputElement>(null)
   const showToast = useToastStore((s) => s.show)
 
@@ -69,6 +77,18 @@ export default function ProductsClient({
 
     return list
   }, [products, search, categoryFilter, statusFilter, stockFilter, featuredOnly, sortField, sortDir])
+
+  // A changed filter/search/page-size can leave you on a page that no longer
+  // exists — jump back to the first page whenever the result set changes.
+  useEffect(() => {
+    setPage(1)
+  }, [search, categoryFilter, statusFilter, stockFilter, featuredOnly, pageSize])
+
+  // Current page, clamped so it can never point past the end of the results.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const pageStart = (currentPage - 1) * pageSize
+  const paged = filtered.slice(pageStart, pageStart + pageSize)
 
   const allSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id))
   const someSelected = selectedIds.size > 0
@@ -291,6 +311,21 @@ export default function ProductsClient({
           <Star size={16} fill={featuredOnly ? 'currentColor' : 'none'} strokeWidth={2.5} />
           Featured
         </button>
+
+        {/* Products per page */}
+        <div className="relative">
+          <select
+            value={pageSize}
+            onChange={e => setPageSize(parseInt(e.target.value, 10))}
+            className="pl-4 pr-10 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors appearance-none"
+            aria-label="Products per page"
+          >
+            {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n} / page</option>)}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary opacity-50">
+            <ChevronsUpDown size={16} />
+          </div>
+        </div>
       </div>
 
       {/* ── Bulk Actions Bar ── */}
@@ -383,12 +418,12 @@ export default function ProductsClient({
                     </p>
                   </td>
                 </tr>
-              ) : filtered.map((product, idx) => (
+              ) : paged.map((product, idx) => (
                 <tr
                   key={product.id}
                   className={cn(
                     'transition-colors group',
-                    idx !== filtered.length - 1 ? 'border-b-2 border-table-border' : '',
+                    idx !== paged.length - 1 ? 'border-b-2 border-table-border' : '',
                     selectedIds.has(product.id)
                       ? 'bg-primary/5'
                       : 'hover:bg-surface-container-low',
@@ -534,6 +569,35 @@ export default function ProductsClient({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination — outside the horizontal-scroll area so Prev/Next stay put
+            without scrolling the wide table sideways first. */}
+        {filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t-2 border-table-border">
+            <p className="font-bold text-[11px] uppercase tracking-widest text-on-surface-variant">
+              Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-table-border font-black text-[10px] uppercase tracking-widest text-primary hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-95"
+              >
+                <ChevronLeft size={15} /> Prev
+              </button>
+              <span className="font-black text-[11px] uppercase tracking-widest text-on-surface-variant px-2 tabular-nums">
+                Page {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-table-border font-black text-[10px] uppercase tracking-widest text-primary hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-95"
+              >
+                Next <ChevronRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
