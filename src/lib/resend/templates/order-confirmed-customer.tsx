@@ -18,26 +18,34 @@ export default function OrderConfirmedCustomer({
 
   return (
     <Html lang="en">
-      <Head />
-      <Preview>✅ Your order #{orderNumber} is confirmed! {estimatedDelivery ? `Expected by ${estimatedDelivery}` : ''}</Preview>
+      <Head>
+        <meta name="color-scheme" content="light only" />
+        <meta name="supported-color-schemes" content="light only" />
+      </Head>
+      <Preview>Your order #{orderNumber} is confirmed. {estimatedDelivery ? `Expected by ${estimatedDelivery}` : ''}</Preview>
       <Body style={body}>
         <Container style={container}>
 
           {/* Header */}
           <Section style={header}>
             <Heading style={headerTitle}>BCR TRADERS</Heading>
+            <Text style={headerRule}>&nbsp;</Text>
+            <Text style={headerSub}>WHOLESALE · TRUSTED · DELIVERED</Text>
           </Section>
 
           {/* Hero */}
           <Section style={hero}>
-            <Text style={heroIcon}>✅</Text>
-            <Heading style={heroTitle}>Order Confirmed!</Heading>
+            <div style={checkBadge}>
+              <span style={checkMark}>&#10003;</span>
+            </div>
+            <Heading style={heroTitle}>Order Confirmed</Heading>
+            <div style={goldRule} />
             <Text style={heroText}>
-              Great news, <strong>{address.name}</strong>! Your order has been confirmed and is being prepared.
+              Great news, <strong>{address.name}</strong> — your order has been confirmed and is being prepared with care.
             </Text>
             {estimatedDelivery && (
               <Text style={deliveryBadge}>
-                🚚 Estimated Delivery: <strong>{estimatedDelivery}</strong>
+                Estimated delivery&nbsp;&nbsp;·&nbsp;&nbsp;<strong>{estimatedDelivery}</strong>
               </Text>
             )}
           </Section>
@@ -147,13 +155,19 @@ export default function OrderConfirmedCustomer({
 
 const body = { backgroundColor: '#f5f0e8', fontFamily: 'Helvetica, Arial, sans-serif', margin: '0', padding: '20px 0' }
 const container = { maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', overflow: 'hidden' as const }
-const header = { backgroundColor: '#26170c', padding: '22px 32px', textAlign: 'center' as const }
-const headerTitle = { color: '#fdf9f1', fontSize: '24px', fontWeight: '700', margin: '0', letterSpacing: '2px' }
-const hero = { padding: '32px 32px 20px', textAlign: 'center' as const }
-const heroIcon = { fontSize: '52px', margin: '0 0 8px' }
-const heroTitle = { color: '#16a34a', fontSize: '30px', fontWeight: '700', margin: '0 0 12px' }
-const heroText = { color: '#3d2b1f', fontSize: '16px', margin: '0 0 16px' }
-const deliveryBadge = { backgroundColor: '#dcfce7', color: '#166534', borderRadius: '8px', padding: '10px 20px', fontSize: '15px', display: 'inline-block' }
+const header = { backgroundColor: '#26170c', padding: '26px 32px 22px', textAlign: 'center' as const }
+const headerTitle = { color: '#fdf9f1', fontSize: '24px', fontWeight: '700', margin: '0', letterSpacing: '3px' }
+const headerRule = { width: '40px', height: '2px', backgroundColor: '#c4a882', margin: '10px auto 8px', fontSize: '0', lineHeight: '2px' }
+const headerSub = { color: '#c4a882', fontSize: '10px', margin: '0', letterSpacing: '2px' }
+const hero = { padding: '34px 32px 22px', textAlign: 'center' as const }
+// Compact, refined checkmark: a small brown disc ringed in gold with a cream
+// tick — the brand palette, and a fraction of the old 52px green emoji.
+const checkBadge = { width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#26170c', border: '2px solid #c4a882', margin: '0 auto 18px', textAlign: 'center' as const, lineHeight: '56px' }
+const checkMark = { color: '#fdf9f1', fontSize: '26px', fontWeight: '700' as const }
+const heroTitle = { color: '#26170c', fontSize: '26px', fontWeight: '700', margin: '0 0 12px', letterSpacing: '0.5px' }
+const goldRule = { width: '48px', height: '2px', backgroundColor: '#c4a882', margin: '0 auto 16px' }
+const heroText = { color: '#4f453f', fontSize: '15px', lineHeight: '1.6', margin: '0 0 18px' }
+const deliveryBadge = { backgroundColor: '#fdf9f1', color: '#26170c', border: '1px solid #c4a882', borderRadius: '999px', padding: '9px 22px', fontSize: '14px', display: 'inline-block' }
 const msgBox = { backgroundColor: '#fdf9f1', border: '1px solid #c4a882', borderLeft: '4px solid #26170c', margin: '0 32px 8px', padding: '16px 20px', borderRadius: '4px' }
 const msgLabel = { color: '#81756e', fontSize: '10px', letterSpacing: '1.5px', textTransform: 'uppercase' as const, margin: '0 0 8px' }
 const msgText = { color: '#26170c', fontSize: '15px', fontStyle: 'italic', margin: '0 0 4px', lineHeight: '1.6' }
@@ -165,12 +179,12 @@ const metaCol = { padding: '0 16px 0 0' }
 const metaLabel = { color: '#81756e', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const, margin: '0 0 2px' }
 const metaValue = { color: '#1c1c17', fontSize: '15px', fontWeight: '600', margin: '0' }
 const timelineRow = { paddingBottom: '10px' }
-const dotDone = { width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#d1fae5', border: '2px solid #16a34a' }
-const dotActive = { width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#16a34a', border: '2px solid #16a34a' }
-const dotPending = { width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#ffffff', border: '2px solid #d6d3d1' }
-const stepLabelActive = { color: '#16a34a', fontSize: '14px', fontWeight: '700', margin: '0', paddingLeft: '10px' }
+const dotDone = { width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#f0e6d2', border: '2px solid #c4a882' }
+const dotActive = { width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#26170c', border: '2px solid #c4a882' }
+const dotPending = { width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#ffffff', border: '2px solid #e5e1d9' }
+const stepLabelActive = { color: '#26170c', fontSize: '14px', fontWeight: '700', margin: '0', paddingLeft: '10px' }
 const stepLabelDone = { color: '#4f453f', fontSize: '14px', margin: '0', paddingLeft: '10px' }
-const stepLabelPending = { color: '#d6d3d1', fontSize: '14px', margin: '0', paddingLeft: '10px' }
+const stepLabelPending = { color: '#b0a89e', fontSize: '14px', margin: '0', paddingLeft: '10px' }
 const itemRow = { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #f5f0e8' }
 const itemImg = { borderRadius: '6px', objectFit: 'cover' as const }
 const imgPlaceholder = { width: '44px', height: '44px', backgroundColor: '#f5f0e8', borderRadius: '6px' }
