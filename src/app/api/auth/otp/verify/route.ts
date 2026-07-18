@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { verifyOtp } from '@/lib/message-central'
 import { createAdminClient } from '@/lib/supabase/server'
 import { consumeOtpBinding } from '@/lib/auth/otp-store'
@@ -220,6 +220,22 @@ export async function POST(request: Request) {
           ...(safeName && { name: safeName }),
         })
         needsName = !safeName
+
+        // Welcome email — ONLY for a brand-new signup that gave a real email.
+        // Phone-only signups get nothing. Sent after the response so it can never
+        // slow down or block the login, and a send failure is swallowed.
+        if (safeEmail) {
+          const welcomeEmail = safeEmail
+          const welcomeName = safeName ?? null
+          after(async () => {
+            try {
+              const resend = await import('@/lib/resend')
+              await resend.sendWelcomeCustomer({ email: welcomeEmail, name: welcomeName })
+            } catch (e) {
+              console.error('[OTP Verify] welcome email failed:', e)
+            }
+          })
+        }
       }
 
       appMetadata = { role: 'customer', supabase_profile_id: userId }

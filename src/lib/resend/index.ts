@@ -102,6 +102,22 @@ export async function getLowStockAlertAdmins(): Promise<AdminRecipient[]> {
 
 // ── Email Senders ──────────────────────────────────────────────────────────────
 
+/**
+ * One-time welcome email for a brand-new customer who signed up WITH an email.
+ * No-op if no email is given (phone-only signups get nothing).
+ */
+export async function sendWelcomeCustomer(data: { email: string | null; name?: string | null }): Promise<void> {
+  if (!data.email) return
+  const { default: Template } = await import('./templates/welcome-customer')
+  const html = await renderTemplate(Template as unknown as React.ComponentType<Record<string, unknown>>, { name: data.name ?? null, siteUrl: SITE_URL })
+  await resend.emails.send({
+    from: FROM,
+    to: data.email,
+    subject: 'Welcome to BCR Traders! 🎉',
+    html,
+  })
+}
+
 export async function sendOrderPlacedCustomer(data: OrderEmailData): Promise<void> {
   if (!data.customerEmail) return
   const { default: Template } = await import('./templates/order-placed-customer')
