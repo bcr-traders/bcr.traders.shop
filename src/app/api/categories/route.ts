@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
+import { writeStrippingMissingColumns } from '@/lib/supabase/tolerant-write'
 
 export async function GET() {
   const supabase = await createClient()
@@ -25,7 +26,11 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const supabase = createAdminClient()
-  const { data, error } = await supabase.from('categories').insert(body).select('id').single()
+  // Tolerate columns the drifted live table lacks (e.g. `icon`) instead of
+  // failing the whole create.
+  const { data, error } = await writeStrippingMissingColumns(body, (payload) =>
+    supabase.from('categories').insert(payload).select('id').single(),
+  )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }
