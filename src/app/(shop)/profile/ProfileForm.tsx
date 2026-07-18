@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Loader2, LogOut, Package, MapPin, ChevronRight } from 'lucide-react'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 
 interface Props {
   initialName: string
@@ -17,6 +18,12 @@ export default function ProfileForm({ initialName, initialEmail, phone }: Props)
   const [signingOut, setSigningOut] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Whether this store account is also a staff account (shares one session).
+  const { user } = useSupabaseUser()
+  const isStaff = ['admin', 'super_admin'].includes(
+    ((user?.app_metadata as { role?: string } | undefined)?.role) ?? '',
+  )
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +50,10 @@ export default function ProfileForm({ initialName, initialEmail, phone }: Props)
   }
 
   async function handleSignOut() {
+    // A staff member's store login is the SAME session as their admin login, so
+    // signing out here also ends their admin session. Warn them first; a normal
+    // customer (no staff role) logs out straight away with no prompt.
+    if (isStaff && !window.confirm('Log out?\n\nYou are signed in as staff. The store and the admin panel share one login, so this also signs you out of the admin panel.')) return
     setSigningOut(true)
     window.location.href = '/api/auth/signout'
   }

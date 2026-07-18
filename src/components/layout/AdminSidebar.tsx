@@ -94,6 +94,9 @@ export default function AdminSidebar({ role, onClose, className, badges, name }:
     href === '/admin/dashboard' ? pathname === href : pathname.startsWith(href)
 
   const handleLogout = async () => {
+    // The store and the admin panel share one login, so signing out ends both.
+    // Confirm first so it can't be an accidental full logout.
+    if (!window.confirm('Log out?\n\nThe store and the admin panel share one login, so this signs you out of both.')) return
     await signOut()
     router.push('/admin/login')
   }
