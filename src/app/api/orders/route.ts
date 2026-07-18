@@ -254,7 +254,14 @@ export async function POST(request: Request) {
   const referralCreditApplied = Math.min(availableCredit, Math.max(0, subtotal - discountAmt - refereeDiscount))
 
   const totalDiscount = discountAmt + refereeDiscount + referralCreditApplied
-  const total = Math.max(0, subtotal - totalDiscount) + deliveryFee
+  const exactTotal = Math.max(0, subtotal - totalDiscount) + deliveryFee
+
+  // Cash on delivery is collected in whole rupees (no coins), so the payable is
+  // rounded to the nearest rupee: 2000.40 → 2000, 2000.60 → 2001. When Razorpay
+  // checkout is added later it will charge the EXACT amount, so the rounding is
+  // gated on the payment method rather than applied unconditionally.
+  const paymentMethod: 'cod' | 'online' = 'cod'
+  const total = paymentMethod === 'cod' ? Math.round(exactTotal) : exactTotal
 
   const { data: order, error } = await adminDb
     .from('orders')
@@ -267,7 +274,7 @@ export async function POST(request: Request) {
       discount: totalDiscount,
       coupon_code: appliedCouponCode,
       total,
-      payment_method: 'cod',
+      payment_method: paymentMethod,
       status: 'placed',
       notes: notes?.trim() || null,
       is_bulk: is_bulk ?? false,
