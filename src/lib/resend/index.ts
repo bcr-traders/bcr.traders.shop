@@ -33,6 +33,8 @@ export interface OrderEmailData {
   notes?: string | null
   gstin?: string | null
   gstBusinessName?: string | null
+  /** Admin-set email subject line; overrides the auto-generated one when set. */
+  customSubject?: string | null
 }
 
 export interface AdminRecipient {
@@ -150,7 +152,7 @@ export async function sendOrderConfirmedCustomer(data: OrderEmailData): Promise<
   await resend.emails.send({
     from: FROM,
     to: data.customerEmail,
-    subject: `✅ Order Confirmed! #${data.orderNumber} — BCR TRADERS`,
+    subject: data.customSubject?.trim() || `✅ Order Confirmed! #${data.orderNumber} — BCR TRADERS`,
     html,
     attachments,
   })
@@ -163,10 +165,12 @@ export async function sendOrderStatusUpdate(data: OrderEmailData): Promise<void>
   const html = await renderTemplate(Template as unknown as React.ComponentType<Record<string, unknown>>, { ...data, siteUrl: SITE_URL })
   const attachments = isDelivered ? await buildInvoiceAttachment(data) : []
   const statusTitle = STATUS_TITLES[data.status ?? ''] ?? data.status ?? 'Updated'
+  // Admin-set subject wins; otherwise the auto-generated one.
+  const subject = data.customSubject?.trim() || `📦 Order Update: ${statusTitle} | #${data.orderNumber}`
   await resend.emails.send({
     from: FROM,
     to: data.customerEmail,
-    subject: `📦 Order Update: ${statusTitle} | #${data.orderNumber}`,
+    subject,
     html,
     attachments,
   })

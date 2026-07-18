@@ -17,7 +17,7 @@ import type { OrderEmailData } from './index'
 export async function notifyOrderEvent(
   orderId: string,
   status: string,
-  opts: { adminProfileId?: string | null; skipCustomer?: boolean } = {},
+  opts: { adminProfileId?: string | null; skipCustomer?: boolean; subjectOverride?: string | null } = {},
 ): Promise<void> {
   try {
     const supabase = createAdminClient()
@@ -78,6 +78,7 @@ export async function notifyOrderEvent(
       notes: order.notes ?? null,
       gstin: order.gstin ?? null,
       gstBusinessName: order.gst_business_name ?? null,
+      customSubject: opts.subjectOverride?.trim() || null,
     }
 
     const resend = await import('./index')

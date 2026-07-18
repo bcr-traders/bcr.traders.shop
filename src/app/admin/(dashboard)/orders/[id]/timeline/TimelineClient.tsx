@@ -39,6 +39,7 @@ export default function TimelineClient({
   const [form, setForm] = useState({
     status: orderStatus,
     title: '',
+    email_subject: '',
     message: '',
     estimated_delivery: '',
     send_email: true,
@@ -61,6 +62,7 @@ export default function TimelineClient({
       body: JSON.stringify({
         status: form.status,
         title: form.title.trim(),
+        email_subject: form.email_subject.trim() || undefined,
         message: form.message.trim() || undefined,
         estimated_delivery: form.estimated_delivery.trim() || undefined,
         send_email: form.send_email,
@@ -70,7 +72,7 @@ export default function TimelineClient({
     if (res.ok) {
       const entry = await res.json() as TimelineEntry
       setTimeline(prev => [entry, ...prev])
-      setForm(prev => ({ ...prev, title: '', message: '', estimated_delivery: '' }))
+      setForm(prev => ({ ...prev, title: '', email_subject: '', message: '', estimated_delivery: '' }))
       showToast(form.send_email ? 'Timeline update added — email sent to customer' : 'Timeline update added!')
     } else {
       const data = await res.json().catch(() => ({})) as { error?: string; detail?: string }
@@ -159,6 +161,20 @@ export default function TimelineClient({
               value={form.title}
               onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
               placeholder='e.g. "Your order is packed and ready for dispatch"'
+              className={inputCls}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="font-label-md text-label-md text-on-surface font-medium">
+              Email Subject
+              <span className="font-label-sm text-label-sm text-on-surface-variant ml-2 font-normal">the subject line the customer sees — leave blank for the default</span>
+            </label>
+            <input
+              type="text"
+              value={form.email_subject}
+              onChange={e => setForm(prev => ({ ...prev, email_subject: e.target.value }))}
+              placeholder="e.g. Your BCR order is out for delivery 🚚"
               className={inputCls}
             />
           </div>

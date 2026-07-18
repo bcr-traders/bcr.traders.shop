@@ -46,6 +46,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     title?: string
     message?: string
     estimated_delivery?: string
+    email_subject?: string
     send_email?: boolean
   } | null
 
@@ -94,7 +95,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       if (pErr) console.warn('Timeline: could not mirror message/ETA onto order:', pErr.message)
     }
     const status = body.status.trim()
-    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null }))
+    // An admin-typed subject overrides the auto-generated email subject line.
+    const subjectOverride = body.email_subject?.trim() || null
+    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null, subjectOverride }))
   }
 
   return NextResponse.json(mapTimelineRow(data), { status: 201 })
