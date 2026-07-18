@@ -29,8 +29,12 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authError = await requireAdminAccess()
-  if (authError) return authError
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
+  if (meta?.role !== 'super_admin' && meta?.role !== 'admin') {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { id } = await params
   const supabase = createAdminClient()
@@ -41,7 +45,27 @@ export async function GET(
     .eq('id', id)
     .single()
 
-  if (error) return Response.json({ error: 'Not found' }, { status: 404 })
+  if (error || !data) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  // An admin can ALWAYS read their OWN profile — that's how the panel loads the
+  // permissions that decide which tabs to show. Without this a plain admin (who
+  // by definition lacks manage_admin_profiles) could never read their own
+  // permissions, so every tab stayed hidden even after being granted them.
+  // Reading ANOTHER admin's profile still requires super_admin or the
+  // manage_admin_profiles permission, so this is not a privilege escalation.
+  const row = data as unknown as { user_id: string | null }
+  if (meta.role !== 'super_admin' && row.user_id !== userId) {
+    const { data: me } = await supabase
+      .from('admin_profiles')
+      .select('permissions')
+      .eq('user_id', userId)
+      .maybeSingle()
+    const perms = (me as unknown as { permissions?: AdminPermissions } | null)?.permissions
+    if (!perms?.manage_admin_profiles) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
   return Response.json(data)
 }
 
