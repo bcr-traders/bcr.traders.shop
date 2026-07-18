@@ -176,6 +176,22 @@ export default function ProductForm({
   )
   const isHangerModel = packagingModel === 'hanger'
 
+  // Box → Pack → Pieces has an OPTIONAL middle "pack" level. Off means the box
+  // sells straight to pieces (e.g. oil: a box and its pieces, but no pack in
+  // between). Existing products that already have a lower unit start on.
+  const [hasPack, setHasPack] = useState<boolean>(() => !!product?.unit_type)
+
+  // Enable/disable the pack level. Turning it off clears the pack fields so the
+  // product saves as box → pieces; turning it on defaults the unit to "Pack".
+  const setPackEnabled = useCallback((on: boolean) => {
+    setHasPack(on)
+    if (on) {
+      setForm(prev => (prev.unit_type ? prev : { ...prev, unit_type: 'Pack' }))
+    } else {
+      setForm(prev => ({ ...prev, unit_type: '', units_per_pack: '', secondary_price: '', secondary_mrp: '' }))
+    }
+  }, [])
+
   // Auto-generate slug from name
   useEffect(() => {
     if (!isEdit || !product?.slug) {
@@ -720,16 +736,25 @@ export default function ProductForm({
                 </Field>
               </div>
 
+              {/* Optional middle level. Off = box → pieces (oil, ghee tins);
+                  on = box → pack → pieces (masala, sachet cartons). */}
+              <ToggleField
+                label="Sell packs inside the box"
+                sub={`On: the ${(form.pack_type || 'box').toLowerCase()} also splits into packs (e.g. 1 box = 10 packs). Off: sold as a whole ${(form.pack_type || 'box').toLowerCase()} → pieces, like oil.`}
+                checked={hasPack}
+                onChange={setPackEnabled}
+              />
+
+              {hasPack && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Lower Unit" hint="The smaller unit a customer can also buy — leave blank if the box is sold whole">
+                <Field label="Lower Unit" hint="The smaller unit a customer can also buy inside the box">
                   <select
-                    value={form.unit_type}
+                    value={form.unit_type || 'Pack'}
                     onChange={e => set('unit_type', e.target.value)}
                     className={inputCls}
                   >
-                    <option value="">— None (sold as a whole {form.pack_type || 'box'}) —</option>
-                    <option value="Hanger">Hanger</option>
                     <option value="Pack">Pack</option>
+                    <option value="Hanger">Hanger</option>
                     <option value="Tin">Tin</option>
                     <option value="Pouch">Pouch</option>
                     <option value="Packet">Packet</option>
@@ -741,19 +766,18 @@ export default function ProductForm({
                     <option value="Piece">Piece</option>
                   </select>
                 </Field>
-                {form.unit_type && (
-                  <Field label={`${form.unit_type}s per ${form.pack_type || 'Box'}`} hint={`How many ${form.unit_type.toLowerCase()}s are in one ${(form.pack_type || 'box').toLowerCase()}`}>
-                    <input
-                      type="number"
-                      value={form.units_per_pack}
-                      min={1}
-                      onChange={e => set('units_per_pack', e.target.value)}
-                      placeholder="e.g. 10"
-                      className={inputCls}
-                    />
-                  </Field>
-                )}
+                <Field label={`${form.unit_type || 'Pack'}s per ${form.pack_type || 'Box'}`} hint={`How many ${(form.unit_type || 'pack').toLowerCase()}s are in one ${(form.pack_type || 'box').toLowerCase()}`}>
+                  <input
+                    type="number"
+                    value={form.units_per_pack}
+                    min={1}
+                    onChange={e => set('units_per_pack', e.target.value)}
+                    placeholder="e.g. 10"
+                    className={inputCls}
+                  />
+                </Field>
               </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Field
