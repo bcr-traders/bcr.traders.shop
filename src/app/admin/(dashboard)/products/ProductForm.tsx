@@ -117,6 +117,11 @@ export default function ProductForm({
   // when editing a product that already has an Odia name, so opening it doesn't
   // re-translate and clobber the saved value.
   const nameOrTouched = useRef(!!product?.name_or)
+  // True once the admin actually edits the English name in this session. The
+  // derived fields (slug, Odia name, meta title/description, keywords) then
+  // follow the name even when editing an existing product — but NOT on open, so
+  // a saved slug/SEO is never clobbered just by viewing the product.
+  const nameEdited = useRef(false)
 
   const [form, setForm] = useState<FormState>({
     category_id: product?.category_id ?? '',
@@ -196,9 +201,10 @@ export default function ProductForm({
     }
   }, [])
 
-  // Auto-generate slug from name
+  // Auto-generate slug from name. New products always; existing products once
+  // the admin actually edits the name (so a saved slug isn't clobbered on open).
   useEffect(() => {
-    if (!isEdit || !product?.slug) {
+    if (!isEdit || nameEdited.current) {
       set('slug', toSlug(form.name))
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,29 +264,44 @@ export default function ProductForm({
 
   // ── SEO Generation ───────────────────────────────────────────────────────────
 
-  async function generateSeo() {
-    if (!form.name) { setError('Enter a product name first'); return }
+  // `silent` = auto-run after a name edit: no toasts/errors, just refresh the
+  // meta title/description/keywords in the background.
+  async function generateSeo(opts: { silent?: boolean } = {}) {
+    const silent = opts.silent === true
+    if (!form.name.trim()) { if (!silent) setError('Enter a product name first'); return }
     setGeneratingSeo(true)
-    setError(null)
+    if (!silent) setError(null)
     const catName = categories.find(c => c.id === form.category_id)?.name ?? ''
-    const res = await fetch('/api/products/generate-seo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: form.name, description: form.description, category: catName }),
-    })
-    if (res.ok) {
-      const data = await res.json() as { meta_title?: string; meta_description?: string; keywords?: string[] }
-      if (data.meta_title) set('meta_title', data.meta_title)
-      if (data.meta_description) set('meta_description', data.meta_description)
-      if (data.keywords?.length) set('tags', data.keywords)
-      showToast('SEO generated!')
-    } else {
-      const d = await res.json().catch(() => ({})) as { error?: string }
-      setError(d.error ?? 'SEO generation failed')
-      showToast(d.error ?? 'SEO generation failed', 'error')
-    }
+    try {
+      const res = await fetch('/api/products/generate-seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, description: form.description, category: catName }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { meta_title?: string; meta_description?: string; keywords?: string[] }
+        if (data.meta_title) set('meta_title', data.meta_title)
+        if (data.meta_description) set('meta_description', data.meta_description)
+        if (data.keywords?.length) set('tags', data.keywords)
+        if (!silent) showToast('SEO generated!')
+      } else if (!silent) {
+        const d = await res.json().catch(() => ({})) as { error?: string }
+        setError(d.error ?? 'SEO generation failed')
+        showToast(d.error ?? 'SEO generation failed', 'error')
+      }
+    } catch { if (!silent) showToast('SEO generation failed', 'error') }
     setGeneratingSeo(false)
   }
+
+  // Auto-refresh meta title/description/keywords a moment after the admin edits
+  // the name, so the SEO fields follow the product name. Debounced (one AI call
+  // per pause), and only after a real name edit — never on open.
+  useEffect(() => {
+    if (!nameEdited.current || !form.name.trim()) return
+    const handle = setTimeout(() => { void generateSeo({ silent: true }) }, 1400)
+    return () => clearTimeout(handle)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.name])
 
   // ── AI Description Generation (English + Odia) ────────────────────────────────
 
@@ -543,7 +564,13 @@ export default function ProductForm({
                 <input
                   type="text"
                   value={form.name}
-                  onChange={e => set('name', e.target.value)}
+                  onChange={e => {
+                    // Editing the name re-derives everything that follows from
+                    // it. Clear nameOrTouched so the Odia name re-translates too.
+                    nameEdited.current = true
+                    nameOrTouched.current = false
+                    set('name', e.target.value)
+                  }}
                   placeholder="e.g. Sunflower Oil 5L"
                   className={inputCls}
                 />
@@ -1091,7 +1118,7 @@ export default function ProductForm({
                 </p>
               </div>
               <button
-                onClick={generateSeo}
+                onClick={() => generateSeo()}
                 disabled={generatingSeo}
                 className="flex items-center gap-2 px-5 py-2.5 bg-surface-card border-2 border-table-border text-primary rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/40 transition-all disabled:opacity-60 active:scale-95"
               >
