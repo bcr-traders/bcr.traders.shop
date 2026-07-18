@@ -175,6 +175,14 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
   const addr = data.address
   const discount = data.discount ?? 0
   const status = STATUS_LABEL[data.status ?? 'placed'] ?? 'Placed'
+
+  // COD totals are rounded to the nearest rupee, so the exact
+  // (subtotal − discount + delivery) can sit a few paise off the grand total.
+  // Surface that gap as an explicit Round Off line so the invoice reconciles.
+  // Mirrors the order route's total math; it's 0 (and hidden) for whole-rupee
+  // orders, which is most of the catalogue.
+  const exactTotal = Math.max(0, data.subtotal - discount) + data.deliveryFee
+  const roundOff = Math.round((data.total - exactTotal) * 100) / 100
   const date = new Date(data.createdAt).toLocaleDateString('en-IN', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
@@ -278,6 +286,12 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
             <Text style={styles.totalLabel}>Delivery</Text>
             <Text style={styles.totalValue}>{data.deliveryFee === 0 ? 'FREE' : fmt(data.deliveryFee)}</Text>
           </View>
+          {Math.abs(roundOff) >= 0.01 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Round Off</Text>
+              <Text style={styles.totalValue}>{roundOff < 0 ? '−' : '+'}{fmt(Math.abs(roundOff))}</Text>
+            </View>
+          )}
           <View style={styles.grandRow}>
             <Text style={styles.grandLabel}>Grand Total</Text>
             <Text style={styles.grandValue}>{fmt(data.total)}</Text>
