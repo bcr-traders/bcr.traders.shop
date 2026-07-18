@@ -51,6 +51,25 @@ const styles = StyleSheet.create({
     padding: 36,
     color: '#1c1c17',
   },
+  // Full-page layer that centres the slanted brand watermark behind everything.
+  watermark: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watermarkText: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 68,
+    color: '#26170c',
+    opacity: 0.06,
+    transform: 'rotate(-45deg)',
+    transformOrigin: 'center',
+    letterSpacing: 4,
+  },
 
   // Header
   header: {
@@ -190,6 +209,14 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
   return (
     <Document title={`BCR Invoice ${data.orderNumber}`} author="BCR Traders">
       <Page size="A4" style={styles.page}>
+
+        {/* ── Diagonal BCR TRADERS watermark ──
+            Rendered first and absolutely positioned so it sits behind the
+            content; `fixed` repeats it on every page. Very low opacity so it
+            never obscures the invoice text. */}
+        <View style={styles.watermark} fixed>
+          <Text style={styles.watermarkText}>BCR TRADERS</Text>
+        </View>
 
         {/* ── Header: logo + seller (left), invoice meta (right) ── */}
         <View style={styles.header}>
