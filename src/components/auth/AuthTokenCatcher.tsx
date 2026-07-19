@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, createStaffClient } from '@/lib/supabase/client'
 
 /**
  * Fallback for magic links that resolve to implicit-flow hash tokens
@@ -17,7 +17,11 @@ export default function AuthTokenCatcher() {
     const hash = window.location.hash
     if (!hash || (!hash.includes('access_token=') && !hash.includes('refresh_token='))) return
 
-    const supabase = createClient()
+    // Land the session in the correct cookie for whichever portal this page
+    // belongs to, so store and staff sessions stay independent.
+    const onStaffPath =
+      window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/delivery')
+    const supabase = onStaffPath ? createStaffClient() : createClient()
 
     const handleHash = async () => {
       try {

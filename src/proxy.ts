@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { AuthMetadata } from '@/types'
+import { STAFF_COOKIE_NAME, isStaffPath } from '@/lib/supabase/cookie-scope'
 
 const PUBLIC_PREFIXES = [
   '/login',
@@ -44,35 +45,54 @@ function isDeliveryRoute(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
-        },
-      },
-    },
-  )
-
-  // Refreshes the session cookie if the access token is near expiry. Guarded so a
-  // transient Auth network blip can't crash the request into a 500.
-  let user = null
-  try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  } catch (err) {
-    if (process.env.AUTH_DEBUG) console.error('[proxy] getUser failed:', err)
-  }
-
   const { pathname } = request.nextUrl
   const isApiRoute = pathname.startsWith('/api')
+
+  // A client bound to either the store (default) or the separate staff cookie.
+  // getUser() on it also refreshes and writes back THAT cookie.
+  const makeClient = (staff: boolean) =>
+    createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          },
+        },
+        ...(staff ? { cookieOptions: { name: STAFF_COOKIE_NAME } } : {}),
+      },
+    )
+
+  const getUserSafe = async (staff: boolean) => {
+    try {
+      const { data } = await makeClient(staff).auth.getUser()
+      return data.user
+    } catch (err) {
+      if (process.env.AUTH_DEBUG) console.error('[proxy] getUser failed:', err)
+      return null
+    }
+  }
+
+  const hasStaffCookie = request.cookies
+    .getAll()
+    .some((c) => c.name === STAFF_COOKIE_NAME || c.name.startsWith(`${STAFF_COOKIE_NAME}.`))
+
+  // Resolve (and refresh) the acting session for this request:
+  //   • admin/delivery pages → ONLY the staff cookie counts.
+  //   • everything else → the staff session if its cookie is present, else the
+  //     store session. Both are kept fresh as the user visits either portal.
+  let user = null
+  if (isStaffPath(pathname)) {
+    user = await getUserSafe(true)
+  } else {
+    if (hasStaffCookie) user = await getUserSafe(true)
+    if (!user) user = await getUserSafe(false)
+  }
 
   if (isPublicRoute(pathname)) return response
 

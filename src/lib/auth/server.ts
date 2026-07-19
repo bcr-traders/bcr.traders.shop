@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, hasStaffCookie } from '@/lib/supabase/server'
 import type { AuthMetadata } from '@/types'
 
 /**
@@ -12,8 +12,7 @@ export async function auth(): Promise<{
   userId: string | null
   sessionClaims: { publicMetadata: AuthMetadata } | null
 }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await resolveUser()
   if (!user) return { userId: null, sessionClaims: null }
 
   const meta = (user.app_metadata ?? {}) as Partial<AuthMetadata>
@@ -29,8 +28,24 @@ export async function auth(): Promise<{
   }
 }
 
-export async function currentUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+/**
+ * The staff (admin/delivery) and store (customer) sessions live in separate
+ * cookies. Prefer the staff session when its cookie is present — an admin's
+ * /api/* calls carry both cookies — and fall back to the store session. Skip
+ * the staff lookup entirely for plain customers (no staff cookie) so their
+ * requests still make a single getUser() call.
+ */
+async function resolveUser() {
+  if (await hasStaffCookie()) {
+    const staff = await createClient({ staff: true })
+    const { data: { user: staffUser } } = await staff.auth.getUser()
+    if (staffUser) return staffUser
+  }
+  const store = await createClient()
+  const { data: { user } } = await store.auth.getUser()
   return user
+}
+
+export async function currentUser() {
+  return resolveUser()
 }
