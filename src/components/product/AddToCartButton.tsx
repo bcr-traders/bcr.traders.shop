@@ -22,6 +22,12 @@ interface Props {
   disabled?: boolean
 }
 
+// "Box" -> "Boxes", "Bottle" -> "Bottles". Handles the sibilant endings a naive
+// +"s" gets wrong ("Box" -> "Boxs").
+function pluralize(word: string): string {
+  return /(?:s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`
+}
+
 export default function AddToCartButton({ product, className, variant = 'icon', disabled }: Props) {
   const addItem       = useCartStore((s) => s.addItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
@@ -52,9 +58,18 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   // "Box" / "Hanger" / "Pack" for multi-level products; for a single-level
   // product use its own pack_type ("Bottle", "Bag", "Piece"…), falling back to a
   // plain "unit" when it names none — so the sheet reads correctly for every
-  // product, not just boxes.
-  const unitWord = hasLevels ? opt.label : (product.pack_type || tField('unit', 'ୟୁନିଟ୍'))
-  const unitWordPlural = hasLevels ? `${opt.label}s` : (product.pack_type ? `${product.pack_type}s` : tField('units', 'ୟୁନିଟ୍'))
+  // product, not just boxes. "Box" keeps its Odia translation (the common case).
+  const isBoxUnit = !hasLevels && (product.pack_type ?? '').toLowerCase() === 'box'
+  const unitWord = hasLevels
+    ? opt.label
+    : isBoxUnit
+      ? tField('Box', 'ବାକ୍ସ')
+      : (product.pack_type || tField('unit', 'ୟୁନିଟ୍'))
+  const unitWordPlural = hasLevels
+    ? pluralize(opt.label)
+    : isBoxUnit
+      ? tField('Boxes', 'ବାକ୍ସ')
+      : (product.pack_type ? pluralize(product.pack_type) : tField('units', 'ୟୁନିଟ୍'))
   const maxQty = product.stock_qty > 0 ? product.stock_qty : 9999
   const clampNum = (n: number) => Math.max(1, Math.min(Math.floor(n), maxQty))
 
