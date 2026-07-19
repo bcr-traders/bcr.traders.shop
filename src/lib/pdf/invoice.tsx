@@ -28,7 +28,7 @@ const SELLER = {
   tagline: 'Wholesale Grocery Distributor',
   address: 'Brahmapur, Ganjam, Odisha - 760001',
   gstin: '21GBUPR9356D1Z3',
-  phone: '+91 90400 11053',
+  phone: '+91 90195 75211',
   email: 'bcr.traders19@gmail.com',
 }
 
