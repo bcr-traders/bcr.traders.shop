@@ -32,6 +32,7 @@ export default function ProductActions({ product }: Props) {
       unit: product.unit,
       image: product.images?.[0] ?? null,
       slug: product.slug,
+      delivery_charge: product.delivery_charge_enabled ? (product.delivery_charge ?? 0) : 0,
     })
     router.push('/checkout')
   }

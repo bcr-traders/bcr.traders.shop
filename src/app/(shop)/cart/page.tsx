@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
+import { computeDeliveryFee, perProductDelivery, FREE_DELIVERY_MIN } from '@/lib/cart/delivery'
 import type { CartItem } from '@/types/database.types'
 
 interface CouponData {
@@ -324,8 +325,11 @@ export default function CartPage() {
     // Never discount more than the subtotal.
     return Math.min(d, subtotal)
   })()
-  const FREE_DELIVERY_MIN = 1000
-  const deliveryFee = subtotal >= FREE_DELIVERY_MIN ? 0 : 50
+  // Per-product delivery charges (if any) override the flat free-above-threshold
+  // fee. When a fixed charge applies, the "add more for free delivery" prompt
+  // doesn't make sense, so it's hidden.
+  const hasProductDelivery = perProductDelivery(items) > 0
+  const deliveryFee = computeDeliveryFee(items, subtotal)
   const total = Math.max(0, subtotal - discount) + deliveryFee
   const totalQty = items.reduce((s, i) => s + i.quantity, 0)
 
@@ -399,8 +403,9 @@ export default function CartPage() {
         {/* ── LEFT column ── */}
         <div className="lg:flex-1 flex flex-col gap-4">
 
-          {/* Free delivery banner */}
-          {deliveryFee === 0 ? (
+          {/* Free delivery banner — only when the flat fee applies (a fixed
+              per-product delivery charge can't be waived by adding more). */}
+          {!hasProductDelivery && (deliveryFee === 0 ? (
             <div className="flex items-center gap-3 border-2 border-primary/30 bg-primary/5 rounded-2xl p-3.5">
               <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                 <Truck size={15} className="text-white" />
@@ -416,7 +421,7 @@ export default function CartPage() {
                 Add <span className="font-black text-primary">₹{(FREE_DELIVERY_MIN - subtotal).toLocaleString('en-IN')}</span> more for Free Delivery
               </span>
             </div>
-          )}
+          ))}
 
           {/* Delivery address */}
           <section className="bg-surface-card rounded-2xl border-2 border-table-border p-4 flex items-start justify-between gap-4">

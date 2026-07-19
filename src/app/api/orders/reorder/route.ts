@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('products')
-    .select('id, name, slug, price, mrp, unit, images, stock_qty, is_active')
+    .select('id, name, slug, price, mrp, unit, images, stock_qty, is_active, delivery_charge, delivery_charge_enabled')
     .in('id', product_ids)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -106,6 +106,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
       units_each: hasLevels ? (opt.pieces ?? undefined) : undefined,
       image: product.images?.[0] ?? null,
       slug: product.slug,
+      delivery_charge: product.delivery_charge_enabled ? (product.delivery_charge ?? 0) : 0,
     })
     if (quantity > 1) updateQuantity(lineId, quantity)
     setFlash(true)

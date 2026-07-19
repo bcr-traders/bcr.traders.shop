@@ -112,6 +112,7 @@ export async function POST(request: Request) {
     pack_type: string | null; unit_type: string | null; units_per_pack: number | null
     pieces_per_secondary: number | null; secondary_price: number | null; secondary_mrp: number | null
     units_per_hanger: number | null; hangers_per_pack: number | null
+    delivery_charge: number | null; delivery_charge_enabled: boolean | null
   }
 
   const productMap = new Map<string, DbProduct>(
@@ -170,7 +171,17 @@ export async function POST(request: Request) {
   }
 
   const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
-  const deliveryFee = 0
+  // Delivery fee = sum of the per-product delivery charges of the products in
+  // this order (each product once), read from authoritative DB data — never
+  // trust a client-sent charge. Products without a charge add nothing.
+  const deliveryByProduct = new Map<string, number>()
+  for (const oi of orderItems) {
+    const p = productMap.get(oi.product_id)
+    if (p?.delivery_charge_enabled && p.delivery_charge) {
+      deliveryByProduct.set(p.id, Number(p.delivery_charge))
+    }
+  }
+  const deliveryFee = [...deliveryByProduct.values()].reduce((sum, c) => sum + c, 0)
 
   // ── Authoritative coupon validation — never trust a client-sent discount ──
   let discountAmt = 0

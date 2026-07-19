@@ -9,6 +9,7 @@ import {
   Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt, Gift,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { perProductDelivery } from '@/lib/cart/delivery'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
@@ -77,7 +78,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
       ))
     : 0
   const creditApplied = Math.min(myCredit, Math.max(0, subtotal - couponDiscount - referralDiscount))
-  const grandTotal = Math.max(0, subtotal - couponDiscount - referralDiscount - creditApplied)
+  // Fixed per-product delivery charge (₹0 when no item has one). The server
+  // recomputes this authoritatively at order time.
+  const deliveryFee = perProductDelivery(items)
+  const grandTotal = Math.max(0, subtotal - couponDiscount - referralDiscount - creditApplied) + deliveryFee
   // Address + serviceability gate the button. The email is captured in a popup
   // at "Place Order" (PRD #3/#4) — every order/status update is sent to it.
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -658,7 +662,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 )}
                 <div className="flex justify-between text-sm pb-3 border-b border-white/15">
                   <span className="text-white/50 font-medium">Delivery</span>
-                  <span className="text-white font-black text-xs uppercase tracking-wider">Free</span>
+                  {deliveryFee > 0
+                    ? <span className="text-white font-black">₹{deliveryFee.toFixed(0)}</span>
+                    : <span className="text-white font-black text-xs uppercase tracking-wider">Free</span>}
                 </div>
               </div>
 

@@ -237,6 +237,7 @@ export interface CartItem {
   image: string | null
   quantity: number
   slug: string
+  delivery_charge?: number  // per-product delivery charge (₹), 0 when none/disabled
 }
 
 // ── Supabase Database type ─────────────────────────────────────────────────

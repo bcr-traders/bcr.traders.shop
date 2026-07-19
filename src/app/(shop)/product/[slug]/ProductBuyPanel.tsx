@@ -83,6 +83,7 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
     units_each: hasLevels ? (piecesEach ?? undefined) : undefined,
     image: product.images?.[0] ?? null,
     slug: product.slug,
+    delivery_charge: product.delivery_charge_enabled ? (product.delivery_charge ?? 0) : 0,
   })
 
   const requireAuth = () => {

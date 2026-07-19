@@ -361,7 +361,7 @@ export default function OrderDetailClient({
         body: JSON.stringify({ product_ids: productIds }),
       })
       const { products } = await res.json() as {
-        products: Array<{ id: string; name: string; slug: string; price: number; mrp: number | null; unit: string; images: string[]; stock_qty: number; is_active: boolean }>
+        products: Array<{ id: string; name: string; slug: string; price: number; mrp: number | null; unit: string; images: string[]; stock_qty: number; is_active: boolean; delivery_charge?: number | null; delivery_charge_enabled?: boolean }>
       }
 
       const productMap = Object.fromEntries(products.map((p) => [p.id, p]))
@@ -381,6 +381,7 @@ export default function OrderDetailClient({
           mrp: current.mrp,
           unit: current.unit,
           image: current.images?.[0] ?? null,
+          delivery_charge: current.delivery_charge_enabled ? (current.delivery_charge ?? 0) : 0,
         })
       }
 
