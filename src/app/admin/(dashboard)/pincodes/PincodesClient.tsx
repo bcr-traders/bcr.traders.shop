@@ -18,6 +18,26 @@ export default function PincodesClient({ initialRows }: Props) {
   const [isAdding, setIsAdding] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({ pincode: '', area_name: '', city: '', state: '', delivery_days: '2' })
+  const [detecting, setDetecting] = useState(false)
+
+  // Auto-fill area/city/state from the pincode (India Post lookup) so the admin
+  // doesn't type them by hand. Fires once a full 6-digit pincode is entered.
+  async function detectLocation(pincode: string) {
+    setDetecting(true)
+    try {
+      const res = await fetch(`/api/pincodes/lookup?pincode=${pincode}`)
+      const d = res.ok ? (await res.json()) as { found?: boolean; area?: string | null; city?: string | null; state?: string | null } : null
+      if (d?.found) {
+        setForm((f) => f.pincode === pincode ? {
+          ...f,
+          area_name: d.area ?? f.area_name,
+          city: d.city ?? f.city,
+          state: d.state ?? f.state,
+        } : f)
+      }
+    } catch { /* leave the fields for manual entry */ }
+    finally { setDetecting(false) }
+  }
   const [error, setError] = useState('')
   const [view, setView] = useState<'list' | 'map'>('list')
   const [openCities, setOpenCities] = useState<Set<string>>(new Set())
@@ -187,8 +207,22 @@ export default function PincodesClient({ initialRows }: Props) {
           <h2 className="font-black text-xl text-primary">Add Pincode.</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <label className="font-black text-[10px] text-primary uppercase tracking-widest">Pincode <span className="text-error">*</span></label>
-              <input value={form.pincode} onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value }))} placeholder="751001" maxLength={6} className={inputCls} />
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">
+                Pincode <span className="text-error">*</span>
+                {detecting && <span className="ml-2 font-bold text-on-surface-variant/60 normal-case tracking-normal">detecting…</span>}
+              </label>
+              <input
+                value={form.pincode}
+                onChange={(e) => {
+                  const pin = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setForm((f) => ({ ...f, pincode: pin }))
+                  if (pin.length === 6) void detectLocation(pin)
+                }}
+                placeholder="751001"
+                inputMode="numeric"
+                maxLength={6}
+                className={inputCls}
+              />
             </div>
             <div className="space-y-2">
               <label className="font-black text-[10px] text-primary uppercase tracking-widest">Area Name</label>
