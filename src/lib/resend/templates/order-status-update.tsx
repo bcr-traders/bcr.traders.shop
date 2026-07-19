@@ -15,6 +15,7 @@ const STATUS_CONFIG: Record<string, { icon: string; title: string; subtitle: str
   out_for_delivery: { icon: '🚚', title: 'Out for Delivery!',     subtitle: 'Your order is on its way to you.',           color: '#7c3aed', bg: '#ede9fe' },
   delivered:        { icon: '🎉', title: 'Order Delivered!',      subtitle: 'Your order has been delivered. Enjoy!',      color: '#16a34a', bg: '#dcfce7' },
   cancelled:        { icon: '❌', title: 'Order Cancelled',       subtitle: 'Your order has been cancelled.',             color: '#dc2626', bg: '#fee2e2' },
+  returned:         { icon: '↩️', title: 'Order Returned',        subtitle: 'Your order has been returned.',              color: '#dc2626', bg: '#fee2e2' },
 }
 
 const TIMELINE_STEPS = ['placed', 'confirmed', 'packed', 'shipping', 'delivered']
@@ -62,7 +63,7 @@ export default function OrderStatusUpdate({
           )}
 
           {/* Estimated delivery */}
-          {estimatedDelivery && status !== 'delivered' && status !== 'cancelled' && (
+          {estimatedDelivery && status !== 'delivered' && status !== 'cancelled' && status !== 'returned' && (
             <Section style={deliveryNote}>
               <Text style={deliveryText}>
                 🚚 Estimated Delivery: <strong>{estimatedDelivery}</strong>
@@ -77,6 +78,8 @@ export default function OrderStatusUpdate({
             <Heading style={sectionTitle}>Order Progress</Heading>
             {status === 'cancelled' ? (
               <Text style={cancelledNote}>This order has been cancelled.</Text>
+            ) : status === 'returned' ? (
+              <Text style={cancelledNote}>This order has been returned.</Text>
             ) : (
               TIMELINE_STEPS.map((step, i) => {
                 const isActive = i === currentStep
