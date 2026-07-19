@@ -90,7 +90,7 @@ export async function PATCH(
   // change (PRD #4). Best-effort — never blocks the status update.
   if (body.status && ['confirmed', 'packed', 'shipping', 'delivered', 'cancelled', 'returned'].includes(body.status)) {
     const status = body.status
-    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null }))
+    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null, customMessage: body.custom_message?.trim() || null }))
   }
 
   return NextResponse.json({ ok: true })

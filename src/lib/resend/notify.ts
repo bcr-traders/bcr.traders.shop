@@ -17,7 +17,7 @@ import type { OrderEmailData } from './index'
 export async function notifyOrderEvent(
   orderId: string,
   status: string,
-  opts: { adminProfileId?: string | null; skipCustomer?: boolean; subjectOverride?: string | null } = {},
+  opts: { adminProfileId?: string | null; skipCustomer?: boolean; subjectOverride?: string | null; customMessage?: string | null } = {},
 ): Promise<void> {
   try {
     const supabase = createAdminClient()
@@ -72,7 +72,10 @@ export async function notifyOrderEvent(
       customerEmail: (profile as { email?: string | null } | null)?.email ?? null,
       customerName: addr?.name,
       estimatedDelivery: order.estimated_delivery ?? null,
-      customMessage: order.custom_message ?? null,
+      // Only the message the admin typed for THIS notification — never the
+      // persisted order.custom_message column. Reading the column made a note
+      // sent once re-appear on every later status email (cancelled, delivered…).
+      customMessage: opts.customMessage ?? null,
       confirmedByName,
       status,
       notes: order.notes ?? null,

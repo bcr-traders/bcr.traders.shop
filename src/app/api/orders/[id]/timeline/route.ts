@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const status = body.status.trim()
     // An admin-typed subject overrides the auto-generated email subject line.
     const subjectOverride = body.email_subject?.trim() || null
-    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null, subjectOverride }))
+    after(() => notifyOrderEvent(id, status, { adminProfileId: meta?.admin_profile_id ?? null, subjectOverride, customMessage: message }))
   }
 
   return NextResponse.json(mapTimelineRow(data), { status: 201 })
