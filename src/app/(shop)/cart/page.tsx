@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Minus, Plus, Trash2, ShoppingBag, Tag, X,
-  ArrowRight, ShieldCheck, Truck, MapPin,
+  ArrowRight, ShieldCheck, Truck,
   Package, ChevronRight, BadgeCheck,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
@@ -422,24 +422,6 @@ export default function CartPage() {
               </span>
             </div>
           ))}
-
-          {/* Delivery address */}
-          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-4 flex items-start justify-between gap-4">
-            <div className="flex gap-3 items-start">
-              <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center flex-shrink-0">
-                <MapPin size={17} className="text-primary" />
-              </div>
-              <div>
-                <h2 className="font-black text-primary text-sm uppercase tracking-wide">Main Warehouse</h2>
-                <p className="text-xs text-on-surface-variant/60 font-medium mt-0.5 leading-snug">
-                  Brahmapur, Ganjam, Odisha 760001
-                </p>
-              </div>
-            </div>
-            <button className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant border-2 border-table-border rounded-xl px-3 py-1.5 hover:border-primary/40 hover:text-primary transition-all duration-200 flex-shrink-0">
-              Change
-            </button>
-          </section>
 
           {/* Items list */}
           <section>
