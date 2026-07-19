@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, createStaffClient } from '@/lib/supabase/client'
 import { isSafeInternalPath } from '@/lib/validators'
 import { Loader2 } from 'lucide-react'
 
@@ -37,7 +37,10 @@ function CallbackContent() {
 
   useEffect(() => {
     const next = safeNext(searchParams.get('next'))
-    const supabase = createClient()
+    // Establish the session in the portal-appropriate cookie so the staff and
+    // store sessions remain fully independent.
+    const onStaffPath = next.startsWith('/admin') || next.startsWith('/delivery')
+    const supabase = onStaffPath ? createStaffClient() : createClient()
 
     let cancelled = false
     let timeoutId: ReturnType<typeof setTimeout> | null = null
