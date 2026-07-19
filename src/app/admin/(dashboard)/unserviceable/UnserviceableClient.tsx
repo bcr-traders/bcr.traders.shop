@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Download, Check, MessageSquare, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
+import { usePagination } from '@/hooks/usePagination'
+import { PageSizeSelect, TablePagination } from '@/components/admin/TablePagination'
 import type { UnserviceableAttempt } from './page'
 
 interface Props { initialRows: UnserviceableAttempt[] }
@@ -24,6 +26,9 @@ export default function UnserviceableClient({ initialRows }: Props) {
     if (filterContacted === 'no' && r.is_contacted) return false
     return true
   })
+
+  const { paged, setPage, pageSize, setPageSize, totalPages, currentPage, pageStart } =
+    usePagination(filtered, filterContacted)
 
   const markContacted = async (row: UnserviceableAttempt) => {
     const res = await fetch(`/api/unserviceable/${row.id}`, {
@@ -81,7 +86,7 @@ export default function UnserviceableClient({ initialRows }: Props) {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 border-b-2 border-table-border overflow-x-auto scrollbar-hide pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b-2 border-table-border pb-2">
         {(['all', 'no', 'yes'] as const).map((v) => (
           <button
             key={v}
@@ -91,6 +96,9 @@ export default function UnserviceableClient({ initialRows }: Props) {
             {v === 'all' ? 'All' : v === 'no' ? 'Pending' : 'Contacted'}
           </button>
         ))}
+        <div className="ml-auto">
+          <PageSizeSelect pageSize={pageSize} onChange={setPageSize} />
+        </div>
       </div>
 
       {/* Table */}
@@ -107,8 +115,8 @@ export default function UnserviceableClient({ initialRows }: Props) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={9} className="px-5 py-24 text-center font-black text-sm text-on-surface-variant uppercase tracking-widest">No records found.</td></tr>
-              ) : filtered.map((row, idx) => (
-                <tr key={row.id} className={cn("hover:bg-surface-container-low transition-colors group", idx !== filtered.length - 1 ? 'border-b-2 border-table-border' : '')}>
+              ) : paged.map((row, idx) => (
+                <tr key={row.id} className={cn("hover:bg-surface-container-low transition-colors group", idx !== paged.length - 1 ? 'border-b-2 border-table-border' : '')}>
                   <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{formatDate(row.created_at)}</td>
                   <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface">{row.customer_name ?? '—'}</td>
                   <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{row.phone ?? '—'}</td>
@@ -164,6 +172,7 @@ export default function UnserviceableClient({ initialRows }: Props) {
             </tbody>
           </table>
         </div>
+        <TablePagination total={filtered.length} currentPage={currentPage} totalPages={totalPages} pageStart={pageStart} pageSize={pageSize} onPage={setPage} />
       </div>
     </div>
   )

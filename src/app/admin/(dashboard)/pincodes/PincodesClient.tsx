@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { usePagination } from '@/hooks/usePagination'
+import { PageSizeSelect, TablePagination } from '@/components/admin/TablePagination'
 import { Loader2, Search, Download, Plus, Trash2, List, Map, Upload, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
@@ -27,6 +29,10 @@ export default function PincodesClient({ initialRows }: Props) {
     r.city.toLowerCase().includes(search.toLowerCase()) ||
     (r.area_name ?? '').toLowerCase().includes(search.toLowerCase()),
   )
+
+  // Pagination for the flat list view (the map view stays grouped by city).
+  const { paged, setPage, pageSize, setPageSize, totalPages, currentPage, pageStart } =
+    usePagination(filtered, search)
 
   // Group filtered rows by city for map view
   const byCity = filtered.reduce<Record<string, PincodeRow[]>>((acc, r) => {
@@ -211,15 +217,18 @@ export default function PincodesClient({ initialRows }: Props) {
         </form>
       )}
 
-      {/* Search */}
-      <div className="relative max-w-lg">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2.5} />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search pincode, city, or area…"
-          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-table-border bg-surface font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40"
-        />
+      {/* Search + rows per page */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[240px] max-w-lg">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2.5} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search pincode, city, or area…"
+            className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-table-border bg-surface font-bold text-sm text-primary focus:outline-none focus:border-primary transition-colors placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40"
+          />
+        </div>
+        {view === 'list' && <PageSizeSelect pageSize={pageSize} onChange={setPageSize} />}
       </div>
 
       {/* List view */}
@@ -238,13 +247,14 @@ export default function PincodesClient({ initialRows }: Props) {
                 {filtered.length === 0 ? (
                   <tr><td colSpan={7} className="px-5 py-24 text-center font-black text-sm text-on-surface-variant uppercase tracking-widest">No pincodes found.</td></tr>
                 ) : (
-                  filtered.map((row, idx) => (
-                    <PincodeTableRow key={row.id} row={row} isLast={idx === filtered.length - 1} onToggle={handleToggle} onDelete={handleDelete} />
+                  paged.map((row, idx) => (
+                    <PincodeTableRow key={row.id} row={row} isLast={idx === paged.length - 1} onToggle={handleToggle} onDelete={handleDelete} />
                   ))
                 )}
               </tbody>
             </table>
           </div>
+          <TablePagination total={filtered.length} currentPage={currentPage} totalPages={totalPages} pageStart={pageStart} pageSize={pageSize} onPage={setPage} />
         </div>
       )}
 

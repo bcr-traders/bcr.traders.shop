@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { usePagination } from '@/hooks/usePagination'
+import { PageSizeSelect, TablePagination } from '@/components/admin/TablePagination'
 import { X, Download, ShoppingCart, Eye, Check, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AbandonedCart } from './page'
@@ -25,6 +27,9 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
     if (showRecovered === 'no' && c.is_recovered) return false
     return true
   })
+
+  const { paged, setPage, pageSize, setPageSize, totalPages, currentPage, pageStart } =
+    usePagination(filtered, `${minValue}|${showRecovered}`)
 
   const exportCSV = () => {
     const header = 'Customer,Phone,Items,Cart Value,Last Activity,Recovered'
@@ -80,6 +85,9 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
             />
           </div>
         </div>
+        <div className="sm:ml-auto">
+          <PageSizeSelect pageSize={pageSize} onChange={setPageSize} />
+        </div>
       </div>
 
       {/* Table */}
@@ -101,8 +109,8 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
                      <p className="font-black text-sm text-on-surface-variant uppercase tracking-widest">No carts found.</p>
                   </td>
                 </tr>
-              ) : filtered.map((cart, idx) => (
-                <tr key={cart.id} className={cn("hover:bg-surface-container-low transition-colors group", idx !== filtered.length - 1 ? 'border-b-2 border-table-border' : '')}>
+              ) : paged.map((cart, idx) => (
+                <tr key={cart.id} className={cn("hover:bg-surface-container-low transition-colors group", idx !== paged.length - 1 ? 'border-b-2 border-table-border' : '')}>
                   <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-primary">{cart.customer_name ?? '—'}</td>
                   <td className="px-5 py-4 border-r border-table-border font-bold text-sm text-on-surface-variant">{cart.phone ?? '—'}</td>
                   <td className="px-5 py-4 border-r border-table-border font-black text-[10px] uppercase tracking-widest text-on-surface-variant">
@@ -131,6 +139,7 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
             </tbody>
           </table>
         </div>
+        <TablePagination total={filtered.length} currentPage={currentPage} totalPages={totalPages} pageStart={pageStart} pageSize={pageSize} onPage={setPage} />
       </div>
 
       {/* Modal */}
