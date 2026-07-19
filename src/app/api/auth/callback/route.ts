@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { isSafeInternalPath } from '@/lib/validators'
+import { STAFF_COOKIE_NAME, isStaffPath } from '@/lib/supabase/cookie-scope'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
 /**
@@ -24,6 +25,10 @@ export async function GET(request: Request) {
 
   const cookieStore = await cookies()
 
+  // A staff login (next → /admin or /delivery) lands the session in the SEPARATE
+  // staff cookie, so it's independent of the store (customer) session.
+  const staff = isStaffPath(next)
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,6 +45,7 @@ export async function GET(request: Request) {
           }
         },
       },
+      ...(staff ? { cookieOptions: { name: STAFF_COOKIE_NAME } } : {}),
     },
   )
 

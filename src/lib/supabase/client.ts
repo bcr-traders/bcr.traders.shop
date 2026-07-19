@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { STAFF_COOKIE_NAME } from './cookie-scope'
 
 /**
  * Singleton browser client with client-side token rotation DISABLED.
@@ -31,4 +32,27 @@ export function createClient(): SupabaseClient {
     },
   )
   return browserClient
+}
+
+/**
+ * Browser client bound to the SEPARATE staff (admin/delivery) cookie. Used so an
+ * admin logout signs out only the staff session, leaving the store session
+ * intact (and vice versa).
+ */
+let staffBrowserClient: SupabaseClient | undefined
+
+export function createStaffClient(): SupabaseClient {
+  if (staffBrowserClient) return staffBrowserClient
+  staffBrowserClient = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: true,
+      },
+      cookieOptions: { name: STAFF_COOKIE_NAME },
+    },
+  )
+  return staffBrowserClient
 }

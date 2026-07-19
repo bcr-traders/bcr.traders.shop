@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
-import { createClient } from '@/lib/supabase/client'
+import { createStaffClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import type { AdminBadges } from './AdminShell'
@@ -42,7 +42,9 @@ export default function AdminSidebar({ role, onClose, className, badges, name }:
   const displayName = name || (user?.user_metadata as { name?: string })?.name || 'Admin'
 
   const signOut = async () => {
-    await createClient().auth.signOut()
+    // Sign out only the STAFF session (its own cookie), scope 'local' so the
+    // customer/store session is untouched.
+    await createStaffClient().auth.signOut({ scope: 'local' })
   }
 
   const nav: NavGroup[] = [
@@ -94,9 +96,7 @@ export default function AdminSidebar({ role, onClose, className, badges, name }:
     href === '/admin/dashboard' ? pathname === href : pathname.startsWith(href)
 
   const handleLogout = async () => {
-    // The store and the admin panel share one login, so signing out ends both.
-    // Confirm first so it can't be an accidental full logout.
-    if (!window.confirm('Log out?\n\nThe store and the admin panel share one login, so this signs you out of both.')) return
+    // Admin and store are now separate sessions — this ends only the admin one.
     await signOut()
     router.push('/admin/login')
   }

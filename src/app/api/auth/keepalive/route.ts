@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, hasStaffCookie } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 /**
@@ -12,9 +12,20 @@ import { NextResponse } from 'next/server'
  */
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    return NextResponse.json({ ok: !!user }, { headers: { 'Cache-Control': 'no-store' } })
+    // Refresh BOTH sessions that may be present — the store (customer) cookie and
+    // the separate staff (admin/delivery) cookie — so an idle tab on either
+    // portal keeps its own session alive independently.
+    const store = await createClient()
+    const { data: { user } } = await store.auth.getUser()
+
+    let staffUser = null
+    if (await hasStaffCookie()) {
+      const staff = await createClient({ staff: true })
+      const res = await staff.auth.getUser()
+      staffUser = res.data.user
+    }
+
+    return NextResponse.json({ ok: !!user || !!staffUser }, { headers: { 'Cache-Control': 'no-store' } })
   } catch {
     return NextResponse.json({ ok: false }, { status: 200, headers: { 'Cache-Control': 'no-store' } })
   }
