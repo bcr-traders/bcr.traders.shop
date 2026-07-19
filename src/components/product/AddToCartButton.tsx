@@ -38,21 +38,23 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
   const [levelIdx, setLevelIdx] = useState(0)
   const opt = buyOptions[Math.min(levelIdx, buyOptions.length - 1)]
 
-  // Box/hanger products get a Blinkit-style quick-pick sheet (1 / 10 / custom)
-  // on ADD, so the customer can bulk-order without opening the product page.
-  // For plain unit products, ADD stays an instant add-one.
-  const soldByBox = hasLevels || (product.pack_type === 'Box' && !!product.units_per_pack)
+  // Every product gets a Blinkit-style quick-pick sheet (1 / 10 / custom) on the
+  // first ADD, so the customer chooses how many units to add instead of always
+  // starting at one. After it's in the cart the button becomes a +/- stepper.
   // Pieces contained in ONE of the selected level. Only fall back to
-  // units_per_pack for single-level products, where it legacy-means
-  // pieces-per-box. Once a product HAS levels, units_per_pack counts lower units
-  // (e.g. 20 hangers per box), not pieces — printing it against the lower unit's
-  // label claims "1 Hanger = 1,200 pieces". Better to show no count than a wrong
-  // one, so this is 0 (hidden) when the admin hasn't filled the pieces in.
-  const unitsPerBox = opt.pieces ?? (hasLevels ? 0 : product.units_per_pack) ?? 0
+  // units_per_pack for single-level products that name a pack_type, where it
+  // legacy-means pieces-per-box. Once a product HAS levels, units_per_pack counts
+  // lower units (e.g. 20 hangers per box), not pieces — printing it against the
+  // lower unit's label claims "1 Hanger = 1,200 pieces". Better to show no count
+  // than a wrong one, so this is 0 (hidden) when there's nothing meaningful.
+  const unitsPerBox = opt.pieces ?? (hasLevels ? 0 : (product.pack_type ? product.units_per_pack : 0)) ?? 0
   const pricePerBox = opt.price
-  /** "Box" / "Hanger" / "Pack" — whatever level is selected. */
-  const unitWord = hasLevels ? opt.label : tField('box', 'ବାକ୍ସ')
-  const unitWordPlural = hasLevels ? `${opt.label}s` : tField('boxes', 'ବାକ୍ସ')
+  // "Box" / "Hanger" / "Pack" for multi-level products; for a single-level
+  // product use its own pack_type ("Bottle", "Bag", "Piece"…), falling back to a
+  // plain "unit" when it names none — so the sheet reads correctly for every
+  // product, not just boxes.
+  const unitWord = hasLevels ? opt.label : (product.pack_type || tField('unit', 'ୟୁନିଟ୍'))
+  const unitWordPlural = hasLevels ? `${opt.label}s` : (product.pack_type ? `${product.pack_type}s` : tField('units', 'ୟୁନିଟ୍'))
   const maxQty = product.stock_qty > 0 ? product.stock_qty : 9999
   const clampNum = (n: number) => Math.max(1, Math.min(Math.floor(n), maxQty))
 
@@ -118,7 +120,8 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
     e.stopPropagation()
     if (disabled) return
     if (!requireAuth()) return
-    if (soldByBox && !cartItem) {
+    // Ask "how many?" before the first add for every product.
+    if (!cartItem) {
       setQtyStr('1')
       setShowSheet(true)
       return
