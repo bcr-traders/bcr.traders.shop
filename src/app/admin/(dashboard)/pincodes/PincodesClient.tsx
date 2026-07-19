@@ -2,7 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { usePagination } from '@/hooks/usePagination'
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback'
 import { PageSizeSelect, TablePagination } from '@/components/admin/TablePagination'
+
+type AreaOption = { area: string; pincode: string; city: string | null; state: string }
 import { Loader2, Search, Download, Plus, Trash2, List, Map, Upload, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
@@ -19,24 +22,51 @@ export default function PincodesClient({ initialRows }: Props) {
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({ pincode: '', area_name: '', city: '', state: '', delivery_days: '2' })
   const [detecting, setDetecting] = useState(false)
+  const [pinNotice, setPinNotice] = useState('')
+  const [areaOptions, setAreaOptions] = useState<AreaOption[]>([])
 
-  // Auto-fill area/city/state from the pincode (India Post lookup) so the admin
-  // doesn't type them by hand. Fires once a full 6-digit pincode is entered.
-  async function detectLocation(pincode: string) {
-    setDetecting(true)
+  // Pincode → area / city / state, scoped to Ganjam district. If the pincode is
+  // outside Ganjam we say so instead of filling it.
+  async function detectByPincode(pincode: string) {
+    setDetecting(true); setPinNotice('')
     try {
       const res = await fetch(`/api/pincodes/lookup?pincode=${pincode}`)
-      const d = res.ok ? (await res.json()) as { found?: boolean; area?: string | null; city?: string | null; state?: string | null } : null
-      if (d?.found) {
+      const d = res.ok ? (await res.json()) as { found?: boolean; inArea?: boolean; area?: string | null; city?: string | null; state?: string | null } : null
+      if (d?.found && d.inArea) {
         setForm((f) => f.pincode === pincode ? {
           ...f,
           area_name: d.area ?? f.area_name,
           city: d.city ?? f.city,
           state: d.state ?? f.state,
         } : f)
+      } else if (d?.found && d.inArea === false) {
+        setPinNotice('This pincode is not in Ganjam district.')
       }
     } catch { /* leave the fields for manual entry */ }
     finally { setDetecting(false) }
+  }
+
+  // Area name → pincode. One Ganjam match auto-fills the pincode; several show a
+  // list to pick from. Debounced so we don't look up on every keystroke.
+  const detectByArea = useDebouncedCallback(async (area: string) => {
+    if (area.trim().length < 3) { setAreaOptions([]); return }
+    try {
+      const res = await fetch(`/api/pincodes/lookup?area=${encodeURIComponent(area.trim())}`)
+      const d = res.ok ? (await res.json()) as { options?: AreaOption[] } : null
+      const opts = d?.options ?? []
+      if (opts.length === 1) {
+        const o = opts[0]
+        setForm((f) => ({ ...f, pincode: o.pincode, city: o.city ?? f.city, state: o.state || f.state }))
+        setAreaOptions([]); setPinNotice('')
+      } else {
+        setAreaOptions(opts)
+      }
+    } catch { setAreaOptions([]) }
+  }, 500)
+
+  function pickArea(o: AreaOption) {
+    setForm((f) => ({ ...f, area_name: o.area, pincode: o.pincode, city: o.city ?? f.city, state: o.state || f.state }))
+    setAreaOptions([]); setPinNotice('')
   }
   const [error, setError] = useState('')
   const [view, setView] = useState<'list' | 'map'>('list')
@@ -216,17 +246,43 @@ export default function PincodesClient({ initialRows }: Props) {
                 onChange={(e) => {
                   const pin = e.target.value.replace(/\D/g, '').slice(0, 6)
                   setForm((f) => ({ ...f, pincode: pin }))
-                  if (pin.length === 6) void detectLocation(pin)
+                  setPinNotice('')
+                  if (pin.length === 6) void detectByPincode(pin)
                 }}
-                placeholder="751001"
+                placeholder="760001"
                 inputMode="numeric"
                 maxLength={6}
                 className={inputCls}
               />
+              {pinNotice && <p className="text-[10px] font-bold text-error">{pinNotice}</p>}
             </div>
-            <div className="space-y-2">
-              <label className="font-black text-[10px] text-primary uppercase tracking-widest">Area Name</label>
-              <input value={form.area_name} onChange={(e) => setForm((f) => ({ ...f, area_name: e.target.value }))} placeholder="Bhubaneswar Central" className={inputCls} />
+            <div className="space-y-2 relative">
+              <label className="font-black text-[10px] text-primary uppercase tracking-widest">
+                Area Name
+                <span className="ml-2 font-bold text-on-surface-variant/50 normal-case tracking-normal">type to find its pincode</span>
+              </label>
+              <input
+                value={form.area_name}
+                onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, area_name: v })); detectByArea(v) }}
+                placeholder="Berhampur"
+                className={inputCls}
+                autoComplete="off"
+              />
+              {areaOptions.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border-2 border-table-border bg-surface-card shadow-lg">
+                  {areaOptions.map((o) => (
+                    <button
+                      key={`${o.area}-${o.pincode}`}
+                      type="button"
+                      onClick={() => pickArea(o)}
+                      className="w-full text-left px-3 py-2.5 flex items-center justify-between gap-2 hover:bg-surface-container-low border-b border-table-border last:border-0 transition-colors"
+                    >
+                      <span className="font-bold text-sm text-primary truncate">{o.area}</span>
+                      <span className="font-mono font-black text-xs text-on-surface-variant tracking-widest flex-shrink-0">{o.pincode}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <label className="font-black text-[10px] text-primary uppercase tracking-widest">City <span className="text-error">*</span></label>
