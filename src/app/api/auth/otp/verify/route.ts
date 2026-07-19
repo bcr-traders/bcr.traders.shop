@@ -127,8 +127,12 @@ export async function POST(request: Request) {
         })
 
         if (createError) {
-          const orphan = /already.*regist|already.*exist|duplicate/i.test(createError.message || '')
-          const recoveredId = orphan ? await findAuthUserIdByPhone(supabaseAdmin, submittedDigits) : null
+          // createUser fails when an auth user already owns this phone (e.g. the
+          // person also has the other kind of account). Recover it by phone
+          // regardless of the exact error wording — the message varies by
+          // Supabase version, and the old regex gate missed some and broke login
+          // for a number registered as both admin and customer.
+          const recoveredId = await findAuthUserIdByPhone(supabaseAdmin, submittedDigits)
           if (!recoveredId) throw createError
           userId = recoveredId
           const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
@@ -171,7 +175,16 @@ export async function POST(request: Request) {
       }
 
       userId = profile.id
-      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
+      let { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
+      if (!authData?.user) {
+        // profiles.id is out of sync with auth — recover the real auth user by
+        // phone so the login session below is created for a user that exists.
+        const recoveredId = await findAuthUserIdByPhone(supabaseAdmin, submittedDigits)
+        if (recoveredId) {
+          userId = recoveredId
+          ;({ data: authData } = await supabaseAdmin.auth.admin.getUserById(userId))
+        }
+      }
       userEmail = authData?.user?.email || `${submittedDigits}@bcrtraders.internal`
       appMetadata = { role: 'customer', supabase_profile_id: userId }
     } else {
@@ -202,8 +215,12 @@ export async function POST(request: Request) {
         })
 
         if (createError) {
-          const orphan = /already.*regist|already.*exist|duplicate/i.test(createError.message || '')
-          const recoveredId = orphan ? await findAuthUserIdByPhone(supabaseAdmin, submittedDigits) : null
+          // createUser fails when an auth user already owns this phone (e.g. the
+          // person also has the other kind of account). Recover it by phone
+          // regardless of the exact error wording — the message varies by
+          // Supabase version, and the old regex gate missed some and broke login
+          // for a number registered as both admin and customer.
+          const recoveredId = await findAuthUserIdByPhone(supabaseAdmin, submittedDigits)
           if (!recoveredId) throw createError
           userId = recoveredId
           const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)

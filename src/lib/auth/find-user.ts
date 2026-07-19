@@ -9,6 +9,9 @@ export async function findAuthUserIdByPhone(
   digits: string,
 ): Promise<string | null> {
   const targets = new Set([digits, `91${digits}`])
+  // Staff auth users use this synthetic email; match on it too, so recovery
+  // still works if the phone field is stored in an unexpected format.
+  const internalEmail = `${digits}@bcrtraders.internal`.toLowerCase()
   const perPage = 1000
 
   for (let page = 1; page <= 10; page++) {
@@ -18,6 +21,7 @@ export async function findAuthUserIdByPhone(
     for (const u of data.users) {
       const stored = (u.phone || '').replace(/\D/g, '')
       if (stored && targets.has(stored)) return u.id
+      if ((u.email || '').toLowerCase() === internalEmail) return u.id
     }
 
     if (data.users.length < perPage) break
