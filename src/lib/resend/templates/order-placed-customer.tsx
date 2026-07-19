@@ -36,7 +36,7 @@ export default function OrderPlacedCustomer({
               Thank you, <strong>{address.name}</strong>! Your order has been received.
             </Text>
             <Text style={statusNote}>
-              ⏳ Waiting for admin confirmation. You'll get another email once confirmed.
+              ⏳ Waiting for BCR Traders confirmation. You'll get another email once confirmed.
             </Text>
           </Section>
 
