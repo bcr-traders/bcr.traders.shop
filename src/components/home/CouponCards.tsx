@@ -53,8 +53,10 @@ export default function CouponCards({ coupons }: Props) {
                 {/* Left — discount info */}
                 <div className="flex-1 p-4 flex flex-col justify-center bg-gradient-to-br from-primary to-primary-container text-white">
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <Tag size={10} className="text-primary-fixed" />
-                    <span className="text-[8px] font-black text-primary-fixed uppercase tracking-widest">
+                    {/* Cream, not primary-fixed: that token is #2E2011, i.e. the
+                        same brown as this panel — 1.16:1, effectively invisible. */}
+                    <Tag size={10} className="text-on-primary-fixed-variant" />
+                    <span className="text-[8px] font-black text-on-primary-fixed-variant uppercase tracking-widest">
                       Coupon
                     </span>
                   </div>
@@ -78,7 +80,9 @@ export default function CouponCards({ coupons }: Props) {
                 {/* Right — code + copy */}
                 <div className="w-26 flex flex-col items-center justify-center gap-1.5 py-4 pr-3.5 pl-2 bg-gradient-to-br from-primary-fixed to-primary-fixed-dim/90 text-on-primary-fixed-variant">
                   <span className="text-[9px] font-black tracking-wider text-secondary uppercase">Code</span>
-                  <span className="text-xs font-black text-primary tracking-widest text-center break-all leading-tight">
+                  {/* The code sat at text-primary (#1C130A) on a #2E2011 panel —
+                      1.16:1. Cream takes it to 15:1. */}
+                  <span className="text-xs font-black text-on-primary-fixed tracking-widest text-center break-all leading-tight">
                     {coupon.code}
                   </span>
                   <button

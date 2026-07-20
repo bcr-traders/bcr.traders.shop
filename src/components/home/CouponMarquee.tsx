@@ -31,10 +31,13 @@ export default function CouponMarquee({ coupons }: Props) {
 
           return (
             <span key={`${c.id}-${i}`} className="inline-flex items-center gap-2 px-6">
-              <Tag size={12} className="text-primary-fixed flex-shrink-0 animate-pulse" />
+              {/* Was text-primary-fixed (#2E2011) on this brown bar — 1.16:1,
+                  invisible. Gold keeps it standing out from the cream text
+                  around it (6.5:1) instead of blending into it. */}
+              <Tag size={12} className="text-secondary flex-shrink-0 animate-pulse" />
               <span className="tracking-wider uppercase">{c.code}</span>
               <span className="text-on-primary/35">—</span>
-              <span className="text-primary-fixed">{label}</span>
+              <span className="text-secondary">{label}</span>
               {desc && (
                 <>
                   <span className="text-on-primary/25">·</span>
