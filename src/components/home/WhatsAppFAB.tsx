@@ -1,20 +1,35 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useOverlayStore } from '@/store/overlayStore'
+
+/**
+ * Routes that must NOT show the button. Cart and checkout are the paying
+ * journey — a floating "order on WhatsApp" there competes with the actual
+ * checkout and invites the customer to abandon a cart they've already filled.
+ *
+ * /checkout already sits outside the (shop) group that renders this, so it
+ * would not receive it anyway; it's listed so the rule stays true if the route
+ * ever moves.
+ */
+const HIDDEN_PREFIXES = ['/cart', '/checkout']
 
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919040011053'
 const WA_MESSAGE = encodeURIComponent('Hi BCR TRADERS, I want to place a bulk order.')
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGE}`
 
 export default function WhatsAppFAB() {
+  const pathname = usePathname()
   // Ride above the floating "View Cart" bar when the cart has items.
   const hasCart = useCartStore((s) => s.items.length > 0)
   // Hide while a full-screen overlay (e.g. the box quick-add sheet) is open.
   const overlayOpen = useOverlayStore((s) => s.count > 0)
-  if (overlayOpen) return null
+
+  const hidden = HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (hidden || overlayOpen) return null
 
   return (
     <motion.div

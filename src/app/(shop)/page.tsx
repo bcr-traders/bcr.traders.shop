@@ -11,7 +11,6 @@ import OfferBanner from '@/components/home/OfferBanner'
 import CouponCards from '@/components/home/CouponCards'
 import CouponMarquee from '@/components/home/CouponMarquee'
 import AnimatedStats from '@/components/home/AnimatedStats'
-import WhatsAppFAB from '@/components/home/WhatsAppFAB'
 import CategoryStrip from '@/components/category/CategoryStrip'
 import { safeJsonLd } from '@/lib/utils'
 import { RETURN_POLICY_JSONLD } from '@/lib/seo/return-policy'
@@ -236,7 +235,6 @@ export default async function HomePage() {
       </div>
 
       {/* Floating WhatsApp order button */}
-      <WhatsAppFAB />
     </>
   )
 }

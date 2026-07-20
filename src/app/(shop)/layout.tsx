@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer'
 import BottomNav from '@/components/layout/BottomNav'
 import SmoothScroll from '@/components/layout/SmoothScroll'
 import CartFloatingBar from '@/components/cart/CartFloatingBar'
+import WhatsAppFAB from '@/components/home/WhatsAppFAB'
 import LoginPromptModal from '@/components/auth/LoginPromptModal'
 import PendingReviewsGate from '@/components/product/PendingReviewsGate'
 import type { SiteAnnouncement } from '@/types/database.types'
@@ -72,6 +73,8 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
       <Footer />
       <BottomNav />
       <CartFloatingBar />
+      {/* Site-wide. It hides itself on /cart and /checkout — see the component. */}
+      <WhatsAppFAB />
       <LoginPromptModal />
       {/* Asks for a rating on every delivered-but-unreviewed product. Mounted
           on the storefront only — checkout is outside this group, so it can
