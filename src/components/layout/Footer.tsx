@@ -123,14 +123,11 @@ export default async function Footer() {
         {/* Developer credit — the last thing on the page. Styled from the same
             tokens as the rest of the site (cream card, table-border outline,
             primary on hover) rather than a fixed dark pill, so it belongs to
-            this cream band instead of sitting on top of it. */}
-        <a
-          href="https://jyotiranjansahoo.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Crafted by Jyotiranjan — open portfolio in a new tab"
-          className="group mt-6 inline-flex items-center gap-2 rounded-full border-2 border-table-border bg-surface-card px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70 transition-all duration-200 hover:border-primary/40 hover:text-primary hover:shadow-sm active:scale-95"
-        >
+            this cream band instead of sitting on top of it.
+
+            The pill is a container, not one big link: each name carries its own
+            destination, so a click never lands on the wrong person's site. */}
+        <div className="group mt-6 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border-2 border-table-border bg-surface-card px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70 transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
           <span>Crafted with</span>
           <Heart
             size={12}
@@ -138,8 +135,18 @@ export default async function Footer() {
             className="fill-error text-error transition-transform duration-200 group-hover:scale-125"
           />
           <span>by</span>
-          <span className="text-primary tracking-[0.12em] normal-case text-[11px]">Jyotiranjan</span>
-        </a>
+          <a
+            href="https://jyotiranjansahoo.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Jyotiranjan — open portfolio in a new tab"
+            className="text-primary tracking-[0.12em] normal-case text-[11px] underline-offset-4 hover:underline transition-colors"
+          >
+            Jyotiranjan
+          </a>
+          <span className="text-on-surface-variant/50">&amp;</span>
+          <span className="text-primary tracking-[0.12em] normal-case text-[11px]">Nani Reddy</span>
+        </div>
       </div>
     </footer>
   )
