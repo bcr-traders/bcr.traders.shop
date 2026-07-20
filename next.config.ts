@@ -37,9 +37,17 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
-        // Cache public images and SVGs
+        // Cache public images and SVGs.
+        //
+        // These are brand assets that effectively never change in place, so a
+        // 24h TTL bought nothing and cost every repeat visit a revalidation.
+        //
+        // TRADE-OFF: unlike /_next/static these filenames are NOT content-hashed,
+        // so `immutable` means a returning visitor keeps the old bytes for up to
+        // a year. To change one of these images, ship it under a NEW filename
+        // (as jagannath-watermark.png -> .webp did) rather than overwriting it.
         source: '/images/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' }],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         // Cache merchant feed (6 hours, same as revalidate)

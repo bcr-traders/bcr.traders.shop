@@ -167,7 +167,9 @@ export default function HeaderLocation({ className = '' }: { className?: string 
         <MapPin size={20} strokeWidth={2.5} className="text-primary flex-shrink-0" />
         <span className="flex flex-col leading-tight max-w-[220px]">
           <span className="text-sm font-black text-primary truncate">{titleLine}</span>
-          <span className="text-xs font-medium text-on-surface-variant/70 truncate">{subLine}</span>
+          {/* /80 not /70: over the white header this is 4.94:1 vs 3.85:1, which
+              failed WCAG AA. Same colour token, just less transparent. */}
+          <span className="text-xs font-medium text-on-surface-variant/80 truncate">{subLine}</span>
         </span>
         <ChevronDown
           size={16}

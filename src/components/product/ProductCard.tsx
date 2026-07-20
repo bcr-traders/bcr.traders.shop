@@ -75,9 +75,10 @@ export default function ProductCard({ product, className }: ProductCardProps) {
 
         {/* ── Info ── */}
         <div className="px-3.5 pt-3 pb-1.5 flex flex-col gap-0.5">
-          {/* Brand — small muted label above the name */}
+          {/* Brand — small muted label above the name.
+              /80 not /60: 4.94:1 vs 3.05:1 on the white card (WCAG AA). */}
           {product.brand && (
-            <p className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-[0.12em] truncate">
+            <p className="text-[10px] font-bold text-on-surface-variant/80 uppercase tracking-[0.12em] truncate">
               {product.brand}
             </p>
           )}

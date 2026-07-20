@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { HOMEPAGE_KEYWORDS } from '@/lib/seo/generator'
 import { getHomepageData } from '@/lib/data/homepage'
 import HeroBanner from '@/components/home/HeroBanner'
@@ -160,11 +161,20 @@ export default async function HomePage() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 flex items-start justify-center overflow-hidden"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/jagannath-watermark.png"
+        {/* Same 1024x1024 artwork, re-encoded PNG -> WebP (1421 KB -> 153 KB) at
+            identical resolution, so it renders pixel-for-pixel as before. `sizes`
+            matches the CSS cap below so the browser fetches a variant near the
+            453-620px it actually displays instead of the full-size asset.
+            `loading="eager"` keeps the plain <img>'s current timing — next/image
+            would otherwise lazy-load it and make the watermark fade in late. */}
+        <Image
+          src="/images/jagannath-watermark.webp"
           alt=""
-          className="mt-24 w-[min(88vw,620px)] max-w-none opacity-[0.12] select-none"
+          width={1024}
+          height={1024}
+          loading="eager"
+          sizes="(max-width: 704px) 88vw, 620px"
+          className="mt-24 h-auto w-[min(88vw,620px)] max-w-none opacity-[0.12] select-none"
         />
       </div>
 

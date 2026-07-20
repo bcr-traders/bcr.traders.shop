@@ -31,7 +31,7 @@ export default function AnimatedSearchPlaceholder({ terms, interval = 2000 }: Pr
 
   return (
     <span
-      className="absolute left-11 top-1/2 -translate-y-1/2 flex items-center text-sm font-medium text-on-surface-variant/50 pointer-events-none select-none"
+      className="absolute left-11 top-1/2 -translate-y-1/2 flex items-center text-sm font-medium text-on-surface-variant/80 pointer-events-none select-none"
       aria-hidden="true"
     >
       <span className="mr-1">Search</span>
@@ -43,7 +43,7 @@ export default function AnimatedSearchPlaceholder({ terms, interval = 2000 }: Pr
             animate={{ y: '0%', opacity: 1 }}
             exit={{ y: '-100%', opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="block leading-5 whitespace-nowrap text-on-surface-variant/70"
+            className="block leading-5 whitespace-nowrap text-on-surface-variant/80"
           >
             &ldquo;{terms[index]}&rdquo;
           </motion.span>

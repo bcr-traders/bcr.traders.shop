@@ -77,6 +77,7 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder=""
+                aria-label={t('nav.searchPlaceholder')}
                 className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-surface-container-low border border-transparent focus:border-primary/30 focus:bg-white text-sm font-medium text-primary placeholder:text-on-surface-variant/50 outline-none transition-colors"
               />
               {query === '' && <AnimatedSearchPlaceholder terms={terms} />}
@@ -206,12 +207,17 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
           {!isSearchPage && (
             <form onSubmit={handleSearch}>
               <div className="relative w-full">
-                <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none" />
+                {/* /80 not /50: 4.66:1 vs 2.37:1 on the #FAF5E9 search bar. */}
+                <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/80 pointer-events-none" />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder=""
+                  // The visible cue is the animated overlay below, which screen
+                  // readers can't use — so name the field explicitly. Nothing
+                  // visual changes.
+                  aria-label={t('nav.searchPlaceholder')}
                   className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-surface-container-low border border-transparent focus:border-primary/30 focus:bg-white text-sm font-medium text-primary placeholder:text-on-surface-variant/50 outline-none transition-colors"
                 />
                 {query === '' && <AnimatedSearchPlaceholder terms={terms} />}

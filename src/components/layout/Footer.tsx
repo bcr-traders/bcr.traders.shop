@@ -105,7 +105,12 @@ export default async function Footer() {
       {/* Massive Logo — cream section matching the site background */}
       <div className="w-full bg-background text-primary pt-10 pb-32 md:pb-10 flex flex-col items-center justify-center overflow-hidden">
         <Link href="/" className="inline-block group hover:scale-[1.02] transition-transform duration-700">
-          <Logo className="h-40 sm:h-56 md:h-72 lg:h-80 w-auto" />
+          {/* Widths derived from the heights below x the 703:844 aspect, so the
+              browser fetches a variant that matches instead of the full 703px. */}
+          <Logo
+            className="h-40 sm:h-56 md:h-72 lg:h-80 w-auto"
+            sizes="(min-width: 1024px) 267px, (min-width: 768px) 240px, (min-width: 640px) 187px, 133px"
+          />
         </Link>
         <div className="mt-8 flex flex-col md:flex-row items-center gap-4 text-[10px] font-black tracking-[0.2em] text-on-surface-variant/70 uppercase">
           <span>© 2025 BCR Traders</span>

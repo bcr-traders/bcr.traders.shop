@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Star, Loader2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import type { PendingReviewProduct } from '@/app/api/reviews/pending/route'
 
 /**
@@ -31,10 +32,17 @@ export default function PendingReviewsGate() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { isSignedIn, isLoaded } = useSupabaseUser()
 
   useEffect(() => setMounted(true), [])
 
   useEffect(() => {
+    // The endpoint is session-scoped and 401s for a signed-out visitor. Firing
+    // it unconditionally logged a console error on every logged-out page load,
+    // so wait until the session is resolved and only ask when signed in.
+    // Behaviour for a signed-in customer is unchanged.
+    if (!isLoaded || !isSignedIn) return
+
     let cancelled = false
     void (async () => {
       // Don't crash the celebration on a brand-new order — that page owns the
@@ -48,7 +56,7 @@ export default function PendingReviewsGate() {
       } catch { /* storefront must work regardless */ }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [isLoaded, isSignedIn])
 
   const open = queue.length > 0 && idx < queue.length
 
