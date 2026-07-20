@@ -5,7 +5,14 @@ import { usePagination } from '@/hooks/usePagination'
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback'
 import { PageSizeSelect, TablePagination } from '@/components/admin/TablePagination'
 
-type AreaOption = { area: string; pincode: string; city: string | null; state: string }
+type AreaOption = {
+  area: string
+  pincode: string
+  city: string | null
+  state: string
+  /** H.O. / S.O. / B.O. — place names repeat, so this tells them apart. */
+  office_type?: string | null
+}
 import { Loader2, Search, Download, Plus, Trash2, List, Map, Upload, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
@@ -31,15 +38,26 @@ export default function PincodesClient({ initialRows }: Props) {
     setDetecting(true); setPinNotice('')
     try {
       const res = await fetch(`/api/pincodes/lookup?pincode=${pincode}`)
-      const d = res.ok ? (await res.json()) as { found?: boolean; inArea?: boolean; area?: string | null; city?: string | null; state?: string | null } : null
+      const d = res.ok ? (await res.json()) as {
+        found?: boolean; inArea?: boolean; area?: string | null
+        city?: string | null; state?: string | null; options?: AreaOption[]
+      } : null
       if (d?.found && d.inArea) {
+        const opts = d.options ?? []
+        // City/state are the same for every office under one pincode, so fill
+        // those straight away.
         setForm((f) => f.pincode === pincode ? {
           ...f,
-          area_name: d.area ?? f.area_name,
           city: d.city ?? f.city,
           state: d.state ?? f.state,
+          // A pincode here covers up to 19 areas. Only auto-fill the label when
+          // there is exactly one; otherwise let the admin choose below rather
+          // than silently picking the first.
+          area_name: opts.length === 1 ? opts[0].area : (opts.length > 1 ? f.area_name : (d.area ?? f.area_name)),
         } : f)
+        setAreaOptions(opts.length > 1 ? opts : [])
       } else if (d?.found && d.inArea === false) {
+        setAreaOptions([])
         setPinNotice('This pincode is not in Ganjam district.')
       }
     } catch { /* leave the fields for manual entry */ }
@@ -49,7 +67,8 @@ export default function PincodesClient({ initialRows }: Props) {
   // Area name → pincode. One Ganjam match auto-fills the pincode; several show a
   // list to pick from. Debounced so we don't look up on every keystroke.
   const detectByArea = useDebouncedCallback(async (area: string) => {
-    if (area.trim().length < 3) { setAreaOptions([]); return }
+    // 2 is enough now the directory is queried by substring locally.
+    if (area.trim().length < 2) { setAreaOptions([]); return }
     try {
       const res = await fetch(`/api/pincodes/lookup?area=${encodeURIComponent(area.trim())}`)
       const d = res.ok ? (await res.json()) as { options?: AreaOption[] } : null
@@ -277,7 +296,14 @@ export default function PincodesClient({ initialRows }: Props) {
                       onClick={() => pickArea(o)}
                       className="w-full text-left px-3 py-2.5 flex items-center justify-between gap-2 hover:bg-surface-container-low border-b border-table-border last:border-0 transition-colors"
                     >
-                      <span className="font-bold text-sm text-primary truncate">{o.area}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-sm text-primary truncate">{o.area}</span>
+                        {o.office_type && (
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/80 truncate">
+                            {o.office_type}
+                          </span>
+                        )}
+                      </span>
                       <span className="font-mono font-black text-xs text-on-surface-variant tracking-widest flex-shrink-0">{o.pincode}</span>
                     </button>
                   ))}
