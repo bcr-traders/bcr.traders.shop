@@ -4,6 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+import { formatCompactINR } from '@/lib/utils'
 
 export interface DailyPoint    { day: string; orders: number; revenue: number }
 export interface CategoryPoint { category: string; revenue: number }
@@ -21,9 +22,8 @@ const STATUS_COLOR_LIST = Object.values(STATUS_COLORS)
 
 const BAR_COLORS = ['#26170c','#715a3e','#3d2b1f','#bc8d5f','#f0bd8b','#fdddb9','#e0c29f']
 
-function rupee(v: number) {
-  return v >= 1000 ? `₹${(v / 1000).toFixed(1)}k` : `₹${v.toFixed(0)}`
-}
+// Indian numbering (k / L / Cr) — see formatCompactINR.
+const rupee = formatCompactINR
 
 // ── Line chart: daily orders last 30 days ─────────────────────────────────────
 export function DailyOrdersChart({ data }: { data: DailyPoint[] }) {

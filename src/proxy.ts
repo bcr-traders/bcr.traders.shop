@@ -68,14 +68,44 @@ export async function proxy(request: NextRequest) {
       },
     )
 
+  /**
+   * Resolve the user, distinguishing "this session is invalid" from "we could
+   * not reach the auth server".
+   *
+   * getUser() calls Supabase over the network and does NOT throw on an HTTP
+   * error — it returns { user: null, error }. Treating that null the same as a
+   * signed-out visitor meant a single blip (5xx, timeout, rate-limit) bounced a
+   * perfectly valid session to the login page. An admin page fans out into many
+   * parallel requests, each passing through here, so it hit that far more often
+   * than the storefront did.
+   *
+   * Definitive answers (no session in the cookie, or the server rejecting the
+   * token with a 4xx) still return null immediately, so real enforcement is
+   * unchanged — an expired or tampered session is still sent to login.
+   * Only an unverifiable outage is retried.
+   */
   const getUserSafe = async (staff: boolean) => {
-    try {
-      const { data } = await makeClient(staff).auth.getUser()
-      return data.user
-    } catch (err) {
-      if (process.env.AUTH_DEBUG) console.error('[proxy] getUser failed:', err)
-      return null
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data, error } = await makeClient(staff).auth.getUser()
+        if (data.user) return data.user
+
+        // No session stored at all — nothing to retry.
+        if (error?.name === 'AuthSessionMissingError') return null
+
+        const status = error?.status
+        // 4xx = the auth server actively rejected this token. 429 is excluded:
+        // it means "ask again later", not "you are signed out".
+        if (typeof status === 'number' && status >= 400 && status < 500 && status !== 429) return null
+
+        if (process.env.AUTH_DEBUG) {
+          console.error(`[proxy] getUser unverifiable (attempt ${attempt + 1}):`, error?.message ?? 'no user, no error')
+        }
+      } catch (err) {
+        if (process.env.AUTH_DEBUG) console.error('[proxy] getUser threw:', err)
+      }
     }
+    return null
   }
 
   const hasStaffCookie = request.cookies

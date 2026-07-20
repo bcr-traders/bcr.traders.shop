@@ -24,6 +24,28 @@ export function formatCurrency(amount: number, currency = 'INR'): string {
   }).format(amount)
 }
 
+const LAKH = 1_00_000
+const CRORE = 1_00_00_000
+
+/**
+ * Compact rupee label for chart axes and KPI tiles, in the INDIAN numbering
+ * system: thousands as `k`, then lakh (1,00,000 -> `1.0L`) and crore
+ * (1,00,00,000 -> `1.0Cr`). Western `M`/`B` scales never apply.
+ *
+ * One decimal place, matching the `240.0k` style already on the dashboard, so
+ * only the scale changes and not the look. Full (non-abbreviated) numbers
+ * should keep going through formatCurrency / toLocaleString('en-IN'), which
+ * already produce the 2-2-3 Indian grouping (12,50,000).
+ */
+export function formatCompactINR(value: number): string {
+  const sign = value < 0 ? '-' : ''
+  const n = Math.abs(value)
+  if (n >= CRORE) return `${sign}₹${(n / CRORE).toFixed(1)}Cr`
+  if (n >= LAKH) return `${sign}₹${(n / LAKH).toFixed(1)}L`
+  if (n >= 1000) return `${sign}₹${(n / 1000).toFixed(1)}k`
+  return `${sign}₹${n.toFixed(0)}`
+}
+
 export function generateOrderNumber(orderId: string): string {
   return `BCR-${orderId.slice(0, 8).toUpperCase()}`
 }

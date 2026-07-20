@@ -8,7 +8,7 @@ import {
   ResponsiveContainer, Legend,
 } from 'recharts'
 import { Download, BarChart2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatCompactINR } from '@/lib/utils'
 
 // ── Shared types ───────────────────────────────────────────────────────────────
 
@@ -52,11 +52,8 @@ const STATUS_COLORS: Record<string, string> = {
 }
 const BAR_PALETTE = ['#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6']
 
-function rupee(v: number) {
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`
-  if (v >= 1000)   return `₹${(v / 1000).toFixed(1)}k`
-  return `₹${v.toFixed(0)}`
-}
+// Indian numbering (k / L / Cr) — see formatCompactINR.
+const rupee = formatCompactINR
 
 const TOOLTIP_STYLE = {
   background: '#ffffff', border: '2px solid #000000',

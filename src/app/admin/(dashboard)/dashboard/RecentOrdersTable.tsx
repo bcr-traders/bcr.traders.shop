@@ -20,6 +20,8 @@ const STATUS_CHIP: Record<OrderStatus, string> = {
 
 export type RecentOrderRow = {
   id: string
+  /** The invoice number printed on the PDF ("Invoice No.", e.g. BCR/2026-2027/5). */
+  order_number: string | null
   status: OrderStatus
   total: number
   created_at: string
@@ -92,8 +94,11 @@ export default function RecentOrdersTable({ initialOrders }: { initialOrders: Re
                     )}
                   >
                     <td className="py-4 px-5 border-r border-table-border">
+                      {/* The invoice number as printed on the PDF, not a slice of
+                          the internal UUID. Falls back to the old truncated id
+                          only for legacy rows that predate order_number. */}
                       <span className="font-black text-xs text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
-                        #{order.id.slice(-8).toUpperCase()}
+                        {order.order_number ?? `#${order.id.slice(-8).toUpperCase()}`}
                       </span>
                     </td>
                     <td className="py-4 px-5 border-r border-table-border">

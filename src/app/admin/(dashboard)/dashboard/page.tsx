@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { DailyOrdersChart, CategoryRevenueChart, StatusDonutChart } from './DashboardCharts'
 import RecentOrdersTable, { type RecentOrderRow } from './RecentOrdersTable'
 import type { OrderStatus, OrderItem } from '@/types/database.types'
+import { formatCompactINR } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Dashboard | BCR Admin' }
 export const revalidate = 60
@@ -56,7 +57,7 @@ export default async function DashboardPage() {
       .gte('created_at', windowStart.toISOString()),
 
     db.from('orders')
-      .select('id, status, total, created_at, address, items')
+      .select('id, order_number, status, total, created_at, address, items')
       .order('created_at', { ascending: false })
       .limit(10),
 
@@ -160,11 +161,8 @@ export default async function DashboardPage() {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   })
 
-  function formatRevenue(n: number) {
-    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`
-    if (n >= 1000) return `₹${(n / 1000).toFixed(1)}k`
-    return `₹${n.toFixed(0)}`
-  }
+  // Indian numbering (k / L / Cr) — see formatCompactINR.
+  const formatRevenue = formatCompactINR
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6 md:space-y-8">
