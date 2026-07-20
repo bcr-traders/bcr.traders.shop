@@ -96,6 +96,10 @@ export interface Product {
   variants: ProductVariant[]
   created_at: string
   updated_at: string
+  // When the CURRENT price took effect (migration 027). Optional: absent until
+  // that migration runs on the live DB, so JSON-LD omits validFrom rather than
+  // inventing one.
+  price_updated_at?: string | null
 }
 
 export interface Coupon {

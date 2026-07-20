@@ -7,6 +7,7 @@ import {
   getProductReviews,
   getRelatedProducts,
 } from '@/lib/data/product'
+import { getServiceableRegions } from '@/lib/data/shipping'
 import { getProductKeywords } from '@/lib/seo/generator'
 import ProductImageGallery from '@/components/product/ProductImageGallery'
 import ProductBreadcrumb from '@/components/product/ProductBreadcrumb'
@@ -86,13 +87,24 @@ export default async function ProductPage({ params }: PageProps) {
 
   const { product, category } = pageData
 
-  const [faqs, { reviews, stats }, related] = await Promise.all([
+  const [faqs, { reviews, stats }, related, serviceableRegions] = await Promise.all([
     getProductFAQs(product.id),
     getProductReviews(product.id, 10),
     category ? getRelatedProducts(category.id, product.id, 4) : Promise.resolve([]),
+    getServiceableRegions(),
   ])
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
+
+  // Google needs a real person's name on a Review. Drop rows whose stored name
+  // can't serve as one — blank, a generic placeholder, or a bare phone number.
+  const reviewsForJsonLd = reviews.slice(0, 5).filter((r) => {
+    const name = r.reviewer_name?.trim() ?? ''
+    if (!name) return false
+    if (/^(anonymous|guest|user|customer|n\/?a)$/i.test(name)) return false
+    if (/^\+?[\d\s-]{6,}$/.test(name)) return false
+    return true
+  })
 
   // ── JSON-LD ────────────────────────────────────────────────────────────────
 
@@ -109,7 +121,14 @@ export default async function ProductPage({ params }: PageProps) {
       url: `${appUrl}/product/${product.slug}`,
       priceCurrency: 'INR',
       price: product.price.toString(),
-      priceValidUntil: new Date(Date.now() + 7 * 86_400_000).toISOString().split('T')[0],
+      // When this price took effect. Omitted (not defaulted to "now") when the
+      // product predates migration 027, so the date is never invented.
+      // NOTE: `priceValidUntil` is deliberately absent — there is no promo end
+      // date in the schema, and the previous rolling "now + 7 days" value was
+      // recomputed on every request, which misrepresented the price window.
+      ...(product.price_updated_at
+        ? { validFrom: new Date(product.price_updated_at).toISOString() }
+        : {}),
       availability:
         product.stock_qty > 0
           ? 'https://schema.org/InStock'
@@ -118,6 +137,13 @@ export default async function ProductPage({ params }: PageProps) {
       itemCondition: 'https://schema.org/NewCondition',
       shippingDetails: {
         '@type': 'OfferShippingDetails',
+        // Delivery is gated on the serviceable_pincodes allow-list, so this
+        // names the states actually served rather than claiming all of India.
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'IN',
+          ...(serviceableRegions.length > 0 ? { addressRegion: serviceableRegions } : {}),
+        },
         shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: 'INR' },
         deliveryTime: {
           '@type': 'ShippingDeliveryTime',
@@ -126,21 +152,29 @@ export default async function ProductPage({ params }: PageProps) {
         },
       },
     },
+    // rating is CHECK (1..5) in the schema, so the 1-5 scale below is accurate.
+    // Values are emitted as numbers, not strings, per Google's Product spec.
     ...(stats.count > 0 && {
       aggregateRating: {
         '@type': 'AggregateRating',
-        ratingValue: stats.avg.toString(),
-        reviewCount: stats.count.toString(),
-        bestRating: '5',
-        worstRating: '1',
+        ratingValue: stats.avg,
+        reviewCount: stats.count,
+        bestRating: 5,
+        worstRating: 1,
       },
-      review: reviews.slice(0, 5).map((r) => ({
-        '@type': 'Review',
-        author: { '@type': 'Person', name: r.reviewer_name },
-        datePublished: r.created_at.split('T')[0],
-        reviewRating: { '@type': 'Rating', ratingValue: r.rating.toString() },
-        reviewBody: r.body ?? undefined,
-      })),
+      // Most-recent approved reviews (getProductReviews filters is_approved and
+      // orders newest-first). Reviews whose author name is unusable — blank, a
+      // generic "Anonymous", or a bare phone number — are skipped individually
+      // so one bad row never drops the whole block.
+      ...(reviewsForJsonLd.length > 0 && {
+        review: reviewsForJsonLd.map((r) => ({
+          '@type': 'Review',
+          author: { '@type': 'Person', name: r.reviewer_name.trim() },
+          datePublished: r.created_at.split('T')[0],
+          reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+          reviewBody: r.body ?? undefined,
+        })),
+      }),
     }),
   }
 
