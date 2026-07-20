@@ -4,6 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 import Logo from './Logo'
 import type { Category } from '@/types/database.types'
 
+const PHONE_NUMBERS = [
+  { label: '+91 90400 11053', href: 'tel:+919040011053' },
+  { label: '+91 98979 33955', href: 'tel:+919897933955' },
+  { label: '+91 76077 78882', href: 'tel:+917607778882' },
+  // Landline — 0680 is the Berhampur STD code. The tel: link carries the
+  // international form (leading 0 dropped, +91 prefixed) so it dials correctly
+  // from a mobile, while the label stays in the familiar local format.
+  { label: '0680 227 0108', href: 'tel:+916802270108' },
+]
+
 const USEFUL_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'All Categories', href: '/search' },
@@ -41,7 +51,11 @@ export default async function Footer() {
               <li className="flex items-center gap-4 group/item hover:text-white transition-colors">
                 <Phone size={24} strokeWidth={2.5} className="group-hover/item:-rotate-12 transition-transform duration-300 flex-shrink-0" />
                 <span className="flex flex-col gap-1">
-                  <a href="tel:+919019575211" className="hover:text-white transition-colors">+91 90195 75211</a>
+                  {PHONE_NUMBERS.map((p) => (
+                    <a key={p.href} href={p.href} className="hover:text-white transition-colors">
+                      {p.label}
+                    </a>
+                  ))}
                 </span>
               </li>
               <li className="flex items-center gap-4 group/item hover:text-white transition-colors">

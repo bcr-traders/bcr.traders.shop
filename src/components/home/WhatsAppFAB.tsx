@@ -17,7 +17,10 @@ import { useOverlayStore } from '@/store/overlayStore'
  */
 const HIDDEN_PREFIXES = ['/cart', '/checkout']
 
-const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919040011053'
+// NOTE: NEXT_PUBLIC_WHATSAPP_NUMBER wins over this fallback wherever it is set,
+// so changing the number here alone will NOT change it in production — the
+// Vercel env var has to be updated too.
+const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '919897933955'
 const WA_MESSAGE = encodeURIComponent('Hi BCR TRADERS, I want to place a bulk order.')
 const WA_LINK = `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGE}`
 
