@@ -19,6 +19,12 @@ export interface Banner {
   text_color: string
   placement: BannerPlacement
   display_order: number
+  /**
+   * Seconds this banner stays on screen before the carousel advances
+   * (migration 029). Optional: absent until that migration runs on the live DB,
+   * in which case the carousel falls back to its previous fixed 5s.
+   */
+  display_seconds?: number | null
   is_active: boolean
   created_at: string
 }

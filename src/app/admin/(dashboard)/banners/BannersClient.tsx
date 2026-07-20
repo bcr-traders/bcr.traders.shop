@@ -402,6 +402,7 @@ function BannerFormModal({
     background_color: banner?.background_color || '#1C130A',
     text_color: banner?.text_color || '#FFFFFF',
     placement: banner?.placement ?? defaultPlacement,
+    display_seconds: banner?.display_seconds ?? 5,
     is_active: banner?.is_active ?? true,
   })
   const [saving, setSaving] = useState(false)
@@ -467,6 +468,43 @@ function BannerFormModal({
                 <option value="mid_page">Promo Card</option>
               </select>
             </div>
+
+            {/* Only the hero rotates — a promo card just sits there, so this
+                setting would be meaningless outside the carousel. */}
+            {form.placement === 'hero' && (
+              <div className="space-y-2">
+                <label className="font-black text-xs text-primary uppercase tracking-widest">
+                  Display Time
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={form.display_seconds}
+                    onChange={e =>
+                      setForm(p => ({
+                        ...p,
+                        // Clamp on blur rather than per keystroke, so clearing
+                        // the box to retype doesn't fight the user.
+                        display_seconds: e.target.value === '' ? '' as unknown as number : parseInt(e.target.value, 10),
+                      }))
+                    }
+                    onBlur={e => {
+                      const n = parseInt(e.target.value, 10)
+                      setForm(p => ({ ...p, display_seconds: Number.isFinite(n) ? Math.min(Math.max(n, 1), 60) : 5 }))
+                    }}
+                    className={cn(inputCls, 'w-24')}
+                  />
+                  <span className="font-bold text-xs text-on-surface-variant whitespace-nowrap">
+                    seconds
+                  </span>
+                </div>
+                <p className="text-[11px] font-medium text-on-surface-variant/70">
+                  How long this banner stays before the next one. 1–60.
+                </p>
+              </div>
+            )}
             {/* Background colour only matters for text-only banners — a full
                 image covers it, so hide it once an image is uploaded. */}
             {!form.image_url && (

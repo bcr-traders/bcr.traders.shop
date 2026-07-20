@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { writeStrippingMissingColumns } from '@/lib/supabase/tolerant-write'
 import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
@@ -27,7 +28,10 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json()
   const supabase = createAdminClient()
-  const { data, error } = await supabase.from('banners').insert(body).select('id').single()
+  // See PUT: display_seconds may not exist on the live table yet.
+  const { data, error } = await writeStrippingMissingColumns(body, (payload) =>
+    supabase.from('banners').insert(payload).select('id').single(),
+  )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }

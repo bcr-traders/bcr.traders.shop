@@ -8,8 +8,19 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '@/hooks/useT'
 import type { Banner } from '@/types/database.types'
 
-const INTERVAL_MS = 5000
+/** Used when a banner has no display_seconds — matches the old fixed timing. */
+const DEFAULT_SECONDS = 5
+const MIN_SECONDS = 1
+const MAX_SECONDS = 60
 const DEFAULT_BG = '#1C130A'
+
+/** Clamp to the same range the DB CHECK enforces, so a bad value can't freeze
+ *  the carousel or spin it continuously. */
+function holdMs(banner: Banner | undefined): number {
+  const raw = Number(banner?.display_seconds)
+  const secs = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_SECONDS
+  return Math.min(Math.max(secs, MIN_SECONDS), MAX_SECONDS) * 1000
+}
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
@@ -38,11 +49,15 @@ export default function HeroBanner({ banners }: Props) {
   const next = useCallback(() => go(index + 1, 1), [go, index])
   const prev = useCallback(() => go(index - 1, -1), [go, index])
 
+  // A timeout per slide, not one shared interval: each banner is held for its
+  // OWN configured duration. `next` changes with `index`, so this re-arms on
+  // every slide — and a manual arrow/dot click also restarts the countdown
+  // rather than cutting the new slide short.
   useEffect(() => {
     if (banners.length <= 1) return
-    const id = setInterval(next, INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [next, banners.length])
+    const id = setTimeout(next, holdMs(banners[index]))
+    return () => clearTimeout(id)
+  }, [next, index, banners])
 
   if (!banners.length) {
     return (
