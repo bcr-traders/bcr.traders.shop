@@ -6,7 +6,6 @@ import SearchControls from '@/components/search/SearchControls'
 import type { Product, Category } from '@/types/database.types'
 import { PackageSearch, Sparkles, TrendingUp, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
-import Logo from '@/components/layout/Logo'
 import { getSearchKeywords } from '@/lib/seo/generator'
 
 export const dynamic = 'force-dynamic'
@@ -92,8 +91,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
   const isFiltered = !!q || !!category || isFeatured
 
+  // The min-height below is the space BELOW the 73px sticky header, not a full
+  // 100vh. Using 100vh made this section overshoot the viewport by the header's
+  // height, and with a short result set that surplus showed as empty cream
+  // between the products and the footer.
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-[calc(100vh-73px)] flex flex-col lg:flex-row">
 
       {/* ══════════════════════════════════════════
           LEFT SIDEBAR — Black branded panel
@@ -119,13 +122,10 @@ export default async function SearchPage({ searchParams }: PageProps) {
             category list inside the panel. */}
         <div className="relative z-10 p-6 lg:sticky lg:top-[73px] lg:h-[calc(100vh-73px)] lg:overflow-y-auto scrollbar-hide flex flex-col">
 
-          {/* Brand — tightened vertical rhythm here and on the title block
-              below so the category list gets the height back. */}
-          <div className="mb-6 hidden lg:block flex-shrink-0">
-            <Link href="/" className="inline-block group">
-              <Logo className="h-12 w-auto group-hover:opacity-75 transition-opacity duration-300" />
-            </Link>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35 mt-1">
+          {/* Logo removed — the site header already shows it directly above
+              this panel. Dropping it also returns ~60px to the category list. */}
+          <div className="mb-4 hidden lg:block flex-shrink-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
               Wholesale Platform
             </p>
           </div>
@@ -157,7 +157,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
               brand, title and copyright stay put. Items are compact enough that
               a typical category count needs no scrolling at all. */}
           {categories.length > 0 && (
-            <div className="hidden lg:flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+            <div className="hidden lg:flex flex-col gap-0.5 flex-1 min-h-[120px] overflow-y-auto overscroll-contain scrollbar-thin-light -mr-2 pr-2">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-2 px-1 flex-shrink-0">
                 Categories
               </p>

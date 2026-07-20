@@ -173,6 +173,31 @@ details>summary::-webkit-details-marker {
   }
 }
 
+/* Slim light scrollbar for scrollable areas on a DARK background (the search
+   sidebar's category list). scrollbar-hide leaves no hint that there's more to
+   see, which on a short/zoomed viewport reads as "the list is cut off". */
+@utility scrollbar-thin-light {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+}
+
 @utility font-odia {
   font-family: 'Noto Sans Odia', sans-serif;
 }
