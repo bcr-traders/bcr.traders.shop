@@ -198,6 +198,15 @@ details>summary::-webkit-details-marker {
   }
 }
 
+/* The footer carries mt-8/md:mt-24 as breathing room after ordinary page
+   content. The search page is a full-bleed two-column layout whose dark sidebar
+   runs to the bottom of the section, so that margin renders as a stray cream
+   band between the sidebar and the footer. Opt that one layout out — both are
+   bg-primary, so they now meet seamlessly. */
+body:has([data-flush-footer]) footer {
+  margin-top: 0;
+}
+
 @utility font-odia {
   font-family: 'Noto Sans Odia', sans-serif;
 }

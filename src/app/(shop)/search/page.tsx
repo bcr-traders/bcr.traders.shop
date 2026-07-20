@@ -91,12 +91,13 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
   const isFiltered = !!q || !!category || isFeatured
 
-  // The min-height below is the space BELOW the 73px sticky header, not a full
-  // 100vh. Using 100vh made this section overshoot the viewport by the header's
-  // height, and with a short result set that surplus showed as empty cream
-  // between the products and the footer.
+  // min-h-screen deliberately MATCHES the shop layout's `<main class="min-h-screen">`.
+  // Anything shorter (e.g. calc(100vh-73px)) leaves main taller than its own
+  // content, and that surplus shows as empty cream above the footer.
+  // `data-flush-footer` additionally collapses the footer's mt-24 for this
+  // full-bleed layout — see globals.css.
   return (
-    <div className="min-h-[calc(100vh-73px)] flex flex-col lg:flex-row">
+    <div data-flush-footer className="min-h-screen flex flex-col lg:flex-row">
 
       {/* ══════════════════════════════════════════
           LEFT SIDEBAR — Black branded panel
