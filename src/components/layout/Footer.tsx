@@ -8,10 +8,8 @@ const PHONE_NUMBERS = [
   { label: '+91 90400 11053', href: 'tel:+919040011053' },
   { label: '+91 98979 33955', href: 'tel:+919897933955' },
   { label: '+91 76077 78882', href: 'tel:+917607778882' },
-  // Landline — 0680 is the Berhampur STD code. The tel: link carries the
-  // international form (leading 0 dropped, +91 prefixed) so it dials correctly
-  // from a mobile, while the label stays in the familiar local format.
-  { label: '0680 227 0108', href: 'tel:+916802270108' },
+  // Landline — dialled exactly as written, with the 0680 STD code and NO +91.
+  { label: '0680 2270108', href: 'tel:06802270108' },
 ]
 
 const USEFUL_LINKS = [
