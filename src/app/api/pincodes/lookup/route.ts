@@ -97,6 +97,20 @@ export async function GET(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = createAdminClient() as any
 
+  /**
+   * True when the directory table exists but holds nothing — i.e. migration 028
+   * ran without its seed. Zero rows would otherwise read as a confident "not in
+   * Ganjam", so this tells a half-applied migration apart from a real miss and
+   * lets the caller fall back instead of answering wrongly.
+   */
+  let emptyCache: boolean | null = null
+  const directoryIsEmpty = async (): Promise<boolean> => {
+    if (emptyCache !== null) return emptyCache
+    const { data, error } = await db.from('ganjam_post_offices').select('id').limit(1)
+    emptyCache = !error && Array.isArray(data) && data.length === 0
+    return emptyCache
+  }
+
   // ── Pincode → every area it covers ──
   if (pincode) {
     if (!PIN_RE.test(pincode)) return NextResponse.json({ error: 'Invalid pincode' }, { status: 400 })
@@ -107,7 +121,7 @@ export async function GET(req: NextRequest) {
       .eq('pincode', pincode)
       .limit(30)
 
-    if (!error && data) {
+    if (!error && data && !(data.length === 0 && (await directoryIsEmpty()))) {
       if (data.length === 0) {
         // Present in no Ganjam row => it's a real pincode we simply don't serve.
         return NextResponse.json({ found: true, inArea: false, options: [] })
@@ -162,7 +176,7 @@ export async function GET(req: NextRequest) {
       .ilike('area_name', `%${term}%`)
       .limit(40)
 
-    if (!error && data) {
+    if (!error && data && !(data.length === 0 && (await directoryIsEmpty()))) {
       const lower = area.toLowerCase()
       const options = (data as Row[])
         // Names that START with what was typed are the likelier intent, so they
