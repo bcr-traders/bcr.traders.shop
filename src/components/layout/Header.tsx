@@ -55,15 +55,16 @@ export default function Header({ searchTerms }: { searchTerms?: string[] }) {
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center flex-shrink-0 group">
             <Logo className="h-11 md:h-12 w-auto group-hover:scale-105 transition-transform duration-300" priority />
-            {/* Brand name beside the mark — mobile only. From md up the desktop
-                search bar takes this space and the logo stands on its own. */}
-            <span className="md:hidden ml-2 font-black text-primary text-sm uppercase tracking-wide leading-none whitespace-nowrap">
+            {/* Brand name beside the mark, on every size. Kept nowrap inside the
+                shrink-0 logo block; the search bar is flex-1 so it gives up the
+                width instead of this wrapping or the row overflowing. */}
+            <span className="ml-2 font-black text-primary text-[13px] sm:text-sm lg:text-base uppercase tracking-wide leading-none whitespace-nowrap">
               BCR Traders
             </span>
           </Link>
 
           {/* ── Delivery location (desktop) ── */}
-          <div className="hidden md:flex items-center pl-4 ml-1 border-l border-outline-variant/40">
+          <div className="hidden md:flex items-center flex-shrink-0 pl-4 ml-1 border-l border-outline-variant/40">
             <HeaderLocation />
           </div>
 
