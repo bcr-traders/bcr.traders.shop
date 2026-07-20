@@ -98,13 +98,26 @@ export default async function SearchPage({ searchParams }: PageProps) {
       {/* ══════════════════════════════════════════
           LEFT SIDEBAR — Black branded panel
       ══════════════════════════════════════════ */}
-      <aside className="lg:w-64 xl:w-72 flex-shrink-0 bg-primary relative overflow-hidden">
-        {/* Dot texture */}
-        <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none" />
-        {/* Ambient orb */}
-        <div className="absolute -bottom-24 -left-12 w-64 h-64 bg-white/5 rounded-full blur-[60px] pointer-events-none" />
+      <aside className="lg:w-64 xl:w-72 flex-shrink-0 bg-primary relative">
+        {/* Decorations get their own clipping layer. `overflow-hidden` used to
+            sit on the <aside> itself, which made it the sticky panel's nearest
+            scroll container — that killed the sticking AND clipped any filters
+            past the panel's box instead of letting them scroll. */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Dot texture */}
+          <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:18px_18px]" />
+          {/* Ambient orb */}
+          <div className="absolute -bottom-24 -left-12 w-64 h-64 bg-white/5 rounded-full blur-[60px]" />
+        </div>
 
-        <div className="relative z-10 p-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-hide flex flex-col">
+        {/* 73px = the sticky site header (logo h-12 = 48px + py-3 = 24px + 1px
+            border). Offsetting by it keeps the panel out from under the header;
+            sizing to the REMAINING viewport is what stops the tail of the
+            category list and the copyright being pushed off-screen, which is
+            what "cut off" was. Height stays definite so `mt-auto` still pins
+            the copyright to the bottom, and overflow-y-auto scrolls a long
+            category list inside the panel. */}
+        <div className="relative z-10 p-6 lg:sticky lg:top-[73px] lg:h-[calc(100vh-73px)] lg:overflow-y-auto scrollbar-hide flex flex-col">
 
           {/* Brand */}
           <div className="mb-8 hidden lg:block">

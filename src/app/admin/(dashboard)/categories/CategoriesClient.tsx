@@ -39,10 +39,31 @@ export default function CategoriesClient({
 
   async function deleteCategory(id: string, name: string) {
     const count = productCounts[id] ?? 0
-    const msg = count > 0
-      ? `"${name}" has ${count} product(s). Delete anyway?`
-      : `Delete category "${name}"?`
-    if (!confirm(msg)) return
+    const cat = categories.find(c => c.id === id)
+
+    // A category with products CANNOT be deleted — products.category_id is
+    // ON DELETE RESTRICT so its products are never silently destroyed. The old
+    // copy asked "Delete anyway?", which promised something the database then
+    // refused. Say what's actually possible instead, and offer the safe route.
+    if (count > 0) {
+      const plural = count === 1 ? '' : 's'
+      if (cat?.is_active) {
+        const deactivate = confirm(
+          `"${name}" has ${count} product${plural} assigned, so it can't be deleted.\n\n` +
+          `Deactivate it instead? That hides it from the storefront and leaves every product untouched.`,
+        )
+        if (deactivate) await patchCategory(id, { is_active: false })
+        return
+      }
+      alert(
+        `"${name}" has ${count} product${plural} assigned, so it can't be deleted.\n\n` +
+        `It's already deactivated, so it's hidden from the storefront. To remove it entirely, ` +
+        `first move ${count === 1 ? 'that product' : 'those products'} to another category.`,
+      )
+      return
+    }
+
+    if (!confirm(`Delete category "${name}"?`)) return
 
     setDeleting(id)
     const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
@@ -50,7 +71,9 @@ export default function CategoriesClient({
       setCategories(prev => prev.filter(c => c.id !== id))
       showToast('Category deleted', 'success')
     } else {
-      showToast('Failed to delete category', 'error')
+      // The server sends a specific, admin-readable reason (never a raw DB error).
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      showToast(d.error ?? 'Failed to delete category', 'error')
     }
     setDeleting(null)
   }

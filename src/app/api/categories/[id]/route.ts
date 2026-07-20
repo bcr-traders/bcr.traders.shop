@@ -66,7 +66,37 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { id } = await params
   const supabase = createAdminClient()
+
+  // products.category_id is ON DELETE RESTRICT, deliberately: deleting a
+  // category must never take its products with it. So check FIRST and explain,
+  // rather than letting Postgres reject it and surfacing an opaque FK error.
+  const { count, error: countError } = await supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('category_id', id)
+
+  if (countError) {
+    console.error('[categories/DELETE] product count failed:', countError.message)
+    return NextResponse.json({ error: 'Could not check this category. Please try again.' }, { status: 500 })
+  }
+
+  const productCount = count ?? 0
+  if (productCount > 0) {
+    return NextResponse.json(
+      {
+        error: `This category has ${productCount} product${productCount === 1 ? '' : 's'} assigned. Reassign ${productCount === 1 ? 'it' : 'them'} to another category first, or deactivate this category instead of deleting it.`,
+        code: 'CATEGORY_HAS_PRODUCTS',
+        productCount,
+      },
+      { status: 409 },
+    )
+  }
+
   const { error } = await supabase.from('categories').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // Never hand a raw Postgres message to the client.
+    console.error('[categories/DELETE] delete failed:', error.message)
+    return NextResponse.json({ error: 'Could not delete this category. Please try again.' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }
