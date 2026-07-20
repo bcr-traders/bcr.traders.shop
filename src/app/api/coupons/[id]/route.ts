@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { writeStrippingMissingColumns } from '@/lib/supabase/tolerant-write'
 import { NextRequest, NextResponse } from 'next/server'
 import type { AuthMetadata } from '@/types'
 
@@ -30,7 +31,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const body = await req.json()
   if (body.code) body.code = String(body.code).toUpperCase().trim()
   const supabase = createAdminClient()
-  const { error } = await supabase.from('coupons').update(body).eq('id', id)
+  // See POST: marquee_message may not exist on the live table yet.
+  const { error } = await writeStrippingMissingColumns(body, (payload) =>
+    supabase.from('coupons').update(payload).eq('id', id),
+  )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

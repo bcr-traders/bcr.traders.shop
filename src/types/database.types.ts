@@ -113,6 +113,14 @@ export interface Coupon {
   code: string
   description: string | null
   description_or: string | null
+  /**
+   * Optional custom line for the homepage coupon ticker (migration 030). When
+   * set it replaces the auto-composed "20% OFF · description" half of the item;
+   * the code itself is always shown. Optional here because the column is absent
+   * until that migration runs on the live DB.
+   */
+  marquee_message?: string | null
+  marquee_message_or?: string | null
   discount_type: 'percentage' | 'flat'
   discount_value: number
   min_order_value: number | null

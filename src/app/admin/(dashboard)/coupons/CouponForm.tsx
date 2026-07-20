@@ -19,6 +19,8 @@ type FormState = {
   code: string
   description: string
   description_or: string
+  marquee_message: string
+  marquee_message_or: string
   discount_type: 'percentage' | 'flat'
   discount_value: string
   min_order_value: string
@@ -63,6 +65,8 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
     code: coupon?.code ?? '',
     description: coupon?.description ?? '',
     description_or: coupon?.description_or ?? '',
+    marquee_message: coupon?.marquee_message ?? '',
+    marquee_message_or: coupon?.marquee_message_or ?? '',
     discount_type: coupon?.discount_type ?? 'percentage',
     discount_value: coupon?.discount_value?.toString() ?? '',
     min_order_value: coupon?.min_order_value?.toString() ?? '',
@@ -109,6 +113,8 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
       code: form.code.toUpperCase().trim(),
       description: form.description.trim() || null,
       description_or: form.description_or.trim() || null,
+      marquee_message: form.marquee_message.trim() || null,
+      marquee_message_or: form.marquee_message_or.trim() || null,
       discount_type: form.discount_type,
       discount_value: parseFloat(form.discount_value),
       min_order_value: form.min_order_value ? parseFloat(form.min_order_value) : null,
@@ -241,6 +247,30 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
                   value={form.description_or}
                   onChange={e => set('description_or', e.target.value)}
                   placeholder="ଓଡ଼ିଆ ବିବରଣ…"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field
+                label="Ticker Message (English)"
+                hint="Optional. Shown in the scrolling coupon bar on the homepage instead of the automatic “20% OFF · description”. The code itself is always shown."
+              >
+                <input
+                  type="text"
+                  value={form.marquee_message}
+                  onChange={e => set('marquee_message', e.target.value)}
+                  placeholder="Ends Sunday — first order only"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Ticker Message (Odia)">
+                <input
+                  type="text"
+                  value={form.marquee_message_or}
+                  onChange={e => set('marquee_message_or', e.target.value)}
+                  placeholder="ଓଡ଼ିଆ ବାର୍ତ୍ତା…"
                   className={inputCls}
                 />
               </Field>

@@ -6,7 +6,8 @@ import type { Coupon } from '@/types/database.types'
 
 type CouponItem = Pick<
   Coupon,
-  'id' | 'code' | 'description' | 'description_or' | 'discount_type' | 'discount_value'
+  | 'id' | 'code' | 'description' | 'description_or' | 'discount_type' | 'discount_value'
+  | 'marquee_message' | 'marquee_message_or'
 >
 
 interface Props {
@@ -28,20 +29,31 @@ export default function CouponMarquee({ coupons }: Props) {
               ? `${c.discount_value}% OFF`
               : `₹${c.discount_value} OFF`
           const desc = c.description ? tField(c.description, c.description_or) : null
+          // An admin-written line for THIS coupon (migration 030). When present
+          // it replaces the auto-composed "20% OFF · description" half; the code
+          // still leads, since that's what the customer has to copy.
+          const custom = c.marquee_message
+            ? tField(c.marquee_message, c.marquee_message_or ?? null)
+            : null
 
           return (
             <span key={`${c.id}-${i}`} className="inline-flex items-center gap-2 px-6">
-              {/* Was text-primary-fixed (#2E2011) on this brown bar — 1.16:1,
-                  invisible. Gold keeps it standing out from the cream text
-                  around it (6.5:1) instead of blending into it. */}
-              <Tag size={12} className="text-secondary flex-shrink-0 animate-pulse" />
-              <span className="tracking-wider uppercase">{c.code}</span>
-              <span className="text-on-primary/35">—</span>
-              <span className="text-secondary">{label}</span>
-              {desc && (
+              {/* White throughout: the original text-primary-fixed (#2E2011) was
+                  the same brown as this bar (1.16:1). */}
+              <Tag size={12} className="text-white flex-shrink-0 animate-pulse" />
+              <span className="tracking-wider uppercase text-white">{c.code}</span>
+              <span className="text-white/40">—</span>
+              {custom ? (
+                <span className="text-white font-medium">{custom}</span>
+              ) : (
                 <>
-                  <span className="text-on-primary/25">·</span>
-                  <span className="text-on-primary/75 font-medium">{desc}</span>
+                  <span className="text-white">{label}</span>
+                  {desc && (
+                    <>
+                      <span className="text-white/40">·</span>
+                      <span className="text-white/80 font-medium">{desc}</span>
+                    </>
+                  )}
                 </>
               )}
             </span>
