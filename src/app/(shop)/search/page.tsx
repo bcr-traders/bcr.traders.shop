@@ -119,8 +119,9 @@ export default async function SearchPage({ searchParams }: PageProps) {
             category list inside the panel. */}
         <div className="relative z-10 p-6 lg:sticky lg:top-[73px] lg:h-[calc(100vh-73px)] lg:overflow-y-auto scrollbar-hide flex flex-col">
 
-          {/* Brand */}
-          <div className="mb-8 hidden lg:block">
+          {/* Brand — tightened vertical rhythm here and on the title block
+              below so the category list gets the height back. */}
+          <div className="mb-6 hidden lg:block flex-shrink-0">
             <Link href="/" className="inline-block group">
               <Logo className="h-12 w-auto group-hover:opacity-75 transition-opacity duration-300" />
             </Link>
@@ -130,7 +131,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           </div>
 
           {/* Page title — desktop */}
-          <div className="mb-6 hidden lg:block border-b border-white/10 pb-6">
+          <div className="mb-4 hidden lg:block border-b border-white/10 pb-4 flex-shrink-0">
             <div className="flex items-center gap-2 mb-2">
               {isFeatured
                 ? <TrendingUp size={12} className="text-white/40" strokeWidth={2.5} />
@@ -148,17 +149,23 @@ export default async function SearchPage({ searchParams }: PageProps) {
             </p>
           </div>
 
-          {/* Category nav — desktop sidebar */}
+          {/* Category nav — desktop sidebar.
+              `min-h-0` is the fix: a flex child defaults to min-height:auto, so
+              this column refused to shrink below its content and the last
+              categories were clipped instead of becoming scrollable. With it,
+              the list takes the leftover height and scrolls inside itself — the
+              brand, title and copyright stay put. Items are compact enough that
+              a typical category count needs no scrolling at all. */}
           {categories.length > 0 && (
-            <div className="hidden lg:flex flex-col gap-1 flex-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-2 px-1">
+            <div className="hidden lg:flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-2 px-1 flex-shrink-0">
                 Categories
               </p>
 
               {/* All link */}
               <Link
                 href="/search"
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-200 ${
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-black uppercase tracking-wide transition-all duration-200 flex-shrink-0 ${
                   !category && !isFeatured
                     ? 'bg-white text-primary'
                     : 'text-white/60 hover:text-white hover:bg-white/8'
@@ -172,7 +179,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 <Link
                   key={cat.id}
                   href={`/search?category=${cat.slug}`}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-200 truncate ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-black uppercase tracking-wide transition-all duration-200 truncate flex-shrink-0 ${
                     category === cat.slug
                       ? 'bg-white text-primary'
                       : 'text-white/60 hover:text-white hover:bg-white/8'
@@ -186,7 +193,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           )}
 
           {/* Bottom copyright */}
-          <div className="mt-auto pt-6 hidden lg:block">
+          <div className="mt-auto pt-4 hidden lg:block flex-shrink-0">
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">
               © 2025 BCR Traders
             </p>
