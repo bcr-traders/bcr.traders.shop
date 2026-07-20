@@ -8,6 +8,7 @@ import {
   getRelatedProducts,
 } from '@/lib/data/product'
 import { getServiceableRegions } from '@/lib/data/shipping'
+import { RETURN_POLICY_JSONLD } from '@/lib/seo/return-policy'
 import { getProductKeywords } from '@/lib/seo/generator'
 import ProductImageGallery from '@/components/product/ProductImageGallery'
 import ProductBreadcrumb from '@/components/product/ProductBreadcrumb'
@@ -135,6 +136,9 @@ export default async function ProductPage({ params }: PageProps) {
           : 'https://schema.org/OutOfStock',
       seller: { '@type': 'Organization', name: 'BCR Traders' },
       itemCondition: 'https://schema.org/NewCondition',
+      // Confirmed policy: no customer returns. Single definition shared with the
+      // site-level Organization markup.
+      hasMerchantReturnPolicy: RETURN_POLICY_JSONLD,
       shippingDetails: {
         '@type': 'OfferShippingDetails',
         // Delivery is gated on the serviceable_pincodes allow-list, so this

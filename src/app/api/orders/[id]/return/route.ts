@@ -4,6 +4,24 @@
  * Admin-only. Marks an order as "returned", sets returned_at,
  * and restores stock_qty for each item in the order.
  * Only allowed on orders that are 'delivered'.
+ *
+ * ── NOT a customer returns feature ──────────────────────────────────────────
+ * BCR Traders' published policy is NO customer returns — the Product JSON-LD
+ * states schema.org/MerchantReturnNotPermitted (see lib/seo/return-policy.ts).
+ * This endpoint is internal exception handling for the back office: an admin
+ * recording goods that came back (damaged, wrong item shipped, refused on
+ * delivery) so stock is corrected and the customer is notified. It does NOT
+ * imply customer-initiated returns are accepted, and must never be exposed to
+ * a customer-facing surface — the role check below is the enforcement point,
+ * and it is deliberately server-side rather than relying on hidden UI.
+ *
+ * It issues no refund; it only moves status, restores stock and emails.
+ *
+ * Note: as of this audit nothing in the app calls this route. Admins reach the
+ * same outcome through the status dropdown -> PATCH /api/orders/[id]/status
+ * ('returned' is in its VALID_STATUSES and STOCK_RESTORED_STATUSES). Kept
+ * because it is the stricter path — it refuses any order that isn't
+ * 'delivered', which the generic status route does not check.
  */
 import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'

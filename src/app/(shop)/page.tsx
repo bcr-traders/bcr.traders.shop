@@ -13,6 +13,7 @@ import AnimatedStats from '@/components/home/AnimatedStats'
 import WhatsAppFAB from '@/components/home/WhatsAppFAB'
 import CategoryStrip from '@/components/category/CategoryStrip'
 import { safeJsonLd } from '@/lib/utils'
+import { RETURN_POLICY_JSONLD } from '@/lib/seo/return-policy'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bcrtraders.com'
 
@@ -65,6 +66,9 @@ const orgJsonLd = {
     'https://www.facebook.com/bcrtrades',
     'https://www.instagram.com/bcrtrades',
   ],
+  // Confirmed policy: no customer returns. Same definition the product offers
+  // emit, so the site states one policy from one source.
+  hasMerchantReturnPolicy: RETURN_POLICY_JSONLD,
 }
 
 const localBizJsonLd = {
