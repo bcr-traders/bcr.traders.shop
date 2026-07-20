@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Phone, Mail, MapPin } from 'lucide-react'
+import { Phone, Mail, MapPin, Heart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Logo from './Logo'
 import type { Category } from '@/types/database.types'
@@ -119,6 +119,27 @@ export default async function Footer() {
           <span className="hidden md:inline">·</span>
           <span>Odisha</span>
         </div>
+
+        {/* Developer credit — the last thing on the page. Styled from the same
+            tokens as the rest of the site (cream card, table-border outline,
+            primary on hover) rather than a fixed dark pill, so it belongs to
+            this cream band instead of sitting on top of it. */}
+        <a
+          href="https://jyotiranjansahoo.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Crafted by Jyotiranjan — open portfolio in a new tab"
+          className="group mt-6 inline-flex items-center gap-2 rounded-full border-2 border-table-border bg-surface-card px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70 transition-all duration-200 hover:border-primary/40 hover:text-primary hover:shadow-sm active:scale-95"
+        >
+          <span>Crafted with</span>
+          <Heart
+            size={12}
+            strokeWidth={2.5}
+            className="fill-error text-error transition-transform duration-200 group-hover:scale-125"
+          />
+          <span>by</span>
+          <span className="text-primary tracking-[0.12em] normal-case text-[11px]">Jyotiranjan</span>
+        </a>
       </div>
     </footer>
   )
