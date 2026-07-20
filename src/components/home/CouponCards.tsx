@@ -78,11 +78,20 @@ export default function CouponCards({ coupons }: Props) {
                 </div>
 
                 {/* Right — code + copy */}
-                <div className="w-26 flex flex-col items-center justify-center gap-1.5 py-4 pr-3.5 pl-2 bg-gradient-to-br from-primary-fixed to-primary-fixed-dim/90 text-on-primary-fixed-variant">
+                {/* Sized to its content with a floor, rather than a fixed w-26:
+                    a code longer than the old 104px had nowhere to go and broke
+                    onto a second line. The panel now widens for a long code and
+                    the flex-1 left side gives up the space. */}
+                <div className="flex-shrink-0 min-w-[104px] flex flex-col items-center justify-center gap-1.5 py-4 px-3 bg-gradient-to-br from-primary-fixed to-primary-fixed-dim/90 text-on-primary-fixed-variant">
                   <span className="text-[9px] font-black tracking-wider text-secondary uppercase">Code</span>
                   {/* The code sat at text-primary (#1C130A) on a #2E2011 panel —
                       1.16:1. Cream takes it to 15:1. */}
-                  <span className="text-xs font-black text-on-primary-fixed tracking-widest text-center break-all leading-tight">
+                  {/* whitespace-nowrap keeps the code on ONE line — break-all was
+                      splitting it mid-word ("LAUNCH20" / "0"). Tracking eased off
+                      from widest so a normal-length code still fits the floor
+                      width. Colour: was text-primary (#1C130A) on a #2E2011
+                      panel — 1.16:1; cream takes it to 15:1. */}
+                  <span className="text-xs font-black text-on-primary-fixed tracking-wide text-center whitespace-nowrap leading-tight">
                     {coupon.code}
                   </span>
                   <button
