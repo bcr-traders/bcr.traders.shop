@@ -5,8 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { createStaffClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import type { AdminBadges } from './AdminShell'
+import type { AdminPermissions } from '@/types/admin.types'
 import Logo from './Logo'
 import { X, LogOut, ShieldAlert } from 'lucide-react'
 
@@ -30,13 +30,26 @@ interface Props {
   badges?: AdminBadges
   /** Authoritative display name from admin_profiles (see admin layout). */
   name?: string | null
+  /** Authoritative permissions from admin_profiles (see admin layout). */
+  permissions?: AdminPermissions | null
 }
 
-export default function AdminSidebar({ role, onClose, className, badges, name }: Props) {
+export default function AdminSidebar({ role, onClose, className, badges, name, permissions }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const { user } = useSupabaseUser()
-  const { can, isSuperAdmin } = useAdminPermissions()
+
+  // Role and permissions come from the server (admin layout), which has already
+  // authenticated this request — NOT from a browser-side session lookup. That
+  // lookup returning no user left a super_admin staring at a sidebar with only
+  // "Dashboard" on it.
+  //
+  // super_admin short-circuits before `permissions` is consulted at all, so full
+  // access never depends on that JSON carrying every key. A section added later
+  // shows up for super_admin with no permissions backfill. Regular admins stay
+  // restricted to the keys their own row actually grants.
+  const isSuperAdmin = role === 'super_admin'
+  const can = (key: keyof AdminPermissions) => isSuperAdmin || !!permissions?.[key]
 
   // Prefer the live admin_profiles name; fall back to the Auth metadata copy.
   const displayName = name || (user?.user_metadata as { name?: string })?.name || 'Admin'

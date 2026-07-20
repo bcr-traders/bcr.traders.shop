@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminShell from '@/components/layout/AdminShell'
 import AdminToaster from '@/components/admin/AdminToaster'
+import type { AdminPermissions } from '@/types/admin.types'
 
 /**
  * This layout wraps EVERY admin page, so everything below ran on every single
@@ -45,20 +46,23 @@ const fetchBadges = unstable_cache(
  * user_metadata copy is only set at account-creation time and goes stale).
  * Cached per user — it changes rarely.
  */
-const fetchAdminName = unstable_cache(
-  async (userId: string): Promise<string | null> => {
+const fetchAdminProfile = unstable_cache(
+  async (userId: string): Promise<{ name: string | null; permissions: AdminPermissions | null }> => {
     try {
       const supabase = createAdminClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db = supabase as any
       const { data } = await db
         .from('admin_profiles')
-        .select('name')
+        .select('name, permissions')
         .eq('user_id', userId)
         .maybeSingle()
-      return (data?.name as string | undefined)?.trim() || null
+      return {
+        name: (data?.name as string | undefined)?.trim() || null,
+        permissions: (data?.permissions as AdminPermissions | undefined) ?? null,
+      }
     } catch {
-      return null
+      return { name: null, permissions: null }
     }
   },
   ['admin-name'],
@@ -73,11 +77,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (role !== 'super_admin' && role !== 'admin') redirect('/admin/login')
 
-  const [badges, name] = await Promise.all([fetchBadges(), fetchAdminName(userId)])
+  // Role and permissions are resolved HERE, on the server, and handed to the
+  // sidebar. It used to derive them from a browser-side session lookup, which
+  // left a super_admin with an empty nav whenever that lookup came back without
+  // a user — even though this layout had already authenticated them.
+  const [badges, profile] = await Promise.all([fetchBadges(), fetchAdminProfile(userId)])
 
   return (
     <>
-      <AdminShell role={role} badges={badges} name={name}>{children}</AdminShell>
+      <AdminShell role={role} badges={badges} name={profile.name} permissions={profile.permissions}>{children}</AdminShell>
       <AdminToaster />
     </>
   )

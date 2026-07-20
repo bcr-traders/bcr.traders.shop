@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import AdminSidebar from './AdminSidebar'
+import type { AdminPermissions } from '@/types/admin.types'
 import Logo from './Logo'
 import { Menu, Bell } from 'lucide-react'
 
@@ -18,6 +19,8 @@ interface Props {
   children: React.ReactNode
   badges?: AdminBadges
   name?: string | null
+  /** Server-resolved admin_profiles.permissions; ignored for super_admin. */
+  permissions?: AdminPermissions | null
 }
 
 const BOTTOM_NAV = [
@@ -28,7 +31,7 @@ const BOTTOM_NAV = [
   { href: '/admin/profiles',   label: 'Team',    icon: 'group' },
 ]
 
-export default function AdminShell({ role, children, badges, name }: Props) {
+export default function AdminShell({ role, children, badges, name, permissions }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
@@ -42,6 +45,7 @@ export default function AdminShell({ role, children, badges, name }: Props) {
         role={role}
         badges={badges}
         name={name}
+        permissions={permissions}
         className="hidden lg:flex sticky top-0 self-start flex-shrink-0"
       />
 
@@ -50,7 +54,7 @@ export default function AdminShell({ role, children, badges, name }: Props) {
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="relative z-10 w-72 max-w-[80vw]">
-            <AdminSidebar role={role} badges={badges} name={name} onClose={() => setMobileOpen(false)} className="w-full h-full" />
+            <AdminSidebar role={role} badges={badges} name={name} permissions={permissions} onClose={() => setMobileOpen(false)} className="w-full h-full" />
           </div>
         </div>
       )}
