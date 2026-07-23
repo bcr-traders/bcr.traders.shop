@@ -5,8 +5,8 @@ import Logo from './Logo'
 import type { Category } from '@/types/database.types'
 
 const PHONE_NUMBERS = [
-  { label: '+91 90400 11053', href: 'tel:+919040011053' },
   { label: '+91 98979 33955', href: 'tel:+919897933955' },
+  { label: '+91 90400 11053', href: 'tel:+919040011053' },
   { label: '+91 76077 78882', href: 'tel:+917607778882' },
   // Landline — dialled exactly as written, with the 0680 STD code and NO +91.
   { label: '0680 2270108', href: 'tel:06802270108' },
