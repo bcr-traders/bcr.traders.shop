@@ -23,6 +23,13 @@ export default function CartFloatingBar() {
     pathname === '/cart' ||
     pathname.startsWith('/checkout')
 
+  // Only the product page pins an Add-to-Cart / Buy-Now bar at the bottom. There,
+  // lift this above that bar and narrow it so the WhatsApp FAB (w-11 at right-4,
+  // itself raised to bottom-40 on product pages) sits to its right — the two then
+  // read as one row instead of this bar covering the buttons. Mobile only; from
+  // md up (no bottom nav) the original bottom-right placement is unchanged.
+  const onProduct = pathname.startsWith('/product/')
+
   return (
     <AnimatePresence>
       {!hidden && (
@@ -31,7 +38,9 @@ export default function CartFloatingBar() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-          className="fixed z-40 left-3 right-3 bottom-20 md:left-auto md:right-6 md:bottom-6 md:w-80"
+          className={`fixed z-40 md:left-auto md:right-6 md:bottom-6 md:w-80 ${
+            onProduct ? 'left-3 right-[4.5rem] bottom-40' : 'left-3 right-3 bottom-20'
+          }`}
         >
           <div className="flex items-stretch bg-primary text-on-primary rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(28,19,10,0.35)]">
             <Link
