@@ -853,17 +853,38 @@ function AnnouncementsTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; o
     link_url: str(raw.link_url),
     is_active: bool(raw.is_active, true),
   })
+  // Standalone lines for the coupon ticker under the hero. Stored as an array
+  // under the `marquee_lines` CMS key; the homepage renders them alongside the
+  // active coupons (see CouponMarquee).
+  const [lines, setLines] = useState<{ text: string; text_or: string }[]>(
+    asArr<{ text: string; text_or: string }>(getCms(cmsContent, 'marquee_lines')),
+  )
   const [saving, setSaving] = useState(false)
+
+  const setLine = (i: number, field: 'text' | 'text_or', value: string) =>
+    setLines(prev => prev.map((l, j) => (j === i ? { ...l, [field]: value } : l)))
 
   async function save() {
     setSaving(true)
-    const res = await fetch('/api/cms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'site_announcement', value: form }),
-    })
+    // Drop blank lines (no English text) so an empty row never reaches the site.
+    const cleanLines = lines
+      .map(l => ({ text: l.text.trim(), text_or: l.text_or.trim() }))
+      .filter(l => l.text.length > 0)
+    const [annRes, lineRes] = await Promise.all([
+      fetch('/api/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'site_announcement', value: form }),
+      }),
+      fetch('/api/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'marquee_lines', value: cleanLines }),
+      }),
+    ])
     setSaving(false)
-    onToast(res.ok ? 'Changes saved successfully' : 'Failed to save — please try again', res.ok ? 'success' : 'error')
+    const ok = annRes.ok && lineRes.ok
+    onToast(ok ? 'Changes saved successfully' : 'Failed to save — please try again', ok ? 'success' : 'error')
   }
 
   return (
@@ -920,6 +941,49 @@ function AnnouncementsTab({ cmsContent, onToast }: { cmsContent: CmsContent[]; o
             <span className={cn('inline-block h-4 w-4 rounded-full shadow transition-transform', form.is_active ? 'translate-x-6 bg-white' : 'translate-x-1.5 bg-on-surface-variant/50')} />
           </button>
         </div>
+      </CmsSection>
+
+      <CmsSection title="Ticker Lines">
+        <p className="font-medium text-[11px] text-on-surface-variant/70 -mt-2">
+          Custom lines that scroll in the ticker under the hero banner, alongside any active coupons.
+          Leave empty to show only coupons.
+        </p>
+
+        {lines.map((line, i) => (
+          <div key={i} className="flex flex-col sm:flex-row gap-3 items-start">
+            <input
+              type="text"
+              value={line.text}
+              onChange={e => setLine(i, 'text', e.target.value)}
+              placeholder="English line — e.g. 🎉 Bahuda Offer: shop ₹11,000 & get 20% off"
+              className={cn(inputCls, 'flex-1')}
+            />
+            <input
+              type="text"
+              value={line.text_or}
+              onChange={e => setLine(i, 'text_or', e.target.value)}
+              placeholder="ଓଡ଼ିଆ (optional)"
+              className={cn(inputCls, 'flex-1')}
+            />
+            <button
+              type="button"
+              onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
+              aria-label="Remove line"
+              className="p-3 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5 transition-colors active:scale-95 flex-shrink-0"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setLines(prev => [...prev, { text: '', text_or: '' }])}
+          className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-table-border rounded-xl font-black text-[10px] text-on-surface-variant uppercase tracking-widest hover:border-primary hover:text-primary transition-colors active:scale-[0.99]"
+        >
+          <Plus size={16} />
+          Add Line
+        </button>
       </CmsSection>
 
       <SaveBar saving={saving} onSave={save} />

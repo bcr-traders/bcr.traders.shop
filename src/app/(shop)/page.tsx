@@ -131,7 +131,7 @@ const websiteJsonLd = {
 }
 
 export default async function HomePage() {
-  const { banners, promoCards, categories, featuredProducts, categoryProducts, coupons, offerBanner, trustBadges } =
+  const { banners, promoCards, categories, featuredProducts, categoryProducts, coupons, offerBanner, trustBadges, marqueeLines } =
     await getHomepageData()
 
   return (
@@ -184,8 +184,10 @@ export default async function HomePage() {
         {/* 2. Promo cards row */}
         <PromoCardsRow cards={promoCards} />
 
-        {/* 3. Coupon marquee ticker */}
-        {coupons.length > 0 && <CouponMarquee coupons={coupons} />}
+        {/* 3. Coupon marquee ticker — active coupons plus admin-authored lines */}
+        {(coupons.length > 0 || marqueeLines.length > 0) && (
+          <CouponMarquee coupons={coupons} customLines={marqueeLines} />
+        )}
 
         {/* 4. Shop by category — Blinkit-style horizontal strip (editable images) */}
         <section className="pt-2">

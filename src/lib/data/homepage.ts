@@ -14,6 +14,12 @@ export interface TrustBadgeItem {
   text_or: string
 }
 
+/** A standalone line in the homepage coupon ticker (Banners & CMS → Announcements). */
+export interface MarqueeLineItem {
+  text: string
+  text_or: string
+}
+
 export interface HomepageData {
   banners: Banner[]
   promoCards: Banner[]
@@ -24,6 +30,7 @@ export interface HomepageData {
   announcement: SiteAnnouncement | null
   offerBanner: OfferBannerConfig | null
   trustBadges: TrustBadgeItem[]
+  marqueeLines: MarqueeLineItem[]
 }
 
 function parseCmsValue<T>(
@@ -122,6 +129,18 @@ export async function getHomepageData(): Promise<HomepageData> {
         .filter((b) => b.text.trim().length > 0)
     : []
 
+  // Standalone ticker lines authored in Banners & CMS → Announcements as an
+  // array of { text, text_or }. Keep only entries with actual English text.
+  const marqueeLines: MarqueeLineItem[] = Array.isArray(cmsMap['marquee_lines'])
+    ? (cmsMap['marquee_lines'] as unknown[])
+        .filter(
+          (l): l is MarqueeLineItem =>
+            !!l && typeof l === 'object' && typeof (l as MarqueeLineItem).text === 'string'
+        )
+        .map((l) => ({ text: l.text, text_or: typeof l.text_or === 'string' ? l.text_or : '' }))
+        .filter((l) => l.text.trim().length > 0)
+    : []
+
   return {
     banners,
     promoCards,
@@ -132,5 +151,6 @@ export async function getHomepageData(): Promise<HomepageData> {
     announcement,
     offerBanner,
     trustBadges,
+    marqueeLines,
   }
 }
