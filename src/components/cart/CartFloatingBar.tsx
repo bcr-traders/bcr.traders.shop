@@ -39,7 +39,7 @@ export default function CartFloatingBar() {
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 320, damping: 30 }}
           className={`fixed z-40 md:left-auto md:right-6 md:bottom-6 md:w-80 ${
-            onProduct ? 'left-3 right-[5.75rem] bottom-40' : 'left-3 right-3 bottom-20'
+            onProduct ? 'left-3 right-[4.5rem] bottom-40' : 'left-3 right-3 bottom-20'
           }`}
         >
           <div className="flex items-stretch bg-primary text-on-primary rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(28,19,10,0.35)]">
