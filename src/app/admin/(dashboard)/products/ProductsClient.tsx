@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
 import type { Product } from '@/types/database.types'
@@ -18,6 +19,11 @@ type SortDir = 'asc' | 'desc'
 type StatusFilter = 'all' | 'active' | 'inactive'
 type StockFilter = 'all' | 'in_stock' | 'out_of_stock'
 
+/** The URL param if it's one of the allowed values, else the fallback. */
+function paramOr<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
+  return value && (allowed as readonly string[]).includes(value) ? (value as T) : fallback
+}
+
 export default function ProductsClient({
   initialProducts,
   categories,
@@ -25,14 +31,20 @@ export default function ProductsClient({
   initialProducts: Product[]
   categories: { id: string; name: string }[]
 }) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [products, setProducts] = useState(initialProducts)
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [stockFilter, setStockFilter] = useState<StockFilter>('all')
-  const [featuredOnly, setFeaturedOnly] = useState(false)
-  const [sortField, setSortField] = useState<SortField>('created_at')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  // Filters / sort / pagination are seeded from the URL so returning here (e.g.
+  // after editing a product) restores the exact view, and the URL stays
+  // shareable/bookmarkable. They're mirrored back to the URL in an effect below.
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get('category') ?? 'all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => paramOr(searchParams.get('status'), ['all', 'active', 'inactive'] as const, 'all'))
+  const [stockFilter, setStockFilter] = useState<StockFilter>(() => paramOr(searchParams.get('stock'), ['all', 'in_stock', 'out_of_stock'] as const, 'all'))
+  const [featuredOnly, setFeaturedOnly] = useState(() => searchParams.get('featured') === '1')
+  const [sortField, setSortField] = useState<SortField>(() => paramOr(searchParams.get('sort'), ['name', 'price', 'stock_qty', 'created_at'] as const, 'created_at'))
+  const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') === 'asc' ? 'asc' : 'desc'))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingStockId, setEditingStockId] = useState<string | null>(null)
   const [stockDraft, setStockDraft] = useState('')
@@ -41,8 +53,11 @@ export default function ProductsClient({
   // Pagination — default 10 per page so the admin sees a short table instead of
   // scrolling a long one to reach the sideways scrollbar. Page size is
   // adjustable (10/25/50/100).
-  const [pageSize, setPageSize] = useState(10)
-  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(() => {
+    const n = Number(searchParams.get('size'))
+    return PAGE_SIZE_OPTIONS.includes(n) ? n : 10
+  })
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1))
   const importRef = useRef<HTMLInputElement>(null)
   const showToast = useToastStore((s) => s.show)
 
@@ -79,8 +94,11 @@ export default function ProductsClient({
   }, [products, search, categoryFilter, statusFilter, stockFilter, featuredOnly, sortField, sortDir])
 
   // A changed filter/search/page-size can leave you on a page that no longer
-  // exists — jump back to the first page whenever the result set changes.
+  // exists — jump back to the first page whenever the result set changes. Skip
+  // the initial run so a page seeded from the URL isn't wiped on mount.
+  const didMountPageReset = useRef(false)
   useEffect(() => {
+    if (!didMountPageReset.current) { didMountPageReset.current = true; return }
     setPage(1)
   }, [search, categoryFilter, statusFilter, stockFilter, featuredOnly, pageSize])
 
@@ -89,6 +107,29 @@ export default function ProductsClient({
   const currentPage = Math.min(page, totalPages)
   const pageStart = (currentPage - 1) * pageSize
   const paged = filtered.slice(pageStart, pageStart + pageSize)
+
+  // Mirror the current view into the URL — debounced, and via replaceState so it
+  // doesn't spam browser history or re-fetch the (dynamic) page. Only non-default
+  // values are written, keeping the URL clean. Restored automatically on return
+  // because the state above seeds from these same params.
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (search.trim()) params.set('q', search.trim())
+    if (categoryFilter !== 'all') params.set('category', categoryFilter)
+    if (statusFilter !== 'all') params.set('status', statusFilter)
+    if (stockFilter !== 'all') params.set('stock', stockFilter)
+    if (featuredOnly) params.set('featured', '1')
+    if (sortField !== 'created_at') params.set('sort', sortField)
+    if (sortDir !== 'desc') params.set('dir', sortDir)
+    if (pageSize !== 10) params.set('size', String(pageSize))
+    if (currentPage > 1) params.set('page', String(currentPage))
+    const qs = params.toString()
+    const url = qs ? `${pathname}?${qs}` : pathname
+    const handle = setTimeout(() => {
+      window.history.replaceState(window.history.state, '', url)
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [search, categoryFilter, statusFilter, stockFilter, featuredOnly, sortField, sortDir, pageSize, currentPage, pathname])
 
   const allSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id))
   const someSelected = selectedIds.size > 0

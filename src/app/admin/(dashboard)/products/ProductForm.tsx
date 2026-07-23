@@ -98,6 +98,14 @@ export default function ProductForm({
   const router = useRouter()
   const isEdit = !!product
 
+  // Back / Cancel returns to the PREVIOUS entry — the products list, whose
+  // filters/sort/page now live in the URL — so the exact view is restored.
+  // Falls back to the plain list if there's no history (e.g. opened directly).
+  const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push('/admin/products')
+  }
+
   const [tab, setTab] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -472,12 +480,14 @@ export default function ProductForm({
       {/* ── Header ── */}
       <div className="sticky top-16 z-30 bg-surface border-b-2 border-table-border px-4 md:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/products"
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Back to products"
             className="p-2.5 rounded-xl border-2 border-table-border bg-surface-card hover:bg-surface-container-low transition-colors text-primary active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-          </Link>
+          </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-primary tracking-tight capitalize">
               {isEdit ? form.name || 'Edit Product' : 'New Product.'}
@@ -488,12 +498,13 @@ export default function ProductForm({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/products"
+          <button
+            type="button"
+            onClick={goBack}
             className="px-5 py-2.5 rounded-xl border-2 border-table-border bg-surface text-on-surface-variant font-black text-xs uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all active:scale-95"
           >
             Cancel
-          </Link>
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}
