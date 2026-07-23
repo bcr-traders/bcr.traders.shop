@@ -361,9 +361,13 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         </button>
       </div>
 
-      {/* ── Mobile sticky bar ── */}
+      {/* ── Mobile sticky bar ──
+          Pinned ABOVE the mobile bottom nav (h-16), not at bottom-0 where the
+          nav (z-50) painted over it and hid the Add to Cart / Buy Now controls
+          entirely — the reported "no add to cart button" bug. From md up the
+          bottom nav is gone, so it drops back to the screen edge. */}
       <div
-        className="fixed bottom-0 left-0 w-full bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center gap-3 z-40 lg:hidden border-t border-outline-variant/30"
+        className="fixed left-0 w-full bg-surface-container-lowest shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center gap-3 z-40 lg:hidden border-t border-outline-variant/30 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0"
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
         <div className="flex flex-col leading-none">
