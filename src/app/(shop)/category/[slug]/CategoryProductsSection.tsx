@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,23 @@ interface Props {
   initialProducts: Product[]
   initialTotal: number
 }
+
+/**
+ * Per-category view state, kept for the browser SESSION so returning to a
+ * category (via the back button) restores the products you already loaded and
+ * your sort/filter — instead of resetting to the first page. That reset also
+ * remounted the grid at a short height, which is why the browser then dumped you
+ * at the bottom of it. Module-level so it survives client-side navigation; a
+ * full page reload clears it and SSR provides a fresh first page.
+ */
+type CategoryViewState = {
+  products: Product[]
+  total: number
+  page: number
+  sort: SortOption
+  inStockOnly: boolean
+}
+const categoryViewCache = new Map<string, CategoryViewState>()
 
 async function fetchProducts(
   categoryId: string,
@@ -64,13 +81,22 @@ async function fetchProducts(
 }
 
 export default function CategoryProductsSection({ categoryId, initialProducts, initialTotal }: Props) {
-  const [sort, setSort] = useState<SortOption>('featured')
-  const [inStockOnly, setInStockOnly] = useState(false)
-  const [page, setPage] = useState(1)
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [total, setTotal] = useState(initialTotal)
+  // Restore this category's prior view (products loaded, page, sort, filter) if
+  // we're returning to it in the same session; otherwise start from the SSR page.
+  const cached = categoryViewCache.get(categoryId)
+  const [sort, setSort] = useState<SortOption>(cached?.sort ?? 'featured')
+  const [inStockOnly, setInStockOnly] = useState(cached?.inStockOnly ?? false)
+  const [page, setPage] = useState(cached?.page ?? 1)
+  const [products, setProducts] = useState<Product[]>(cached?.products ?? initialProducts)
+  const [total, setTotal] = useState(cached?.total ?? initialTotal)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  // Keep the session cache in step with the current view, so the next return to
+  // this category picks up exactly here.
+  useEffect(() => {
+    categoryViewCache.set(categoryId, { products, total, page, sort, inStockOnly })
+  }, [categoryId, products, total, page, sort, inStockOnly])
 
   const hasMore = products.length < total
 
