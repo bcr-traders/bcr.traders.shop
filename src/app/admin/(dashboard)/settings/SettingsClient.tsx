@@ -13,6 +13,8 @@ type Settings = {
   store_tagline_or: string
   min_order_value: string
   bulk_order_minimum: string
+  free_delivery_min: string
+  flat_delivery_fee: string
   low_stock_threshold: string
   admin_notification_email: string
   otp_expiry_minutes: string
@@ -107,6 +109,8 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       store_tagline_or: settings.store_tagline_or.trim(),
       min_order_value: settings.min_order_value ? parseFloat(settings.min_order_value) : 0,
       bulk_order_minimum: settings.bulk_order_minimum ? parseFloat(settings.bulk_order_minimum) : 0,
+      free_delivery_min: settings.free_delivery_min ? parseFloat(settings.free_delivery_min) : 1000,
+      flat_delivery_fee: settings.flat_delivery_fee ? parseFloat(settings.flat_delivery_fee) : 50,
       low_stock_threshold: settings.low_stock_threshold ? parseInt(settings.low_stock_threshold, 10) : 10,
       admin_notification_email: settings.admin_notification_email.trim(),
       otp_expiry_minutes: settings.otp_expiry_minutes ? parseInt(settings.otp_expiry_minutes, 10) : 10,
@@ -255,6 +259,47 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
             )}
           </div>
         )}
+      </Section>
+
+      {/* ── Delivery ── */}
+      <Section title="Delivery" sub="Free-delivery threshold and the flat fee below it">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Field label="Free Delivery Above" hint="Free at/above this subtotal">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-black text-sm">₹</span>
+              <input
+                type="number"
+                value={settings.free_delivery_min}
+                min={0}
+                step={1}
+                onChange={e => set('free_delivery_min', e.target.value)}
+                placeholder="1000"
+                className={cn(inputCls, 'pl-9 font-mono')}
+              />
+            </div>
+          </Field>
+          <Field label="Flat Delivery Fee" hint="Charged below the threshold">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-black text-sm">₹</span>
+              <input
+                type="number"
+                value={settings.flat_delivery_fee}
+                min={0}
+                step={1}
+                onChange={e => set('flat_delivery_fee', e.target.value)}
+                placeholder="50"
+                className={cn(inputCls, 'pl-9 font-mono')}
+              />
+            </div>
+          </Field>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+          <Info size={16} strokeWidth={2.5} className="text-blue-600 flex-shrink-0" />
+          <p className="font-bold text-xs text-blue-800">
+            Orders under <strong className="font-black text-blue-900">₹{settings.free_delivery_min || '1000'}</strong> pay{' '}
+            <strong className="font-black text-blue-900">₹{settings.flat_delivery_fee || '50'}</strong> delivery; at or above, it's free. A per-product delivery charge (set on a product) still overrides this.
+          </p>
+        </div>
       </Section>
 
       {/* ── Inventory ── */}

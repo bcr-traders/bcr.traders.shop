@@ -32,6 +32,8 @@ export default async function SettingsPage() {
     store_tagline_or:         str(raw.store_tagline_or, ''),
     min_order_value:          num(raw.min_order_value, 0),
     bulk_order_minimum:       num(raw.bulk_order_minimum, 0),
+    free_delivery_min:        num(raw.free_delivery_min, 1000),
+    flat_delivery_fee:        num(raw.flat_delivery_fee, 50),
     low_stock_threshold:      num(raw.low_stock_threshold, 10),
     admin_notification_email: str(raw.admin_notification_email, ''),
     otp_expiry_minutes:       num(raw.otp_expiry_minutes, 10),

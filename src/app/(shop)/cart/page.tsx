@@ -11,7 +11,8 @@ import {
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
-import { computeDeliveryFee, perProductDelivery, FREE_DELIVERY_MIN } from '@/lib/cart/delivery'
+import { computeDeliveryFee, perProductDelivery } from '@/lib/cart/delivery'
+import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
 import type { CartItem } from '@/types/database.types'
 
 interface CouponData {
@@ -299,6 +300,7 @@ function EmptyCart() {
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice, setCoupon } = useCartStore()
   const { isSignedIn } = useSupabaseUser()
+  const deliveryConfig = useDeliveryConfig()
   const router = useRouter()
 
   const [couponInput, setCouponInput] = useState('')
@@ -329,7 +331,7 @@ export default function CartPage() {
   // fee. When a fixed charge applies, the "add more for free delivery" prompt
   // doesn't make sense, so it's hidden.
   const hasProductDelivery = perProductDelivery(items) > 0
-  const deliveryFee = computeDeliveryFee(items, subtotal)
+  const deliveryFee = computeDeliveryFee(items, subtotal, deliveryConfig)
   const total = Math.max(0, subtotal - discount) + deliveryFee
   const totalQty = items.reduce((s, i) => s + i.quantity, 0)
 
@@ -418,7 +420,7 @@ export default function CartPage() {
             <div className="flex items-center gap-3 border-2 border-table-border rounded-2xl p-3.5 text-sm">
               <Truck size={16} className="text-on-surface-variant/50 flex-shrink-0" />
               <span className="font-medium text-on-surface-variant/70">
-                Add <span className="font-black text-primary">₹{(FREE_DELIVERY_MIN - subtotal).toLocaleString('en-IN')}</span> more for Free Delivery
+                Add <span className="font-black text-primary">₹{(deliveryConfig.freeDeliveryMin - subtotal).toLocaleString('en-IN')}</span> more for Free Delivery
               </span>
             </div>
           ))}

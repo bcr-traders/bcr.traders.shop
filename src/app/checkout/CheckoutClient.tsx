@@ -9,7 +9,8 @@ import {
   Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt, Gift,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import { perProductDelivery } from '@/lib/cart/delivery'
+import { computeDeliveryFee } from '@/lib/cart/delivery'
+import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
@@ -33,6 +34,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   // customer home before the success page loads. A ref, not state: it must be
   // readable by the effect on the very next render, without scheduling another.
   const orderPlacedRef = useRef(false)
+  const deliveryConfig = useDeliveryConfig()
   const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -78,9 +80,11 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
       ))
     : 0
   const creditApplied = Math.min(myCredit, Math.max(0, subtotal - couponDiscount - referralDiscount))
-  // Fixed per-product delivery charge (₹0 when no item has one). The server
-  // recomputes this authoritatively at order time.
-  const deliveryFee = perProductDelivery(items)
+  // Same rule as the cart and the order route: per-product charge if any, else
+  // free at/above the admin threshold, else the flat fee. (Previously this only
+  // summed per-product charges, so it showed FREE for sub-threshold orders while
+  // the cart showed the flat fee.) The server recomputes it authoritatively.
+  const deliveryFee = computeDeliveryFee(items, subtotal, deliveryConfig)
   const grandTotal = Math.max(0, subtotal - couponDiscount - referralDiscount - creditApplied) + deliveryFee
   // Address + serviceability gate the button. The email is captured in a popup
   // at "Place Order" (PRD #3/#4) — every order/status update is sent to it.
@@ -600,7 +604,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
             <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle,#fff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
 
             <div className="relative z-10">
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/35 mb-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80 mb-4">
                 Order Summary
               </p>
 
@@ -624,7 +628,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-black text-white line-clamp-1">{item.name}</p>
-                        <p className="text-[10px] text-white/40 font-medium">{item.unit} × {item.quantity}</p>
+                        <p className="text-[10px] text-white/80 font-medium">{item.unit} × {item.quantity}</p>
                       </div>
                     </div>
                     <span className="text-sm font-black text-white flex-shrink-0">
@@ -637,12 +641,12 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               {/* Price breakdown */}
               <div className="space-y-2.5 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/50 font-medium">Subtotal ({totalItems()} items)</span>
+                  <span className="text-white/80 font-medium">Subtotal ({totalItems()} items)</span>
                   <span className="text-white font-black">₹{subtotal.toFixed(0)}</span>
                 </div>
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/50 font-medium">
+                    <span className="text-white/80 font-medium">
                       Coupon {validCouponCode ? `(${validCouponCode})` : 'Discount'}
                     </span>
                     <span className="text-emerald-300 font-black">−₹{couponDiscount.toFixed(0)}</span>
@@ -650,18 +654,18 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 )}
                 {referralDiscount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/50 font-medium">Referral ({referralApplied?.code})</span>
+                    <span className="text-white/80 font-medium">Referral ({referralApplied?.code})</span>
                     <span className="text-emerald-300 font-black">−₹{referralDiscount.toFixed(0)}</span>
                   </div>
                 )}
                 {creditApplied > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/50 font-medium">Referral reward</span>
+                    <span className="text-white/80 font-medium">Referral reward</span>
                     <span className="text-emerald-300 font-black">−₹{creditApplied.toFixed(0)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pb-3 border-b border-white/15">
-                  <span className="text-white/50 font-medium">Delivery</span>
+                  <span className="text-white/80 font-medium">Delivery</span>
                   {deliveryFee > 0
                     ? <span className="text-white font-black">₹{deliveryFee.toFixed(0)}</span>
                     : <span className="text-white font-black text-xs uppercase tracking-wider">Free</span>}
@@ -669,7 +673,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               </div>
 
               <div className="flex items-end justify-between mb-5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Total</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Total</span>
                 <span className="text-2xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
               </div>
 
@@ -729,7 +733,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
         <div className="flex justify-between items-center mb-2.5">
-          <span className="text-[9px] font-black uppercase tracking-widest text-white/35">
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/80">
             Total{couponDiscount > 0 ? ` · −₹${couponDiscount.toFixed(0)}` : ''}
           </span>
           <span className="text-xl font-black text-white">₹{grandTotal.toFixed(0)}</span>

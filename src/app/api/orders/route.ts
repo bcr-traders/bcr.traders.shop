@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cleanGstin } from '@/lib/validations/gst'
 import { findBuyOption } from '@/lib/products/packaging'
+import { computeDeliveryFee, parseDeliveryConfig } from '@/lib/cart/delivery'
 import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
 import { generateUniqueReferralCode } from '@/lib/referral/code'
 import type { AuthMetadata } from '@/types'
@@ -171,9 +172,8 @@ export async function POST(request: Request) {
   }
 
   const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
-  // Delivery fee = sum of the per-product delivery charges of the products in
-  // this order (each product once), read from authoritative DB data — never
-  // trust a client-sent charge. Products without a charge add nothing.
+  // Per-product delivery charges (each product once), from authoritative DB data
+  // — never trust a client-sent charge. Products without a charge add nothing.
   const deliveryByProduct = new Map<string, number>()
   for (const oi of orderItems) {
     const p = productMap.get(oi.product_id)
@@ -181,7 +181,17 @@ export async function POST(request: Request) {
       deliveryByProduct.set(p.id, Number(p.delivery_charge))
     }
   }
-  const deliveryFee = [...deliveryByProduct.values()].reduce((sum, c) => sum + c, 0)
+  // Apply the SAME rule the cart and checkout show, so the charge matches what
+  // the customer saw: per-product charges win; otherwise free at/above the admin
+  // threshold, else the flat fee. Thresholds come from the `settings` CMS row.
+  const { data: settingsRow } = await adminDb
+    .from('cms_content').select('value').eq('key', 'settings').maybeSingle()
+  const deliveryConfig = parseDeliveryConfig((settingsRow as { value?: unknown } | null)?.value)
+  const deliveryFee = computeDeliveryFee(
+    [...deliveryByProduct.values()].map((c) => ({ delivery_charge: c })),
+    subtotal,
+    deliveryConfig,
+  )
 
   // ── Authoritative coupon validation — never trust a client-sent discount ──
   let discountAmt = 0
