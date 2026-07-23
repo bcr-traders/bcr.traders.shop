@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
+    // Vercel's image optimizer is returning 402
+    // (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) — the account's image-optimization
+    // quota/spend limit is exhausted, so EVERY /_next/image request fails and all
+    // <Image> renders show a broken image. Serving the originals directly (Supabase
+    // and /public both work) bypasses the optimizer so images load again.
+    // Re-enable optimization (remove this line) once the Vercel plan/limit is raised.
+    unoptimized: true,
   },
 
   async headers() {
