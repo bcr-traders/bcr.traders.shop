@@ -371,8 +371,14 @@ export default function ProductBuyPanel({ product }: { product: Product }) {
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
         <div className="flex flex-col leading-none">
-          <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/50">{unit}</span>
-          <span className="text-lg font-black text-primary">₹{price}</span>
+          {/* Mirror the panel's "Total amount": the big number is qty × unit
+              price, not the bare unit price. When more than one is selected the
+              small line shows the "3 × ₹5,410" breakdown so the total reads
+              correctly instead of "Box ₹16,230". */}
+          <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/50">
+            {currentQty > 1 ? `${currentQty} × ₹${price.toLocaleString('en-IN')}` : unit}
+          </span>
+          <span className="text-lg font-black text-primary">₹{(currentQty * price).toLocaleString('en-IN')}</span>
         </div>
         <div className="flex-1 flex gap-2">
           <AddControl full />
