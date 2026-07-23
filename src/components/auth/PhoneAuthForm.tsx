@@ -91,7 +91,16 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
           return
         }
         if (preData?.error_code === 'user_not_found') {
-          setNotRegistered(true)
+          // New user entering their number on login: drop them straight onto the
+          // sign-up form (same page, name field appears) instead of showing a
+          // "no account found" popup. Staff portals have no self sign-up, so they
+          // still get the contact-admin notice.
+          if (allowSignup) {
+            setError(null)
+            setMode('signup')
+          } else {
+            setNotRegistered(true)
+          }
           setLoading(false)
           return
         }
