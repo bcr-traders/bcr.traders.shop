@@ -205,7 +205,7 @@ export default function HeaderLocation({ className = '' }: { className?: string 
                 maxLength={6}
                 value={input}
                 onChange={handleChange}
-                placeholder="e.g. 753001"
+                placeholder="e.g. 760002"
                 className="w-full px-4 py-3 pr-12 border border-table-border/80 rounded-xl text-sm font-bold text-primary placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary/50 transition-colors bg-surface-container-low"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
