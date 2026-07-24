@@ -34,6 +34,8 @@ export default function OrderStatusUpdate({
 
   const date = new Date(createdAt).toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
+    // Emails render on the server (UTC); pin to IST so a late-night order isn't dated a day off.
+    timeZone: 'Asia/Kolkata',
   })
 
   return (

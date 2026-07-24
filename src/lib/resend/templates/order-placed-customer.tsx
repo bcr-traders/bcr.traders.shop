@@ -13,6 +13,8 @@ export default function OrderPlacedCustomer({
 }: Props) {
   const date = new Date(createdAt).toLocaleString('en-IN', {
     day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    // Emails render on the server (UTC); pin to IST or the time is off by 5:30.
+    timeZone: 'Asia/Kolkata',
   })
 
   return (
