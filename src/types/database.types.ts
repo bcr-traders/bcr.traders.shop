@@ -128,7 +128,14 @@ export interface Coupon {
   is_active: boolean
   valid_from: string | null
   valid_until: string | null
+  /** Global cap across ALL customers (uses_count tracks the running total). */
   max_uses: number | null
+  /**
+   * Cap for a SINGLE customer (migration 031). Counted from that customer's own
+   * orders. null = no per-customer limit. Optional because the column is absent
+   * until that migration runs on the live DB.
+   */
+  max_uses_per_customer?: number | null
   uses_count: number
   created_at: string
 }

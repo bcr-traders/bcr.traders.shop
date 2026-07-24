@@ -13,6 +13,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { computeDeliveryFee, perProductDelivery } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
+import CartCouponPicker from '@/components/cart/CartCouponPicker'
 import type { CartItem } from '@/types/database.types'
 
 interface CouponData {
@@ -349,8 +350,11 @@ export default function CartPage() {
     return () => clearTimeout(syncRef.current)
   }, [items, isSignedIn])
 
-  const handleApplyCoupon = useCallback(async () => {
-    const code = couponInput.trim()
+  // Split out so a coupon TAPPED from the list can reuse the exact same
+  // validation as the typed code. Kept separate from handleApplyCoupon so the
+  // button's click event is never mistaken for a code.
+  const applyCouponCode = useCallback(async (rawCode: string) => {
+    const code = rawCode.trim()
     if (!code) return
     setCouponLoading(true)
     setCouponError('')
@@ -379,7 +383,12 @@ export default function CartPage() {
     } finally {
       setCouponLoading(false)
     }
-  }, [couponInput, subtotal])
+  }, [subtotal])
+
+  const handleApplyCoupon = useCallback(
+    () => applyCouponCode(couponInput),
+    [applyCouponCode, couponInput],
+  )
 
   if (items.length === 0) return <EmptyCart />
 
@@ -455,6 +464,14 @@ export default function CartPage() {
             onRemove={() => { setAppliedCoupon(null); setCouponError('') }}
             error={couponError}
             loading={couponLoading}
+          />
+
+          {/* Tap-to-apply list of the coupons this customer can actually use.
+              Hides itself when there's nothing to offer. */}
+          <CartCouponPicker
+            subtotal={subtotal}
+            appliedCode={appliedCoupon?.code ?? null}
+            onApply={applyCouponCode}
           />
         </div>
 

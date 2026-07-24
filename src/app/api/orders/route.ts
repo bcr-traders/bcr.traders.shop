@@ -201,13 +201,14 @@ export async function POST(request: Request) {
   if (coupon_code && coupon_code.trim()) {
     const { data: coupon } = await adminDb
       .from('coupons')
-      .select('id, code, discount_type, discount_value, min_order_value, max_discount, max_uses, uses_count, valid_until, is_active')
+      .select('*')
       .ilike('code', coupon_code.trim())
       .maybeSingle()
 
     const c = coupon as null | {
       id: string; code: string; discount_type: 'percentage' | 'flat'; discount_value: number
       min_order_value: number | null; max_discount: number | null; max_uses: number | null
+      max_uses_per_customer?: number | null
       uses_count: number | null; valid_until: string | null; is_active: boolean
     }
 
@@ -220,6 +221,28 @@ export async function POST(request: Request) {
 
     if (invalid) {
       return Response.json({ error: 'This coupon is not valid for your order.' }, { status: 400 })
+    }
+
+    // Per-customer cap (migration 031). Counted from THIS customer's own orders,
+    // server-side, so it can't be bypassed from the client. Only enforced when
+    // the admin has set a limit; a missing column simply yields no count.
+    if (c!.max_uses_per_customer != null && c!.max_uses_per_customer > 0) {
+      const { count: usedByCustomer } = await adminDb
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profileId)
+        .ilike('coupon_code', c!.code)
+
+      if ((usedByCustomer ?? 0) >= c!.max_uses_per_customer) {
+        return Response.json(
+          {
+            error: c!.max_uses_per_customer === 1
+              ? 'You have already used this coupon.'
+              : `You can only use this coupon ${c!.max_uses_per_customer} times.`,
+          },
+          { status: 400 },
+        )
+      }
     }
 
     let d =

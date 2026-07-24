@@ -28,6 +28,7 @@ type FormState = {
   valid_from: string
   valid_until: string
   max_uses: string
+  max_uses_per_customer: string
   is_active: boolean
 }
 
@@ -74,6 +75,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
     valid_from: toDateInput(coupon?.valid_from ?? null),
     valid_until: toDateInput(coupon?.valid_until ?? null),
     max_uses: coupon?.max_uses?.toString() ?? '',
+    max_uses_per_customer: coupon?.max_uses_per_customer?.toString() ?? '',
     is_active: coupon?.is_active ?? true,
   })
 
@@ -122,6 +124,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
       valid_from: form.valid_from || null,
       valid_until: form.valid_until || null,
       max_uses: form.max_uses ? parseInt(form.max_uses, 10) : null,
+      max_uses_per_customer: form.max_uses_per_customer ? parseInt(form.max_uses_per_customer, 10) : null,
       is_active: form.is_active,
     }
 
@@ -405,6 +408,16 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
                   value={form.max_uses}
                   min={1}
                   onChange={e => set('max_uses', e.target.value)}
+                  placeholder="Unlimited"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Uses Per Customer" hint="How many times ONE customer may use it — blank for unlimited">
+                <input
+                  type="number"
+                  value={form.max_uses_per_customer}
+                  min={1}
+                  onChange={e => set('max_uses_per_customer', e.target.value)}
                   placeholder="Unlimited"
                   className={inputCls}
                 />
