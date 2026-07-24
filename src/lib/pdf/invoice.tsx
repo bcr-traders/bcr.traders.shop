@@ -43,32 +43,17 @@ const STATUS_LABEL: Record<string, string> = {
   returned: 'Returned',
 }
 
+// Sizes are scaled ~0.72x from the original A4 layout so the same design fits an
+// A5 page (A5 is ~71% of A4 per side). Proportions, colours and structure are
+// unchanged — only font sizes and spacing shrank. The diagonal brand watermark
+// was removed.
 const styles = StyleSheet.create({
   page: {
     backgroundColor: '#ffffff',
     fontFamily: 'Helvetica',
-    fontSize: 10,
-    padding: 36,
+    fontSize: 8,
+    padding: 26,
     color: '#1c1c17',
-  },
-  // Full-page layer that centres the slanted brand watermark behind everything.
-  watermark: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  watermarkText: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 68,
-    color: '#26170c',
-    opacity: 0.06,
-    transform: 'rotate(-45deg)',
-    transformOrigin: 'center',
-    letterSpacing: 4,
   },
 
   // Header
@@ -76,45 +61,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
-  logo: { width: 40, height: 48, marginRight: 12 },
-  brandName: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#26170c', letterSpacing: 1 },
-  brandSub: { fontSize: 8, color: '#81756e', marginTop: 2 },
-  sellerLine: { fontSize: 8, color: '#4f453f', marginTop: 1.5 },
-  gstin: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 3 },
+  logo: { width: 30, height: 36, marginRight: 9 },
+  brandName: { fontSize: 15, fontFamily: 'Helvetica-Bold', color: '#26170c', letterSpacing: 1 },
+  brandSub: { fontSize: 7, color: '#81756e', marginTop: 2 },
+  sellerLine: { fontSize: 7, color: '#4f453f', marginTop: 1.5 },
+  gstin: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 3 },
 
   invoiceBox: { alignItems: 'flex-end' },
   invoiceLabel: {
-    fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#ffffff',
-    backgroundColor: '#26170c', padding: '4 10', borderRadius: 3,
+    fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#ffffff',
+    backgroundColor: '#26170c', padding: '3 8', borderRadius: 3,
     textTransform: 'uppercase', letterSpacing: 1,
   },
-  invoiceMetaLabel: { fontSize: 8, color: '#81756e', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 8 },
-  invoiceMetaValue: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 1 },
-  invoiceDate: { fontSize: 9, color: '#4f453f', marginTop: 6 },
+  invoiceMetaLabel: { fontSize: 7, color: '#81756e', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 6 },
+  invoiceMetaValue: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 1 },
+  invoiceDate: { fontSize: 8, color: '#4f453f', marginTop: 4 },
 
-  ruleThick: { borderBottom: '2 solid #26170c', marginBottom: 16 },
+  ruleThick: { borderBottom: '2 solid #26170c', marginBottom: 11 },
 
   // Bill-to / meta
-  row: { flexDirection: 'row', marginBottom: 18 },
+  row: { flexDirection: 'row', marginBottom: 12 },
   col: { flex: 1 },
-  label: { fontSize: 8, color: '#81756e', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 },
-  addressText: { fontSize: 10, color: '#3d2b1f', lineHeight: 1.6 },
-  nameText: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#26170c', marginBottom: 2 },
-  buyerGstin: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 4 },
+  label: { fontSize: 7, color: '#81756e', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  addressText: { fontSize: 8, color: '#3d2b1f', lineHeight: 1.6 },
+  nameText: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c', marginBottom: 2 },
+  buyerGstin: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#26170c', marginTop: 3 },
 
   // COD box
   paymentBox: {
     backgroundColor: '#fdf9f1',
     border: '1 solid #c4a882',
     borderRadius: 4,
-    padding: '10 12',
-    marginBottom: 18,
+    padding: '7 9',
+    marginBottom: 12,
   },
-  paymentText: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#26170c' },
-  paymentSub: { fontSize: 8, color: '#81756e', marginTop: 2 },
+  paymentText: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c' },
+  paymentSub: { fontSize: 7, color: '#81756e', marginTop: 2 },
 
   // GST non-cancellable notice. Warmer/red-tinted vs the cream payment box, so
   // it reads as a condition of sale rather than another routine detail.
@@ -122,72 +107,72 @@ const styles = StyleSheet.create({
     backgroundColor: '#fdf2f2',
     border: '1 solid #dc2626',
     borderRadius: 4,
-    padding: '9 12',
-    marginTop: 16,
+    padding: '6 9',
+    marginTop: 11,
   },
   gstNoticeTitle: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: 'Helvetica-Bold',
     color: '#dc2626',
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
-  gstNoticeText: { fontSize: 8, color: '#7c2d2d', marginTop: 3, lineHeight: 1.45 },
+  gstNoticeText: { fontSize: 7, color: '#7c2d2d', marginTop: 2, lineHeight: 1.45 },
 
   // Items table
-  table: { marginBottom: 16 },
+  table: { marginBottom: 11 },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#26170c',
-    padding: '7 8',
+    padding: '5 6',
   },
-  th: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#ffffff', textTransform: 'uppercase', letterSpacing: 0.5 },
-  thSl: { width: 24 },
+  th: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#ffffff', textTransform: 'uppercase', letterSpacing: 0.5 },
+  thSl: { width: 18 },
   thItem: { flex: 3 },
   thNum: { flex: 1, textAlign: 'center' },
   thPrice: { flex: 1.3, textAlign: 'right' },
   tableRow: {
     flexDirection: 'row',
-    padding: '10 8',
+    padding: '7 6',
     borderBottom: '1 solid #f0e9dc',
     alignItems: 'flex-start',
   },
   tableRowAlt: { backgroundColor: '#fbf7ef' },
-  tdSl: { width: 24, fontSize: 9, color: '#81756e', lineHeight: 1.4 },
+  tdSl: { width: 18, fontSize: 8, color: '#81756e', lineHeight: 1.4 },
   // The item cell is a column View; its children must NOT set `flex`, or the
   // name collapses to zero height and the unit renders on top of it.
-  tdItemCell: { flex: 3, paddingRight: 8 },
-  tdItem: { fontSize: 10, color: '#1c1c17', lineHeight: 1.35 },
-  tdUnit: { fontSize: 8, color: '#81756e', marginTop: 3, lineHeight: 1.3 },
-  tdNum: { flex: 1, fontSize: 10, color: '#1c1c17', textAlign: 'center', lineHeight: 1.4 },
-  tdPrice: { flex: 1.3, fontSize: 10, color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
-  tdPriceBold: { flex: 1.3, fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
+  tdItemCell: { flex: 3, paddingRight: 6 },
+  tdItem: { fontSize: 8, color: '#1c1c17', lineHeight: 1.35 },
+  tdUnit: { fontSize: 7, color: '#81756e', marginTop: 2, lineHeight: 1.3 },
+  tdNum: { flex: 1, fontSize: 8, color: '#1c1c17', textAlign: 'center', lineHeight: 1.4 },
+  tdPrice: { flex: 1.3, fontSize: 8, color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
+  tdPriceBold: { flex: 1.3, fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#1c1c17', textAlign: 'right', lineHeight: 1.4 },
 
   // Totals
-  totalsContainer: { marginLeft: 'auto', width: 220 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  totalLabel: { fontSize: 10, color: '#4f453f' },
-  totalValue: { fontSize: 10, color: '#1c1c17' },
+  totalsContainer: { marginLeft: 'auto', width: 160 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
+  totalLabel: { fontSize: 8, color: '#4f453f' },
+  totalValue: { fontSize: 8, color: '#1c1c17' },
   grandRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#26170c',
     borderRadius: 3,
-    padding: '7 10',
-    marginTop: 6,
+    padding: '5 8',
+    marginTop: 4,
   },
-  grandLabel: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
-  grandValue: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
+  grandLabel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
+  grandValue: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
 
   // Footer
   footer: {
     borderTop: '1 solid #e5e1d9',
-    paddingTop: 12,
-    marginTop: 24,
+    paddingTop: 9,
+    marginTop: 16,
   },
-  footerThanks: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#26170c', textAlign: 'center', marginBottom: 6 },
-  footerText: { fontSize: 8, color: '#81756e', textAlign: 'center', lineHeight: 1.5 },
-  footerNote: { fontSize: 7, color: '#a99f95', textAlign: 'center', marginTop: 6 },
+  footerThanks: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#26170c', textAlign: 'center', marginBottom: 4 },
+  footerText: { fontSize: 7, color: '#81756e', textAlign: 'center', lineHeight: 1.5 },
+  footerNote: { fontSize: 6, color: '#a99f95', textAlign: 'center', marginTop: 4 },
 })
 
 function InvoiceDocument({ data }: { data: OrderEmailData }) {
@@ -208,15 +193,7 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
 
   return (
     <Document title={`BCR Invoice ${data.orderNumber}`} author="BCR Traders">
-      <Page size="A4" style={styles.page}>
-
-        {/* ── Diagonal BCR TRADERS watermark ──
-            Rendered first and absolutely positioned so it sits behind the
-            content; `fixed` repeats it on every page. Very low opacity so it
-            never obscures the invoice text. */}
-        <View style={styles.watermark} fixed>
-          <Text style={styles.watermarkText}>BCR TRADERS</Text>
-        </View>
+      <Page size="A5" style={styles.page}>
 
         {/* ── Header: logo + seller (left), invoice meta (right) ── */}
         <View style={styles.header}>
