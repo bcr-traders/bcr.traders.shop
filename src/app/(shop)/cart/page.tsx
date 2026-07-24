@@ -359,23 +359,22 @@ export default function CartPage() {
     setCouponLoading(true)
     setCouponError('')
     try {
-      const res = await fetch('/api/coupons')
-      if (!res.ok) throw new Error('fetch failed')
-      const data: CouponData[] = await res.json()
-      const found = data.find((c) => c.code.toUpperCase() === code.toUpperCase())
-      const expired = found?.valid_until && new Date(found.valid_until) < new Date()
-      const usedUp =
-        found?.max_uses != null && (found.uses_count ?? 0) >= found.max_uses
-      if (!found) {
-        setCouponError('Invalid coupon code')
-      } else if (expired) {
-        setCouponError('This coupon has expired')
-      } else if (usedUp) {
-        setCouponError('This coupon is no longer available')
-      } else if (found.min_order_value && subtotal < found.min_order_value) {
-        setCouponError(`Min. order ₹${found.min_order_value} required for this coupon`)
+      // Validate server-side: the public coupon list can only show the GLOBAL
+      // cap, so checking here missed the per-customer cap and the customer only
+      // found out when placing the order. This runs the same rules the order
+      // route runs, including how many times THIS customer has already used it.
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, subtotal }),
+      })
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string; coupon?: CouponData
+      }
+      if (!res.ok || !data.ok || !data.coupon) {
+        setCouponError(data.error || 'Invalid coupon code')
       } else {
-        setAppliedCoupon(found)
+        setAppliedCoupon(data.coupon)
         setCouponInput('')
       }
     } catch {
