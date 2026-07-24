@@ -87,6 +87,10 @@ export const viewport: Viewport = {
   themeColor: '#1c130a',
   width: 'device-width',
   initialScale: 1,
+  // Required for env(safe-area-inset-*) to return real values on iPhone.
+  // Without it those insets are 0, so the bottom nav / sticky bars / sheets sit
+  // under the notch and home indicator. No effect on desktop/Android (insets 0).
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -166,7 +166,7 @@ function SuccessOverlay({
         {/* Scrolls within itself on short screens: the receipt, invoice button
             and referral block together are taller than a small phone viewport,
             and the page behind is locked. */}
-        <div className="w-full p-6 sm:p-8 flex flex-col items-center max-h-[88vh] overflow-y-auto overscroll-contain">
+        <div className="w-full p-6 sm:p-8 flex flex-col items-center max-h-[88dvh] overflow-y-auto overscroll-contain">
           {/* Animated checkmark */}
           <motion.div
             className="relative w-24 h-24 mb-5"

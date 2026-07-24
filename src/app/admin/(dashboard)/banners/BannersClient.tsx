@@ -415,7 +415,7 @@ function BannerFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-table-border">
+      <div className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto border-2 border-table-border">
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-table-border">
           <h3 className="font-black text-xl text-primary tracking-tight">
             {banner ? 'Edit Banner.' : `Add ${PLACEMENT_LABELS[form.placement] ?? 'Banner'}.`}

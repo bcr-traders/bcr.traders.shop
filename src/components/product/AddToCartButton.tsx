@@ -178,7 +178,7 @@ export default function AddToCartButton({ product, className, variant = 'icon', 
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 320 }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-            className="relative w-full max-w-md bg-surface rounded-t-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto overscroll-contain"
+            className="relative w-full max-w-md bg-surface rounded-t-3xl p-5 shadow-2xl max-h-[92dvh] overflow-y-auto overscroll-contain"
             style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
           >
             <div className="mx-auto w-10 h-1.5 rounded-full bg-outline-variant/40 mb-4" />

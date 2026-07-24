@@ -50,7 +50,7 @@ export default function PaymentModal({ orderId, total, onDelivered, onClose }: P
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60">
-      <div className="w-full max-w-sm bg-surface rounded-t-3xl sm:rounded-3xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-sm bg-surface rounded-t-3xl sm:rounded-3xl p-6 space-y-5 max-h-[90dvh] overflow-y-auto">
 
         <div className="flex items-center justify-between">
           <h2 className="font-headline-md text-headline-md text-primary">Collect Payment</h2>

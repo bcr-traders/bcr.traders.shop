@@ -217,6 +217,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* iOS Safari zooms the whole page in when a focused control's font-size is under
+   16px (ours are 14px), then leaves the page zoomed. Bumping to 16px stops it.
+   Scoped to iOS only — `-webkit-touch-callout` is an iOS-Safari-only feature —
+   so desktop and Android inputs are byte-for-byte unchanged. Field HEIGHT is
+   padding-driven, so this only nudges the text size on iPhone, nothing else. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Headings / sub-headings use the Playfair Display serif by default.
    Product names (h4) intentionally stay on the main Poppins font. */
 h1,

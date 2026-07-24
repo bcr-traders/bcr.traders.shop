@@ -145,7 +145,7 @@ export default function AbandonedCartsClient({ initialCarts }: Props) {
       {/* Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-surface-card rounded-2xl border-2 border-table-border shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-lg bg-surface-card rounded-2xl border-2 border-table-border shadow-xl overflow-hidden flex flex-col max-h-[90dvh]">
             <div className="flex items-center justify-between px-6 py-4 border-b-2 border-table-border bg-surface">
               <h3 className="font-black text-xl text-primary">Cart Details.</h3>
               <button onClick={() => setSelected(null)} className="p-2 rounded-xl border-2 border-table-border hover:bg-surface-card transition-colors active:scale-95">
