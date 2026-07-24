@@ -270,6 +270,15 @@ export async function POST(request: Request) {
   const isFirstOrder = (priorOrderCount ?? 0) === 0
 
   if (referralCfg.enabled && body.referral_code?.trim() && isFirstOrder) {
+    // A coupon and a referral code are mutually exclusive — one discount source
+    // per order. (The buyer's OWN referrer reward below is separate and still
+    // allowed alongside a coupon.)
+    if (appliedCouponCode) {
+      return Response.json(
+        { error: 'Use either a coupon or a referral code, not both.', error_code: 'coupon_referral_exclusive' },
+        { status: 400 },
+      )
+    }
     const code = body.referral_code.trim().toUpperCase()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: refProfile } = await (adminDb as any)
@@ -290,14 +299,29 @@ export async function POST(request: Request) {
     }
   }
 
-  // Buyer's own accrued credit (earned from referring others) auto-applies here.
+  // The buyer's OWN referrer reward is count-based (migration 033): every person
+  // who ordered with their code grants ONE use of the referrer discount, applied
+  // once here and capped at how many people referred them. Independent of any
+  // coupon, so it is NOT blocked by one.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: buyerProfile } = await (adminDb as any)
-    .from('profiles').select('referral_code, referral_credit').eq('id', profileId).maybeSingle()
-  const availableCredit = Math.max(0, Number(buyerProfile?.referral_credit ?? 0))
-  const referralCreditApplied = Math.min(availableCredit, Math.max(0, subtotal - discountAmt - refereeDiscount))
+    .from('profiles').select('referral_code, referral_redemptions_used').eq('id', profileId).maybeSingle()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: referralsMade } = await (adminDb as any)
+    .from('referrals').select('id', { count: 'exact', head: true }).eq('referrer_id', profileId)
+  const redemptionsUsed = Math.max(0, Number(buyerProfile?.referral_redemptions_used ?? 0))
+  const availableReferrerUses = Math.max(0, (referralsMade ?? 0) - redemptionsUsed)
 
-  const totalDiscount = discountAmt + refereeDiscount + referralCreditApplied
+  let referrerRedemption = 0
+  if (referralCfg.enabled && availableReferrerUses > 0) {
+    referrerRedemption = Math.min(
+      computeReferrerReward(subtotal, referralCfg),
+      Math.max(0, subtotal - discountAmt - refereeDiscount),
+    )
+  }
+  const consumeReferrerUse = referrerRedemption > 0
+
+  const totalDiscount = discountAmt + refereeDiscount + referrerRedemption
   const exactTotal = Math.max(0, subtotal - totalDiscount) + deliveryFee
 
   // Cash on delivery is collected in whole rupees (no coins), so the payable is
@@ -350,24 +374,26 @@ export async function POST(request: Request) {
     } catch (e) { console.error('Referral code generation failed:', e) }
   }
 
-  // Settle referral rewards after the response: spend the buyer's applied credit,
-  // and (if they redeemed a code) record the referral + credit the referrer.
-  if (referralCfg.enabled && (referralCreditApplied > 0 || referrerIdToCredit)) {
+  // Settle referral rewards after the response:
+  //   • if the buyer used one of their OWN referrer uses, count it as spent;
+  //   • if the buyer redeemed someone's code, record the referral — which is
+  //     what grows that referrer's available-uses count (no balance to credit).
+  if (referralCfg.enabled && (consumeReferrerUse || referrerIdToCredit)) {
     after(async () => {
       try {
         const db = createAdminClient()
-        if (referralCreditApplied > 0) {
+        if (consumeReferrerUse) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (db as any).from('profiles').update({ referral_credit: Math.max(0, availableCredit - referralCreditApplied) }).eq('id', profileId)
+          await (db as any).from('profiles')
+            .update({ referral_redemptions_used: redemptionsUsed + 1 })
+            .eq('id', profileId)
         }
         if (referrerIdToCredit) {
           const reward = computeReferrerReward(subtotal, referralCfg)
+          // reward_amount is kept as a record of the reward at referral time; the
+          // referrer's benefit is now the extra USE this row grants, not a balance.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (db as any).from('referrals').insert({ referrer_id: referrerIdToCredit, referee_id: profileId, code: redeemedCode, order_id: orderId, reward_amount: reward })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: rp } = await (db as any).from('profiles').select('referral_credit').eq('id', referrerIdToCredit).maybeSingle()
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (db as any).from('profiles').update({ referral_credit: Number(rp?.referral_credit ?? 0) + reward }).eq('id', referrerIdToCredit)
         }
       } catch (e) { console.error('Referral settlement failed:', e) }
     })

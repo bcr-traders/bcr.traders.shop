@@ -22,7 +22,7 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await (db as any)
     .from('profiles')
-    .select('referral_code, referral_credit')
+    .select('referral_code, referral_redemptions_used')
     .eq('id', profileId)
     .maybeSingle()
 
@@ -39,11 +39,29 @@ export async function GET() {
     .eq('referee_id', profileId)
     .maybeSingle()
 
+  // Referrer reward is count-based: how many people used my code, minus how many
+  // of those uses I've already spent = uses still available.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: referralsMade } = await (db as any)
+    .from('referrals')
+    .select('id', { count: 'exact', head: true })
+    .eq('referrer_id', profileId)
+  const redemptionsUsed = Math.max(0, Number(profile?.referral_redemptions_used ?? 0))
+  const referralsCount = referralsMade ?? 0
+  const usesLeft = Math.max(0, referralsCount - redemptionsUsed)
+
   return NextResponse.json({
     enabled: cfg.enabled,
     code: (profile?.referral_code as string | null) ?? null,
-    credit: Number(profile?.referral_credit ?? 0),
     benefit: referralBenefitText(cfg),
     eligibleForReferee: cfg.enabled && (priorOrders ?? 0) === 0 && !existingReferral,
+    // Count-based referrer reward.
+    referralsCount,
+    usesLeft,
+    // The per-use discount shape, so the checkout can apply one use (the server
+    // recomputes it authoritatively at order time).
+    referrerReward: usesLeft > 0
+      ? { type: cfg.referrer_type, value: cfg.referrer_value, max: cfg.max_discount }
+      : null,
   })
 }

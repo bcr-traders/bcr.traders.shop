@@ -5,15 +5,19 @@ import { Gift, Copy, Check, Share2 } from 'lucide-react'
 
 interface Props {
   code: string | null
-  credit: number
+  /** How many people have ordered with this customer's code. */
+  referralsCount: number
+  /** Referrer-discount uses still available (referralsCount − uses already spent). */
+  usesLeft: number
   benefit: string
 }
 
 /**
  * Account-section referral card: shows the customer's own code (copy + share),
- * the program benefit, and any reward credit waiting to auto-apply at checkout.
+ * the program benefit, how many people used their code, and how many referrer
+ * discount uses they have left to spend at their own checkout.
  */
-export default function ReferralCard({ code, credit, benefit }: Props) {
+export default function ReferralCard({ code, referralsCount, usesLeft, benefit }: Props) {
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {
@@ -57,10 +61,16 @@ export default function ReferralCard({ code, credit, benefit }: Props) {
                 <Share2 size={18} />
               </button>
             </div>
-            {credit > 0 && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 border border-white/15 px-3 py-2">
-                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Reward</span>
-                <span className="text-sm font-bold text-white/90">₹{credit.toLocaleString('en-IN')} will auto-apply at your next checkout.</span>
+            {referralsCount > 0 && (
+              <div className="mt-3 flex flex-col gap-1 rounded-xl bg-white/10 border border-white/15 px-3 py-2.5">
+                <span className="text-sm font-bold text-white/90">
+                  <b className="font-black">{referralsCount}</b> {referralsCount === 1 ? 'person has' : 'people have'} used your code.
+                </span>
+                <span className="text-xs font-medium text-white/70">
+                  {usesLeft > 0
+                    ? `Your referral discount will apply on your next ${usesLeft} order${usesLeft === 1 ? '' : 's'}.`
+                    : 'No referral discount uses left — share your code again to earn more.'}
+                </span>
               </div>
             )}
           </>

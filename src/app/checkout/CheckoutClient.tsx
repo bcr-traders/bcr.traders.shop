@@ -65,7 +65,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [referralError, setReferralError] = useState('')
   const [referralChecking, setReferralChecking] = useState(false)
   const [referralEligible, setReferralEligible] = useState(false)
-  const [myCredit, setMyCredit] = useState(0)
+  // The buyer's OWN referrer reward is count-based now: one use per person who
+  // ordered with their code. This holds the per-use discount shape when they have
+  // a use left (else null); the server re-checks and consumes a use at order time.
+  const [myReferrerReward, setMyReferrerReward] = useState<{ type: 'percentage' | 'flat'; value: number; max: number | null } | null>(null)
 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null
   const subtotal = totalPrice()
@@ -79,7 +82,16 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
         subtotal,
       ))
     : 0
-  const creditApplied = Math.min(myCredit, Math.max(0, subtotal - couponDiscount - referralDiscount))
+  // One use of the buyer's own referrer reward, if any left. Kept in `creditApplied`
+  // so the summary line and totals below are unchanged.
+  const referrerRewardValue = myReferrerReward
+    ? (myReferrerReward.type === 'percentage'
+        ? (myReferrerReward.max != null
+            ? Math.min(Math.round(subtotal * myReferrerReward.value / 100), myReferrerReward.max)
+            : Math.round(subtotal * myReferrerReward.value / 100))
+        : myReferrerReward.value)
+    : 0
+  const creditApplied = Math.min(referrerRewardValue, Math.max(0, subtotal - couponDiscount - referralDiscount))
   // Same rule as the cart and the order route: per-product charge if any, else
   // free at/above the admin threshold, else the flat fee. (Previously this only
   // summed per-product charges, so it showed FREE for sub-threshold orders while
@@ -158,8 +170,11 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
       try {
         const res = await fetch('/api/referral/me')
         if (!res.ok) return
-        const d = await res.json() as { credit?: number; eligibleForReferee?: boolean; enabled?: boolean }
-        setMyCredit(Number(d.credit ?? 0))
+        const d = await res.json() as {
+          referrerReward?: { type: 'percentage' | 'flat'; value: number; max: number | null } | null
+          eligibleForReferee?: boolean; enabled?: boolean
+        }
+        setMyReferrerReward(d.referrerReward ?? null)
         setReferralEligible(!!d.enabled && !!d.eligibleForReferee)
       } catch { /* ignore */ }
     })()
@@ -168,6 +183,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const applyReferral = async () => {
     const code = referralInput.trim()
     if (!code) return
+    // A coupon and a referral code are mutually exclusive (the server enforces
+    // this too). The input is normally hidden when a coupon is applied; this is
+    // the belt-and-suspenders guard.
+    if (couponDiscount > 0) { setReferralError('Remove the coupon to use a referral code.'); return }
     setReferralChecking(true); setReferralError('')
     try {
       const res = await fetch(`/api/referral/validate?code=${encodeURIComponent(code)}`)
@@ -549,6 +568,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                     className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant border-2 border-table-border rounded-xl px-3 py-1.5 hover:border-error/40 hover:text-error transition-colors"
                   >Remove</button>
                 </div>
+              ) : couponDiscount > 0 ? (
+                <p className="text-xs font-bold text-on-surface-variant/70 leading-relaxed">
+                  A coupon is already applied. You can use a coupon <b>or</b> a referral code, not both — remove the coupon to enter a friend&apos;s code.
+                </p>
               ) : (
                 <>
                   <div className="flex items-stretch gap-2">

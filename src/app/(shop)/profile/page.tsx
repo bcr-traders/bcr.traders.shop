@@ -22,11 +22,21 @@ export default async function ProfilePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('name, phone, email, referral_code, referral_credit')
+    .select('name, phone, email, referral_code, referral_redemptions_used')
     .eq('id', userId)
     .maybeSingle()
 
   const referralCfg = await getReferralConfig()
+
+  // Count-based referrer reward: how many people used this customer's code, and
+  // how many of those uses they still have to spend at their own checkout.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: referralsMade } = await (supabase as any)
+    .from('referrals')
+    .select('id', { count: 'exact', head: true })
+    .eq('referrer_id', userId)
+  const referralsCount = referralsMade ?? 0
+  const usesLeft = Math.max(0, referralsCount - Number(profile?.referral_redemptions_used ?? 0))
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,7 +63,8 @@ export default async function ProfilePage() {
         {referralCfg.enabled && (
           <ReferralCard
             code={(profile?.referral_code as string | null) ?? null}
-            credit={Number(profile?.referral_credit ?? 0)}
+            referralsCount={referralsCount}
+            usesLeft={usesLeft}
             benefit={referralBenefitText(referralCfg)}
           />
         )}
