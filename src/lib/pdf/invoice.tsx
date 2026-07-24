@@ -26,9 +26,9 @@ function qtyWithUnit(quantity: number, unit: string | null | undefined): string 
 const SELLER = {
   name: 'BCR TRADERS',
   tagline: 'Wholesale Grocery Distributor',
-  address: 'Brahmapur, Ganjam, Odisha - 760001',
+  address: 'Brahmapur, Ganjam, Odisha - 760002',
   gstin: '21GBUPR9356D1Z3',
-  phone: '+91 90195 75211',
+  phone: '+91 98979 33955',
   email: 'bcr.traders19@gmail.com',
 }
 
