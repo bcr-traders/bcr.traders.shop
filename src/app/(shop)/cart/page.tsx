@@ -317,6 +317,10 @@ export default function CartPage() {
   const subtotal = totalPrice()
   const discount = (() => {
     if (!appliedCoupon) return 0
+    // Below the coupon's minimum it earns nothing. The effect below also drops
+    // the coupon, but guard here so the total is never briefly wrong while the
+    // cart is being edited.
+    if (appliedCoupon.min_order_value != null && subtotal < appliedCoupon.min_order_value) return 0
     let d =
       appliedCoupon.discount_type === 'percentage'
         ? Math.round((subtotal * appliedCoupon.discount_value) / 100)
@@ -328,6 +332,20 @@ export default function CartPage() {
     // Never discount more than the subtotal.
     return Math.min(d, subtotal)
   })()
+
+  // A coupon stays applied while the cart is edited. If the customer removes
+  // items and falls below its minimum, take it off and say why — otherwise the
+  // cart would keep showing a coupon the order route rejects at checkout.
+  useEffect(() => {
+    if (!appliedCoupon) return
+    const min = appliedCoupon.min_order_value
+    if (min != null && subtotal < min) {
+      setAppliedCoupon(null)
+      setCouponError(
+        `${appliedCoupon.code} removed — it needs a minimum order of ₹${min.toLocaleString('en-IN')}`,
+      )
+    }
+  }, [subtotal, appliedCoupon])
   // Per-product delivery charges (if any) override the flat free-above-threshold
   // fee. When a fixed charge applies, the "add more for free delivery" prompt
   // doesn't make sense, so it's hidden.
