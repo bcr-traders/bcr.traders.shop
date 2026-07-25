@@ -48,6 +48,8 @@ export default function ProductsClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingStockId, setEditingStockId] = useState<string | null>(null)
   const [stockDraft, setStockDraft] = useState('')
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+  const [priceDraft, setPriceDraft] = useState('')
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [importing, setImporting] = useState(false)
   // Pagination — default 10 per page so the admin sees a short table instead of
@@ -166,6 +168,17 @@ export default function ProductsClient({
     const qty = parseInt(stockDraft, 10)
     if (!isNaN(qty) && qty >= 0) await patchProduct(id, { stock_qty: qty })
     setEditingStockId(null)
+  }
+
+  async function savePrice(id: string) {
+    const price = parseFloat(priceDraft)
+    const current = products.find(p => p.id === id)?.price
+    // Only write when it's a valid, non-negative number that actually changed —
+    // avoids a needless PATCH (and a spurious price_updated_at bump) on blur.
+    if (!isNaN(price) && price >= 0 && price !== current) {
+      await patchProduct(id, { price })
+    }
+    setEditingPriceId(null)
   }
 
   async function bulkAction(action: 'activate' | 'deactivate' | 'delete') {
@@ -513,10 +526,39 @@ export default function ProductsClient({
                     {categoryMap[product.category_id ?? ''] ?? '—'}
                   </td>
 
-                  {/* Price */}
+                  {/* Price (inline edit) */}
                   <td className="py-4 px-5 border-r border-table-border">
-                    <p className="font-black text-sm text-primary">₹{product.price.toLocaleString('en-IN')}</p>
-                    {product.mrp && <p className="font-bold text-[10px] text-on-surface-variant line-through">₹{product.mrp}</p>}
+                    {editingPriceId === product.id ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-black text-sm text-primary">₹</span>
+                        <input
+                          type="number"
+                          value={priceDraft}
+                          autoFocus
+                          min={0}
+                          step="0.01"
+                          onChange={e => setPriceDraft(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') savePrice(product.id)
+                            if (e.key === 'Escape') setEditingPriceId(null)
+                          }}
+                          onBlur={() => savePrice(product.id)}
+                          className="w-24 px-3 py-1.5 border-2 border-primary rounded-lg font-black text-sm text-primary focus:outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingPriceId(product.id)
+                          setPriceDraft(product.price.toString())
+                        }}
+                        title="Click to edit price"
+                        className="font-black text-sm text-primary px-3 py-1.5 -mx-3 rounded-lg border-2 border-transparent hover:border-primary/40 hover:bg-surface transition-colors active:scale-95"
+                      >
+                        {saving[product.id] ? '…' : `₹${product.price.toLocaleString('en-IN')}`}
+                      </button>
+                    )}
+                    {product.mrp && <p className="font-bold text-[10px] text-on-surface-variant line-through mt-0.5">₹{product.mrp}</p>}
                   </td>
 
                   {/* Unit */}
