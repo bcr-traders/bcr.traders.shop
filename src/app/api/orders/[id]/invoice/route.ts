@@ -29,7 +29,7 @@ function orderToEmailData(order: Order): OrderEmailData {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { userId, sessionClaims } = await auth()
@@ -77,11 +77,17 @@ export async function GET(
 
   const pdfBuffer = Buffer.from(pdfBase64, 'base64')
 
+  // View in the browser by default (admin opens it in a new tab); only force a
+  // save when the caller explicitly asks with ?download=1 (the customer's
+  // "Download Invoice" buttons). `inline` lets the PDF render in the tab; the
+  // filename still applies if the viewer then saves it.
+  const disposition = req.nextUrl.searchParams.get('download') === '1' ? 'attachment' : 'inline'
+
   return new NextResponse(pdfBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="BCR-Invoice-${orderNumber}.pdf"`,
+      'Content-Disposition': `${disposition}; filename="BCR-Invoice-${orderNumber}.pdf"`,
       'Content-Length': String(pdfBuffer.byteLength),
     },
   })

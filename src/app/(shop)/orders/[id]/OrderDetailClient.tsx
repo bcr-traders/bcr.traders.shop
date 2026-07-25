@@ -236,7 +236,7 @@ function SuccessOverlay({
           {/* Invoice — same endpoint the order page below uses. `download` so it
               saves the PDF rather than navigating away from this celebration. */}
           <motion.a
-            href={`/api/orders/${order.id}/invoice`}
+            href={`/api/orders/${order.id}/invoice?download=1`}
             download
             className="w-full h-12 mb-6 rounded-xl border-2 border-primary/25 bg-primary/[0.04] text-primary text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary/40 active:scale-95 transition-all"
             initial={{ opacity: 0, y: 8 }}
@@ -616,7 +616,7 @@ export default function OrderDetailClient({
             <button onClick={() => window.print()} className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
               <Printer size={15} /> Print
             </button>
-            <a href={`/api/orders/${order.id}/invoice`} download className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
+            <a href={`/api/orders/${order.id}/invoice?download=1`} download className="px-5 py-3 rounded-xl text-sm font-black uppercase tracking-wider text-on-surface border-2 border-table-border hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center gap-2 print:hidden">
               <Download size={15} /> Download PDF
             </a>
             <button onClick={handleReorder} disabled={reordering} className="px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest text-white bg-primary border-2 border-primary hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
