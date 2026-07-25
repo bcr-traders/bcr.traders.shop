@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import AdminSidebar from './AdminSidebar'
 import type { AdminPermissions } from '@/types/admin.types'
 import Logo from './Logo'
-import { Menu, Bell } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import NotificationBell, { type AdminNotification } from '@/components/admin/NotificationBell'
 
 export interface AdminBadges {
   orders: number
@@ -21,6 +22,8 @@ interface Props {
   name?: string | null
   /** Server-resolved admin_profiles.permissions; ignored for super_admin. */
   permissions?: AdminPermissions | null
+  /** Header notification-bell items (new orders + unserviceable attempts). */
+  notifications?: AdminNotification[]
 }
 
 const BOTTOM_NAV = [
@@ -31,7 +34,7 @@ const BOTTOM_NAV = [
   { href: '/admin/profiles',   label: 'Team',    icon: 'group' },
 ]
 
-export default function AdminShell({ role, children, badges, name, permissions }: Props) {
+export default function AdminShell({ role, children, badges, name, permissions, notifications }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
@@ -73,20 +76,14 @@ export default function AdminShell({ role, children, badges, name, permissions }
             </button>
             <Logo className="h-9 w-auto" />
           </div>
-          <button className="relative p-2 text-white/70 hover:text-white transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-1.5 right-2 w-2 h-2 bg-error border-2 border-primary rounded-full" />
-          </button>
+          <NotificationBell items={notifications ?? []} variant="mobile" />
         </header>
 
         {/* Desktop top bar */}
         <header className="hidden lg:flex sticky top-0 z-40 items-center justify-between px-8 h-16 bg-white border-b-2 border-table-border shadow-sm">
           <h2 className="font-black text-xl text-primary tracking-tight uppercase">Admin Panel</h2>
           <div className="flex items-center gap-2">
-            <button className="relative p-2 text-on-surface-variant hover:text-primary transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-2 w-2 h-2 bg-error border-2 border-white rounded-full" />
-            </button>
+            <NotificationBell items={notifications ?? []} variant="desktop" />
           </div>
         </header>
 
