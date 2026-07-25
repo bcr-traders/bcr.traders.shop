@@ -94,15 +94,19 @@ export async function getHomepageData(): Promise<HomepageData> {
   })
 
   // Derived in memory — no extra queries.
-  // Best Sellers leads with Ruchi and Fortune products, then the rest. Sort runs
-  // before the slice so those brands surface even when their display_order would
-  // have pushed them past the cut. Array.sort is stable, so within each group the
-  // existing display_order is preserved.
-  const isPriorityBrand = (p: Product) =>
-    /ruchi|fortune/i.test(`${p.name} ${p.brand ?? ''}`)
+  // Best Sellers ordering: Ruchi first, then Fortune, then every other brand.
+  // Sort runs before the slice so those brands surface even when their
+  // display_order would have pushed them past the 12-item cut. Array.sort is
+  // stable, so within each tier the existing display_order is preserved.
+  const brandRank = (p: Product) => {
+    const hay = `${p.name} ${p.brand ?? ''}`
+    if (/ruchi/i.test(hay)) return 0
+    if (/fortune/i.test(hay)) return 1
+    return 2
+  }
   const featuredProducts = allProducts
     .filter((p) => p.is_featured)
-    .sort((a, b) => Number(isPriorityBrand(b)) - Number(isPriorityBrand(a)))
+    .sort((a, b) => brandRank(a) - brandRank(b))
     .slice(0, 12)
 
   const categoryProducts: Record<string, Product[]> = {}
