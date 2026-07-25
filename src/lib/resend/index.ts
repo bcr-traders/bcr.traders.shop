@@ -31,6 +31,7 @@ export interface OrderEmailData {
   confirmedByName?: string | null
   status?: string
   notes?: string | null
+  transportDetails?: string | null
   gstin?: string | null
   gstBusinessName?: string | null
   /** Admin-set email subject line; overrides the auto-generated one when set. */

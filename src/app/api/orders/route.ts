@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string; transport_details?: string }
   try {
     body = await request.json()
   } catch {
@@ -331,28 +331,41 @@ export async function POST(request: Request) {
   const paymentMethod: 'cod' | 'online' = 'cod'
   const total = paymentMethod === 'cod' ? Math.round(exactTotal) : exactTotal
 
-  const { data: order, error } = await adminDb
-    .from('orders')
-    .insert({
-      user_id: profileId,
-      items: orderItems,
-      address,
-      subtotal,
-      delivery_fee: deliveryFee,
-      discount: totalDiscount,
-      coupon_code: appliedCouponCode,
-      total,
-      payment_method: paymentMethod,
-      status: 'placed',
-      notes: notes?.trim() || null,
-      is_bulk: is_bulk ?? false,
-      // Only reference the GST columns when the buyer actually asked for a GST
-      // invoice. Naming a column that doesn't exist on the live table fails the
-      // WHOLE insert, so a plain order must never depend on them.
-      ...(gstin ? { gstin, gst_business_name: gstBusinessName } : {}),
-    })
-    .select('id, order_number, created_at')
-    .single()
+  const transportDetails = typeof body.transport_details === 'string'
+    ? body.transport_details.trim().slice(0, 300)
+    : ''
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orderPayload: Record<string, any> = {
+    user_id: profileId,
+    items: orderItems,
+    address,
+    subtotal,
+    delivery_fee: deliveryFee,
+    discount: totalDiscount,
+    coupon_code: appliedCouponCode,
+    total,
+    payment_method: paymentMethod,
+    status: 'placed',
+    notes: notes?.trim() || null,
+    is_bulk: is_bulk ?? false,
+    ...(transportDetails ? { transport_details: transportDetails } : {}),
+    // Only reference the GST columns when the buyer actually asked for a GST
+    // invoice. Naming a column that doesn't exist on the live table fails the
+    // WHOLE insert, so a plain order must never depend on them.
+    ...(gstin ? { gstin, gst_business_name: gstBusinessName } : {}),
+  }
+
+  let { data: order, error } = await adminDb
+    .from('orders').insert(orderPayload).select('id, order_number, created_at').single()
+
+  // transport_details lands only after migration 034. If that's the only snag,
+  // drop it and retry so placing an order never depends on the migration.
+  if (error && transportDetails && /transport_details/i.test(error.message)) {
+    delete orderPayload.transport_details
+    ;({ data: order, error } = await adminDb
+      .from('orders').insert(orderPayload).select('id, order_number, created_at').single())
+  }
 
   if (error) {
     // Surface the real Postgres message — "Failed to create order" alone makes

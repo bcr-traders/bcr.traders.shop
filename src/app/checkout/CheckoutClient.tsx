@@ -53,6 +53,26 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [gstin, setGstin] = useState('')
   const [gstBusinessName, setGstBusinessName] = useState('')
   const [notes, setNotes] = useState('')
+  // Transport / lorry: pick an admin-set vehicle or type custom details.
+  const [vehicles, setVehicles] = useState<{ id: string; number: string; name: string | null; phone: string | null }[]>([])
+  const [transportChoice, setTransportChoice] = useState('') // '' | vehicle id | 'custom'
+  const [transportCustom, setTransportCustom] = useState('')
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/delivery-vehicles')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => { if (active && Array.isArray(d)) setVehicles(d) })
+      .catch(() => { /* transport is optional */ })
+    return () => { active = false }
+  }, [])
+
+  // The text snapshot stored on the order and shown on the invoice.
+  const transportDetails = (() => {
+    if (transportChoice === 'custom') return transportCustom.trim() || null
+    const v = vehicles.find((x) => x.id === transportChoice)
+    return v ? [v.number, v.name, v.phone].filter(Boolean).join(' · ') : null
+  })()
   const [email, setEmail] = useState(initialEmail)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [isPlacing, setIsPlacing] = useState(false)
@@ -227,6 +247,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           address_id: selectedId,
           items,
           notes: notes.trim() || undefined,
+          transport_details: transportDetails || undefined,
           is_bulk: isBulk,
           coupon_code: validCouponCode || undefined,
           email: email.trim() || undefined,
@@ -596,6 +617,43 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               )}
             </section>
           )}
+
+          {/* ── Transport / Lorry ── */}
+          <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5">
+            <label
+              htmlFor="checkout-transport"
+              className="block font-black text-sm uppercase tracking-widest text-primary mb-3"
+            >
+              Transport / Lorry{' '}
+              <span className="text-[10px] normal-case tracking-normal text-on-surface-variant/50 font-medium">
+                (optional)
+              </span>
+            </label>
+            <select
+              id="checkout-transport"
+              value={transportChoice}
+              onChange={(e) => setTransportChoice(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-background text-sm font-bold text-on-surface focus:outline-none transition-colors"
+            >
+              <option value="">Not specified</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {[v.number, v.name].filter(Boolean).join(' — ')}
+                </option>
+              ))}
+              <option value="custom">Other (enter details)</option>
+            </select>
+            {transportChoice === 'custom' && (
+              <input
+                type="text"
+                value={transportCustom}
+                onChange={(e) => setTransportCustom(e.target.value)}
+                maxLength={200}
+                placeholder="Transporter name, lorry number, LR no…"
+                className="mt-3 w-full px-4 py-3 rounded-xl border-2 border-table-border focus:border-primary bg-background text-sm font-medium text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none transition-colors"
+              />
+            )}
+          </section>
 
           {/* ── Order Notes (mobile) ── */}
           <section className="bg-surface-card rounded-2xl border-2 border-table-border p-5 lg:hidden">

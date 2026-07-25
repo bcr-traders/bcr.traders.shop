@@ -209,6 +209,16 @@ export interface OrderItem {
 
 export type OrderStatus = 'placed' | 'confirmed' | 'packed' | 'shipping' | 'delivered' | 'cancelled' | 'returned'
 
+export interface DeliveryVehicle {
+  id: string
+  number: string
+  name: string | null
+  phone: string | null
+  is_active: boolean
+  display_order: number
+  created_at?: string
+}
+
 export interface Order {
   id: string
   user_id: string
@@ -223,6 +233,8 @@ export interface Order {
   status: OrderStatus
   payment_method: 'cod'
   notes: string | null
+  /** Lorry/transport chosen at checkout (migration 034). Text snapshot. */
+  transport_details?: string | null
   is_bulk: boolean
   estimated_delivery?: string | null
   custom_message?: string | null

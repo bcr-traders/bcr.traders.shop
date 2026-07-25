@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
     padding: '7 9',
     marginBottom: 12,
   },
-  paymentText: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#26170c' },
-  paymentSub: { fontSize: 7, color: '#81756e', marginTop: 2 },
+  detailLabel: { fontSize: 7, color: '#81756e', textTransform: 'uppercase', letterSpacing: 0.6 },
+  detailValue: { fontSize: 8, color: '#3d2b1f', marginTop: 1, lineHeight: 1.4 },
 
   // GST non-cancellable notice. Warmer/red-tinted vs the cream payment box, so
   // it reads as a condition of sale rather than another routine detail.
@@ -244,11 +244,23 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
           </View>
         </View>
 
-        {/* ── COD notice ── */}
-        <View style={styles.paymentBox}>
-          <Text style={styles.paymentText}>Amount to collect on delivery: {fmt(data.total)}</Text>
-          <Text style={styles.paymentSub}>Payable in Cash or UPI at the time of delivery.</Text>
-        </View>
+        {/* ── Transport / lorry + order notes (replaces the amount-to-collect box) ── */}
+        {(data.transportDetails || data.notes) ? (
+          <View style={styles.paymentBox}>
+            {data.transportDetails ? (
+              <>
+                <Text style={styles.detailLabel}>Transport / Lorry</Text>
+                <Text style={styles.detailValue}>{data.transportDetails}</Text>
+              </>
+            ) : null}
+            {data.notes ? (
+              <>
+                <Text style={[styles.detailLabel, data.transportDetails ? { marginTop: 5 } : {}]}>Order Notes</Text>
+                <Text style={styles.detailValue}>{data.notes}</Text>
+              </>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* ── Items table ── */}
         <View style={styles.table}>

@@ -90,6 +90,7 @@ export default function AdminSidebar({ role, onClose, className, badges, name, p
         { href: '/admin/unserviceable',     label: 'Unserviceable',   icon: 'location_off',         show: can('view_unserviceable'),   badge: badges?.unserviceable },
         { href: '/admin/abandoned-carts',   label: 'Abandoned Carts', icon: 'remove_shopping_cart', show: can('view_abandoned_carts') },
         { href: '/admin/delivery/persons',  label: 'Delivery Team',   icon: 'delivery_dining',      show: can('manage_delivery_persons') },
+        { href: '/admin/delivery-vehicles', label: 'Delivery Vehicles',icon: 'local_shipping',      show: can('manage_delivery_persons') },
       ],
     },
     {
