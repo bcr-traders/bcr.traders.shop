@@ -10,32 +10,41 @@
 // Defaults, used until an admin overrides them in Settings.
 export const FREE_DELIVERY_MIN = 1000
 export const FLAT_DELIVERY_FEE = 50
+// 0 = no minimum. The real value is admin-set in Settings (settings CMS row);
+// this fallback deliberately imposes NO minimum so a missing/broken config can
+// never lock customers out of checkout.
+export const MIN_ORDER_VALUE = 0
 
 export interface DeliveryConfig {
   /** Order subtotal at/above which delivery is free. */
   freeDeliveryMin: number
   /** Flat fee charged when the subtotal is below the free-delivery threshold. */
   flatDeliveryFee: number
+  /** Minimum order subtotal required to check out (0 = no minimum). */
+  minOrderValue: number
 }
 
 export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
   freeDeliveryMin: FREE_DELIVERY_MIN,
   flatDeliveryFee: FLAT_DELIVERY_FEE,
+  minOrderValue: MIN_ORDER_VALUE,
 }
 
 /**
- * Read the admin's delivery thresholds off the `settings` CMS value. Any missing
+ * Read the admin's store thresholds off the `settings` CMS value. Any missing
  * or invalid field falls back to the default, so a partial/absent config can
- * never make delivery free (or break) by accident.
+ * never make delivery free, break, or accidentally impose a minimum.
  */
 export function parseDeliveryConfig(settingsValue: unknown): DeliveryConfig {
   if (!settingsValue || typeof settingsValue !== 'object') return DEFAULT_DELIVERY_CONFIG
   const v = settingsValue as Record<string, unknown>
   const min = Number(v.free_delivery_min)
   const fee = Number(v.flat_delivery_fee)
+  const minOrder = Number(v.min_order_value)
   return {
     freeDeliveryMin: Number.isFinite(min) && min >= 0 ? min : FREE_DELIVERY_MIN,
     flatDeliveryFee: Number.isFinite(fee) && fee >= 0 ? fee : FLAT_DELIVERY_FEE,
+    minOrderValue: Number.isFinite(minOrder) && minOrder >= 0 ? minOrder : MIN_ORDER_VALUE,
   }
 }
 

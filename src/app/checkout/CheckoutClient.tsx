@@ -11,6 +11,8 @@ import {
 import { useCartStore } from '@/store/cartStore'
 import { computeDeliveryFee } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
+import { useStoreOpen } from '@/hooks/useStoreOpen'
+import { ORDER_OPEN_LABEL, ORDER_CLOSE_LABEL } from '@/lib/store-hours'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
@@ -35,6 +37,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   // readable by the effect on the very next render, without scheduling another.
   const orderPlacedRef = useRef(false)
   const deliveryConfig = useDeliveryConfig()
+  const storeOpen = useStoreOpen()
   const items     = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -123,7 +126,10 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   // A GST invoice is optional, but if requested the GSTIN + business name must be valid.
   const gstOk = !gstEnabled || (isValidGstin(gstin) && gstBusinessName.trim().length >= 2)
-  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && gstOk
+  // Minimum-order gate (admin-set, 0 = none). The order route enforces this too.
+  const minOrderValue = deliveryConfig.minOrderValue
+  const belowMinOrder = minOrderValue > 0 && subtotal < minOrderValue
+  const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && gstOk && !belowMinOrder && storeOpen
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -803,6 +809,15 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                   Enter a valid GSTIN and business name to continue
                 </p>
               )}
+              {!storeOpen ? (
+                <p className="text-[11px] font-black text-white text-center mt-3">
+                  Orders are accepted only between {ORDER_OPEN_LABEL} and {ORDER_CLOSE_LABEL}. Please order during store hours.
+                </p>
+              ) : belowMinOrder ? (
+                <p className="text-[11px] font-black text-white text-center mt-3">
+                  Minimum order ₹{minOrderValue.toLocaleString('en-IN')} — add ₹{(minOrderValue - subtotal).toLocaleString('en-IN')} more to place your order
+                </p>
+              ) : null}
             </div>
           </section>
         </div>
@@ -819,6 +834,15 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           </span>
           <span className="text-xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
         </div>
+        {!storeOpen ? (
+          <p className="text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2 text-center mb-2">
+            Orders open {ORDER_OPEN_LABEL}–{ORDER_CLOSE_LABEL} — currently closed
+          </p>
+        ) : belowMinOrder ? (
+          <p className="text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2 text-center mb-2">
+            Min order ₹{minOrderValue.toLocaleString('en-IN')} — add ₹{(minOrderValue - subtotal).toLocaleString('en-IN')} more
+          </p>
+        ) : null}
         {error && <p className="text-xs font-bold text-error mb-2">{error}</p>}
         <button
           onClick={requestPlaceOrder}

@@ -13,6 +13,8 @@ import { useCartStore } from '@/store/cartStore'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { computeDeliveryFee, perProductDelivery } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
+import { useStoreOpen } from '@/hooks/useStoreOpen'
+import { ORDER_OPEN_LABEL, ORDER_CLOSE_LABEL } from '@/lib/store-hours'
 import CartCouponPicker from '@/components/cart/CartCouponPicker'
 import type { CartItem } from '@/types/database.types'
 
@@ -302,6 +304,7 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice, setCoupon } = useCartStore()
   const { isSignedIn } = useSupabaseUser()
   const deliveryConfig = useDeliveryConfig()
+  const storeOpen = useStoreOpen()
   const router = useRouter()
 
   const [couponInput, setCouponInput] = useState('')
@@ -353,6 +356,15 @@ export default function CartPage() {
   const deliveryFee = computeDeliveryFee(items, subtotal, deliveryConfig)
   const total = Math.max(0, subtotal - discount) + deliveryFee
   const totalQty = items.reduce((s, i) => s + i.quantity, 0)
+
+  // Minimum-order gate (admin-set, 0 = none). Checkout is blocked until the
+  // subtotal reaches it; the order route enforces the same rule authoritatively.
+  const minOrderValue = deliveryConfig.minOrderValue
+  const belowMinOrder = minOrderValue > 0 && subtotal < minOrderValue
+  const amountToMin = belowMinOrder ? minOrderValue - subtotal : 0
+  // Checkout is blocked either below the minimum order or outside store hours.
+  const checkoutDisabled = belowMinOrder || !storeOpen
+  const goToCheckout = () => { if (!checkoutDisabled) router.push('/checkout') }
 
   const syncRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => {
@@ -505,10 +517,22 @@ export default function CartPage() {
               couponCode={appliedCoupon?.code}
             />
 
+            {/* Checkout-blocked notice (desktop) — closed hours take priority */}
+            {!storeOpen ? (
+              <p className="hidden lg:block text-center text-xs font-black text-error bg-error/10 border-2 border-error/20 rounded-xl py-2.5 px-3">
+                Orders are accepted only between {ORDER_OPEN_LABEL} and {ORDER_CLOSE_LABEL}. Please order during store hours.
+              </p>
+            ) : belowMinOrder ? (
+              <p className="hidden lg:block text-center text-xs font-black text-error bg-error/10 border-2 border-error/20 rounded-xl py-2.5 px-3">
+                Minimum order ₹{minOrderValue.toLocaleString('en-IN')} — add ₹{amountToMin.toLocaleString('en-IN')} more to checkout
+              </p>
+            ) : null}
+
             {/* Desktop checkout CTA */}
             <button
-              onClick={() => router.push('/checkout')}
-              className="hidden lg:flex w-full bg-primary text-white font-black text-sm uppercase tracking-widest py-4 rounded-2xl items-center justify-center gap-2 hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-sm border-2 border-primary"
+              onClick={goToCheckout}
+              disabled={checkoutDisabled}
+              className="hidden lg:flex w-full bg-primary text-white font-black text-sm uppercase tracking-widest py-4 rounded-2xl items-center justify-center gap-2 hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-sm border-2 border-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               Proceed to Checkout
               <ArrowRight size={17} strokeWidth={2.5} />
@@ -528,6 +552,15 @@ export default function CartPage() {
 
         {/* ── Mobile sticky checkout bar ── */}
         <div className="lg:hidden fixed bottom-16 inset-x-0 bg-primary border-t-2 border-primary px-4 py-3 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.25)] z-40">
+          {!storeOpen ? (
+            <p className="max-w-lg mx-auto mb-2 text-center text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2">
+              Orders open {ORDER_OPEN_LABEL}–{ORDER_CLOSE_LABEL} — currently closed
+            </p>
+          ) : belowMinOrder ? (
+            <p className="max-w-lg mx-auto mb-2 text-center text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2">
+              Min order ₹{minOrderValue.toLocaleString('en-IN')} — add ₹{amountToMin.toLocaleString('en-IN')} more
+            </p>
+          ) : null}
           <div className="flex justify-between items-center max-w-lg mx-auto gap-4">
             <div>
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40 block">
@@ -538,8 +571,9 @@ export default function CartPage() {
               </span>
             </div>
             <button
-              onClick={() => router.push('/checkout')}
-              className="flex-shrink-0 bg-white text-primary font-black text-sm uppercase tracking-wider px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-white/90 transition-all duration-200 active:scale-95"
+              onClick={goToCheckout}
+              disabled={checkoutDisabled}
+              className="flex-shrink-0 bg-white text-primary font-black text-sm uppercase tracking-wider px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-white/90 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
             >
               Checkout <ChevronRight size={16} strokeWidth={2.5} />
             </button>
