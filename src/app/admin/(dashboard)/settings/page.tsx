@@ -32,6 +32,10 @@ export default async function SettingsPage() {
     store_tagline_or:         str(raw.store_tagline_or, ''),
     min_order_value:          num(raw.min_order_value, 0),
     bulk_order_minimum:       num(raw.bulk_order_minimum, 0),
+    // Order timings — default to the shipped 4:00 AM–8:30 PM window, enabled.
+    order_hours_enabled:      bool(raw.order_hours_enabled, true),
+    order_open_time:          str(raw.order_open_time, '04:00'),
+    order_close_time:         str(raw.order_close_time, '20:30'),
     free_delivery_min:        num(raw.free_delivery_min, 1000),
     flat_delivery_fee:        num(raw.flat_delivery_fee, 50),
     low_stock_threshold:      num(raw.low_stock_threshold, 10),

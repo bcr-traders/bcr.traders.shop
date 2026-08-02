@@ -1,3 +1,5 @@
+import { parseOrderHours, DEFAULT_ORDER_HOURS, type OrderHoursConfig } from '@/lib/store-hours'
+
 // Delivery-fee rule, shared by the cart, checkout and the order route so all
 // three agree on what the customer sees and is charged.
 //
@@ -22,12 +24,15 @@ export interface DeliveryConfig {
   flatDeliveryFee: number
   /** Minimum order subtotal required to check out (0 = no minimum). */
   minOrderValue: number
+  /** Admin-set window during which orders may be placed. */
+  orderHours: OrderHoursConfig
 }
 
 export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
   freeDeliveryMin: FREE_DELIVERY_MIN,
   flatDeliveryFee: FLAT_DELIVERY_FEE,
   minOrderValue: MIN_ORDER_VALUE,
+  orderHours: DEFAULT_ORDER_HOURS,
 }
 
 /**
@@ -45,6 +50,7 @@ export function parseDeliveryConfig(settingsValue: unknown): DeliveryConfig {
     freeDeliveryMin: Number.isFinite(min) && min >= 0 ? min : FREE_DELIVERY_MIN,
     flatDeliveryFee: Number.isFinite(fee) && fee >= 0 ? fee : FLAT_DELIVERY_FEE,
     minOrderValue: Number.isFinite(minOrder) && minOrder >= 0 ? minOrder : MIN_ORDER_VALUE,
+    orderHours: parseOrderHours(settingsValue),
   }
 }
 

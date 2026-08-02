@@ -14,7 +14,7 @@ import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import { computeDeliveryFee, perProductDelivery } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
 import { useStoreOpen } from '@/hooks/useStoreOpen'
-import { ORDER_OPEN_LABEL, ORDER_CLOSE_LABEL } from '@/lib/store-hours'
+import { formatMinute } from '@/lib/store-hours'
 import CartCouponPicker from '@/components/cart/CartCouponPicker'
 import type { CartItem } from '@/types/database.types'
 
@@ -365,6 +365,8 @@ export default function CartPage() {
   // Checkout is blocked either below the minimum order or outside store hours.
   const checkoutDisabled = belowMinOrder || !storeOpen
   const goToCheckout = () => { if (!checkoutDisabled) router.push('/checkout') }
+  const openLabel = formatMinute(deliveryConfig.orderHours.openMinute)
+  const closeLabel = formatMinute(deliveryConfig.orderHours.closeMinute)
 
   const syncRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => {
@@ -520,7 +522,7 @@ export default function CartPage() {
             {/* Checkout-blocked notice (desktop) — closed hours take priority */}
             {!storeOpen ? (
               <p className="hidden lg:block text-center text-xs font-black text-error bg-error/10 border-2 border-error/20 rounded-xl py-2.5 px-3">
-                Orders are accepted only between {ORDER_OPEN_LABEL} and {ORDER_CLOSE_LABEL}. Please order during store hours.
+                Orders are accepted only between {openLabel} and {closeLabel}. Please order during store hours.
               </p>
             ) : belowMinOrder ? (
               <p className="hidden lg:block text-center text-xs font-black text-error bg-error/10 border-2 border-error/20 rounded-xl py-2.5 px-3">
@@ -554,7 +556,7 @@ export default function CartPage() {
         <div className="lg:hidden fixed bottom-16 inset-x-0 bg-primary border-t-2 border-primary px-4 py-3 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.25)] z-40">
           {!storeOpen ? (
             <p className="max-w-lg mx-auto mb-2 text-center text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2">
-              Orders open {ORDER_OPEN_LABEL}–{ORDER_CLOSE_LABEL} — currently closed
+              Orders open {openLabel}–{closeLabel} — currently closed
             </p>
           ) : belowMinOrder ? (
             <p className="max-w-lg mx-auto mb-2 text-center text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2">

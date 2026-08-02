@@ -12,7 +12,7 @@ import { useCartStore } from '@/store/cartStore'
 import { computeDeliveryFee } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
 import { useStoreOpen } from '@/hooks/useStoreOpen'
-import { ORDER_OPEN_LABEL, ORDER_CLOSE_LABEL } from '@/lib/store-hours'
+import { formatMinute } from '@/lib/store-hours'
 import { cn } from '@/lib/utils'
 import PincodeChecker from '@/components/checkout/PincodeChecker'
 import AddressForm from '@/components/checkout/AddressForm'
@@ -130,6 +130,8 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const minOrderValue = deliveryConfig.minOrderValue
   const belowMinOrder = minOrderValue > 0 && subtotal < minOrderValue
   const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && gstOk && !belowMinOrder && storeOpen
+  const openLabel = formatMinute(deliveryConfig.orderHours.openMinute)
+  const closeLabel = formatMinute(deliveryConfig.orderHours.closeMinute)
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -811,7 +813,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
               )}
               {!storeOpen ? (
                 <p className="text-[11px] font-black text-white text-center mt-3">
-                  Orders are accepted only between {ORDER_OPEN_LABEL} and {ORDER_CLOSE_LABEL}. Please order during store hours.
+                  Orders are accepted only between {openLabel} and {closeLabel}. Please order during store hours.
                 </p>
               ) : belowMinOrder ? (
                 <p className="text-[11px] font-black text-white text-center mt-3">
@@ -836,7 +838,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
         </div>
         {!storeOpen ? (
           <p className="text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2 text-center mb-2">
-            Orders open {ORDER_OPEN_LABEL}–{ORDER_CLOSE_LABEL} — currently closed
+            Orders open {openLabel}–{closeLabel} — currently closed
           </p>
         ) : belowMinOrder ? (
           <p className="text-[11px] font-black text-white bg-error/30 border border-error/40 rounded-lg py-1.5 px-2 text-center mb-2">

@@ -4,8 +4,15 @@ import { useState, useCallback } from 'react'
 import { Loader2, AlertTriangle, Check, AlertCircle, Info, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
+import { formatMinute, parseTimeToMinutes } from '@/lib/store-hours'
 
 const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
+
+/** "04:00" → "4:00 AM" for the settings preview; leaves malformed input as-is. */
+function fmtTime(hhmm: string): string {
+  const m = parseTimeToMinutes(hhmm)
+  return m == null ? hhmm : formatMinute(m)
+}
 
 type Settings = {
   store_name: string
@@ -13,6 +20,9 @@ type Settings = {
   store_tagline_or: string
   min_order_value: string
   bulk_order_minimum: string
+  order_hours_enabled: boolean
+  order_open_time: string
+  order_close_time: string
   free_delivery_min: string
   flat_delivery_fee: string
   low_stock_threshold: string
@@ -100,6 +110,14 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
     if (settings.otp_expiry_minutes && (isNaN(otp) || otp < 1 || otp > 60)) {
       setError('OTP expiry must be between 1 and 60 minutes'); return
     }
+    if (settings.order_hours_enabled) {
+      if (parseTimeToMinutes(settings.order_open_time) == null || parseTimeToMinutes(settings.order_close_time) == null) {
+        setError('Enter valid order open and close times'); return
+      }
+      if (settings.order_open_time === settings.order_close_time) {
+        setError('Order open and close times cannot be the same'); return
+      }
+    }
 
     setSaving(true)
 
@@ -109,6 +127,9 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       store_tagline_or: settings.store_tagline_or.trim(),
       min_order_value: settings.min_order_value ? parseFloat(settings.min_order_value) : 0,
       bulk_order_minimum: settings.bulk_order_minimum ? parseFloat(settings.bulk_order_minimum) : 0,
+      order_hours_enabled: settings.order_hours_enabled,
+      order_open_time: settings.order_open_time || '04:00',
+      order_close_time: settings.order_close_time || '20:30',
       free_delivery_min: settings.free_delivery_min ? parseFloat(settings.free_delivery_min) : 1000,
       flat_delivery_fee: settings.flat_delivery_fee ? parseFloat(settings.flat_delivery_fee) : 50,
       low_stock_threshold: settings.low_stock_threshold ? parseInt(settings.low_stock_threshold, 10) : 10,
@@ -257,6 +278,53 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
                 </p>
               </div>
             )}
+          </div>
+        )}
+      </Section>
+
+      {/* ── Order Timings ── */}
+      <Section title="Order Timings" sub="When customers are allowed to place orders (IST)">
+        <Toggle
+          checked={settings.order_hours_enabled}
+          onChange={v => set('order_hours_enabled', v)}
+          label="Restrict Order Hours"
+          sub="When on, customers can browse the site anytime but can only place orders inside the window below. Outside it, checkout is disabled with a message."
+        />
+        {settings.order_hours_enabled && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field label="Orders Open At" hint="Store opens (IST)">
+              <input
+                type="time"
+                value={settings.order_open_time}
+                onChange={e => set('order_open_time', e.target.value)}
+                className={cn(inputCls, 'font-mono')}
+              />
+            </Field>
+            <Field label="Orders Close At" hint="Store closes (IST)">
+              <input
+                type="time"
+                value={settings.order_close_time}
+                onChange={e => set('order_close_time', e.target.value)}
+                className={cn(inputCls, 'font-mono')}
+              />
+            </Field>
+          </div>
+        )}
+        {settings.order_hours_enabled ? (
+          <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+            <Info size={16} strokeWidth={2.5} className="text-blue-600 flex-shrink-0" />
+            <p className="font-bold text-xs text-blue-800">
+              Orders can be placed only between{' '}
+              <strong className="font-black text-blue-900">{fmtTime(settings.order_open_time)}</strong> and{' '}
+              <strong className="font-black text-blue-900">{fmtTime(settings.order_close_time)}</strong> (IST). Outside these hours customers can still browse but checkout is disabled.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border-2 border-amber-200 rounded-xl">
+            <Info size={16} strokeWidth={2.5} className="text-amber-600 flex-shrink-0" />
+            <p className="font-bold text-xs text-amber-900">
+              Order-hour restriction is <b>off</b> — customers can place orders at any time.
+            </p>
           </div>
         )}
       </Section>

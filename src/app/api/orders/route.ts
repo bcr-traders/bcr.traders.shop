@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { cleanGstin } from '@/lib/validations/gst'
 import { findBuyOption } from '@/lib/products/packaging'
 import { computeDeliveryFee, parseDeliveryConfig } from '@/lib/cart/delivery'
-import { isOrderingOpen, ORDER_OPEN_LABEL, ORDER_CLOSE_LABEL } from '@/lib/store-hours'
+import { isOrderingOpen, formatMinute } from '@/lib/store-hours'
 import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
 import { generateUniqueReferralCode } from '@/lib/referral/code'
 import type { AuthMetadata } from '@/types'
@@ -34,16 +34,6 @@ export async function POST(request: Request) {
 
   if (!address_id || !Array.isArray(items) || items.length === 0) {
     return Response.json({ error: 'address_id and items are required' }, { status: 400 })
-  }
-
-  // Store hours (authoritative). Orders are accepted only between 4:00 AM and
-  // 8:30 PM IST; outside that window the cart/checkout disable their CTAs, but
-  // this is the gate that actually can't be bypassed.
-  if (!isOrderingOpen()) {
-    return Response.json(
-      { error: `Orders are accepted only between ${ORDER_OPEN_LABEL} and ${ORDER_CLOSE_LABEL} (IST). Please place your order during store hours.` },
-      { status: 400 },
-    )
   }
 
   // Optional GST invoice ("claim GST bill"). If a GSTIN is supplied it must be
@@ -198,6 +188,18 @@ export async function POST(request: Request) {
   const { data: settingsRow } = await adminDb
     .from('cms_content').select('value').eq('key', 'settings').maybeSingle()
   const deliveryConfig = parseDeliveryConfig((settingsRow as { value?: unknown } | null)?.value)
+
+  // Store hours (authoritative). Orders are accepted only inside the admin-set
+  // window (IST); the cart/checkout disable their CTAs outside it, but this is
+  // the gate that actually can't be bypassed.
+  if (!isOrderingOpen(deliveryConfig.orderHours)) {
+    const openLabel = formatMinute(deliveryConfig.orderHours.openMinute)
+    const closeLabel = formatMinute(deliveryConfig.orderHours.closeMinute)
+    return Response.json(
+      { error: `Orders are accepted only between ${openLabel} and ${closeLabel} (IST). Please place your order during store hours.` },
+      { status: 400 },
+    )
+  }
 
   // Authoritative minimum-order gate. The cart and checkout disable their CTAs
   // below this, but the frontend can be bypassed, so the order is rejected here
