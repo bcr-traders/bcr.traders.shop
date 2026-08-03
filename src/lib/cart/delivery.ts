@@ -26,6 +26,8 @@ export interface DeliveryConfig {
   minOrderValue: number
   /** Admin-set window during which orders may be placed. */
   orderHours: OrderHoursConfig
+  /** Whether online (Razorpay) payment is offered at checkout alongside COD. */
+  razorpayEnabled: boolean
 }
 
 export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
@@ -33,6 +35,7 @@ export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
   flatDeliveryFee: FLAT_DELIVERY_FEE,
   minOrderValue: MIN_ORDER_VALUE,
   orderHours: DEFAULT_ORDER_HOURS,
+  razorpayEnabled: false,
 }
 
 /**
@@ -51,6 +54,7 @@ export function parseDeliveryConfig(settingsValue: unknown): DeliveryConfig {
     flatDeliveryFee: Number.isFinite(fee) && fee >= 0 ? fee : FLAT_DELIVERY_FEE,
     minOrderValue: Number.isFinite(minOrder) && minOrder >= 0 ? minOrder : MIN_ORDER_VALUE,
     orderHours: parseOrderHours(settingsValue),
+    razorpayEnabled: v.razorpay_enabled === true,
   }
 }
 

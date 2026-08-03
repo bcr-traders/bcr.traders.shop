@@ -5,6 +5,7 @@ import { cleanGstin } from '@/lib/validations/gst'
 import { findBuyOption } from '@/lib/products/packaging'
 import { computeDeliveryFee, parseDeliveryConfig } from '@/lib/cart/delivery'
 import { isOrderingOpen, formatMinute } from '@/lib/store-hours'
+import { createCheckoutOrder, verifyPaymentSignature, fetchPayment, isRazorpayConfigured } from '@/lib/razorpay'
 import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
 import { generateUniqueReferralCode } from '@/lib/referral/code'
 import type { AuthMetadata } from '@/types'
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string; transport_details?: string }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string; transport_details?: string; payment_method?: 'cod' | 'online'; razorpay?: { order_id?: string; payment_id?: string; signature?: string } }
   try {
     body = await request.json()
   } catch {
@@ -348,12 +349,73 @@ export async function POST(request: Request) {
   const totalDiscount = discountAmt + refereeDiscount + referrerRedemption
   const exactTotal = Math.max(0, subtotal - totalDiscount) + deliveryFee
 
-  // Cash on delivery is collected in whole rupees (no coins), so the payable is
-  // rounded to the nearest rupee: 2000.40 → 2000, 2000.60 → 2001. When Razorpay
-  // checkout is added later it will charge the EXACT amount, so the rounding is
-  // gated on the payment method rather than applied unconditionally.
-  const paymentMethod: 'cod' | 'online' = 'cod'
-  const total = paymentMethod === 'cod' ? Math.round(exactTotal) : exactTotal
+  // ── Payment method: COD (default) or online via Razorpay ──────────────────
+  // Online is a two-phase call to THIS endpoint so all the pricing/validation
+  // above runs identically both times and the order is created exactly once,
+  // only after the payment is verified:
+  //   Phase 1 (no razorpay proof): create a Razorpay order for the exact amount
+  //     and return it — NO db order yet.
+  //   Phase 2 (with razorpay proof): verify the signature, confirm the captured
+  //     payment with Razorpay, then fall through and create the order as paid.
+  const requestedOnline = body.payment_method === 'online'
+  if (requestedOnline && (!deliveryConfig.razorpayEnabled || !isRazorpayConfigured())) {
+    return Response.json({ error: 'Online payment is currently unavailable. Please choose Cash on Delivery.' }, { status: 400 })
+  }
+
+  const amountPaise = Math.round(exactTotal * 100)
+  let paymentMethod: 'cod' | 'online' = 'cod'
+  let paymentStatus: 'pending' | 'collected' = 'pending'
+  let paymentReference: string | null = null
+
+  if (requestedOnline) {
+    paymentMethod = 'online'
+    const rzp = body.razorpay
+    if (!rzp?.payment_id || !rzp.order_id || !rzp.signature) {
+      // Phase 1 — start the payment. No order is created until it succeeds.
+      try {
+        const rzOrder = await createCheckoutOrder(amountPaise, `bcr_${profileId.slice(0, 8)}_${Date.now()}`)
+        return Response.json({
+          needs_payment: true,
+          razorpay: {
+            key_id: process.env.RAZORPAY_KEY_ID,
+            order_id: rzOrder.id,
+            amount: rzOrder.amount,
+            currency: rzOrder.currency,
+          },
+        }, { status: 200 })
+      } catch (e) {
+        console.error('Razorpay order create failed:', e)
+        return Response.json({ error: 'Could not start online payment. Please try again or use Cash on Delivery.' }, { status: 502 })
+      }
+    }
+
+    // Phase 2 — a payment came back. Verify it before trusting it.
+    if (!verifyPaymentSignature(rzp.order_id, rzp.payment_id, rzp.signature)) {
+      return Response.json({ error: 'Payment verification failed. If you were charged, contact support.' }, { status: 400 })
+    }
+    // Idempotency: a retried/double-submitted callback must not create a 2nd order.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingOrder } = await (adminDb as any)
+      .from('orders').select('id').eq('payment_reference', rzp.payment_id).maybeSingle()
+    if (existingOrder) return Response.json({ order_id: existingOrder.id }, { status: 200 })
+    // Confirm with Razorpay directly: real, captured, for THIS order, exact amount.
+    try {
+      const pay = await fetchPayment(rzp.payment_id)
+      const settled = pay.status === 'captured' || pay.status === 'authorized'
+      if (!settled || pay.orderId !== rzp.order_id || pay.amount !== amountPaise) {
+        return Response.json({ error: 'Payment could not be confirmed. If you were charged, contact support.' }, { status: 400 })
+      }
+    } catch (e) {
+      console.error('Razorpay payment fetch failed:', e)
+      return Response.json({ error: 'Payment could not be confirmed. If you were charged, contact support.' }, { status: 502 })
+    }
+    paymentStatus = 'collected'
+    paymentReference = rzp.payment_id
+  }
+
+  // COD is collected in whole rupees (no coins). Online charges the exact amount
+  // the customer already paid, so no rounding.
+  const total = paymentMethod === 'cod' ? Math.round(exactTotal) : amountPaise / 100
 
   const transportDetails = typeof body.transport_details === 'string'
     ? body.transport_details.trim().slice(0, 300)
@@ -370,6 +432,9 @@ export async function POST(request: Request) {
     coupon_code: appliedCouponCode,
     total,
     payment_method: paymentMethod,
+    // Online orders are prepaid: record the money as collected + the Razorpay
+    // payment id. COD keeps the default 'pending' until collected at delivery.
+    ...(paymentMethod === 'online' ? { payment_status: paymentStatus, payment_reference: paymentReference } : {}),
     status: 'placed',
     notes: notes?.trim() || null,
     is_bulk: is_bulk ?? false,

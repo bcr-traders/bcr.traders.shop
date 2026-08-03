@@ -80,6 +80,8 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [isPlacing, setIsPlacing] = useState(false)
   const [error, setError] = useState('')
+  // Payment method. Online (Razorpay) only when the admin has enabled it.
+  const [payMethod, setPayMethod] = useState<'cod' | 'online'>('cod')
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [validCouponCode, setValidCouponCode] = useState<string | null>(null)
   // Referral: field the referee enters + the buyer's own auto-applied credit.
@@ -132,6 +134,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const canPlace = !!selectedId && (pincodeResult?.serviceable === true || isBulk) && gstOk && !belowMinOrder && storeOpen
   const openLabel = formatMinute(deliveryConfig.orderHours.openMinute)
   const closeLabel = formatMinute(deliveryConfig.orderHours.closeMinute)
+  const razorpayEnabled = deliveryConfig.razorpayEnabled
+  // Online is only real when the admin enabled it; otherwise force COD.
+  const effectivePayMethod: 'cod' | 'online' = razorpayEnabled ? payMethod : 'cod'
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -242,57 +247,149 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
     setShowEmailModal(true)
   }
 
+  // The common order body — reused by COD and by both phases of online payment.
+  const buildOrderBody = (extra?: Record<string, unknown>) => ({
+    address_id: selectedId,
+    items,
+    notes: notes.trim() || undefined,
+    transport_details: transportDetails || undefined,
+    is_bulk: isBulk,
+    coupon_code: validCouponCode || undefined,
+    email: email.trim() || undefined,
+    gstin: gstEnabled ? gstin.trim().toUpperCase() || undefined : undefined,
+    gst_business_name: gstEnabled ? gstBusinessName.trim() || undefined : undefined,
+    referral_code: referralApplied?.code || undefined,
+    payment_method: effectivePayMethod,
+    ...extra,
+  })
+
+  // POST to /api/orders. Returns the parsed JSON on success, or null when a
+  // recoverable error was already surfaced to the customer. Throws otherwise.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const submitOrder = async (extra?: Record<string, unknown>): Promise<any | null> => {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildOrderBody(extra)),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      // Stale cart — a product was deleted/deactivated. Drop those items so
+      // the customer can retry with what's still available.
+      if (json.error_code === 'items_unavailable' && Array.isArray(json.unavailable_ids)) {
+        const names = items.filter((i) => json.unavailable_ids.includes(i.id)).map((i) => i.name)
+        json.unavailable_ids.forEach((id: string) => removeItem(id))
+        setError(
+          names.length
+            ? `${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} no longer available and ${names.length === 1 ? 'was' : 'were'} removed from your cart. Please review your order and try again.`
+            : (json.error ?? 'Some items are no longer available.'),
+        )
+        return null
+      }
+      // Referral no longer valid — clear it so they can place the order without it.
+      if (json.error_code === 'referral_invalid') {
+        setReferralApplied(null)
+        setReferralError(json.error ?? 'Referral code could not be applied.')
+        setError('Your referral code could not be applied. It has been removed — please place your order again.')
+        return null
+      }
+      throw new Error(json.detail ? `${json.error}: ${json.detail}` : (json.error ?? 'Failed to place order'))
+    }
+    return json
+  }
+
+  const finishOrder = (orderId: string) => {
+    // Set BEFORE clearCart so the empty-cart redirect can't fire.
+    orderPlacedRef.current = true
+    clearCart()
+    router.push(`/orders/${orderId}?new=1`)
+  }
+
+  // Load Razorpay Checkout's script on demand (once).
+  const loadRazorpay = (): Promise<boolean> =>
+    new Promise((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).Razorpay) return resolve(true)
+      const s = document.createElement('script')
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      s.onload = () => resolve(true)
+      s.onerror = () => resolve(false)
+      document.body.appendChild(s)
+    })
+
+  const placeOnlineOrder = async () => {
+    // Phase 1 — ask the server to create a Razorpay order for the exact amount.
+    const start = await submitOrder()
+    if (!start) { setIsPlacing(false); return }
+    if (!start.needs_payment || !start.razorpay) {
+      if (start.order_id) return finishOrder(start.order_id)
+      throw new Error('Could not start online payment')
+    }
+    const ok = await loadRazorpay()
+    if (!ok) {
+      setError('Could not load the payment window. Check your connection and try again, or choose Cash on Delivery.')
+      setIsPlacing(false)
+      return
+    }
+    const addr = addresses.find((a) => a.id === selectedId)
+    const rz = start.razorpay
+    const options = {
+      key: rz.key_id,
+      order_id: rz.order_id,
+      amount: rz.amount,
+      currency: rz.currency,
+      name: 'BCR Traders',
+      description: 'Order payment',
+      prefill: { email: email.trim(), name: addr?.name || '', contact: addr?.phone || '' },
+      theme: { color: '#26170c' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handler: async (resp: any) => {
+        // Phase 2 — verify the payment server-side, which creates the order.
+        try {
+          const done = await submitOrder({
+            razorpay: {
+              order_id: resp.razorpay_order_id,
+              payment_id: resp.razorpay_payment_id,
+              signature: resp.razorpay_signature,
+            },
+          })
+          if (!done) { setIsPlacing(false); return }
+          finishOrder(done.order_id)
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Payment succeeded but the order could not be finalized. Please contact support.')
+          setIsPlacing(false)
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          setError('Payment cancelled. You can try again or choose Cash on Delivery.')
+          setIsPlacing(false)
+        },
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rzp = new (window as any).Razorpay(options)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rzp.on('payment.failed', (r: any) => {
+      setError(r?.error?.description || 'Payment failed. Please try again or choose Cash on Delivery.')
+      setIsPlacing(false)
+    })
+    rzp.open()
+  }
+
   const placeOrder = async () => {
     if (!canPlace || !emailValid) return
     setShowEmailModal(false)
     setError('')
     setIsPlacing(true)
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address_id: selectedId,
-          items,
-          notes: notes.trim() || undefined,
-          transport_details: transportDetails || undefined,
-          is_bulk: isBulk,
-          coupon_code: validCouponCode || undefined,
-          email: email.trim() || undefined,
-          gstin: gstEnabled ? gstin.trim().toUpperCase() || undefined : undefined,
-          gst_business_name: gstEnabled ? gstBusinessName.trim() || undefined : undefined,
-          referral_code: referralApplied?.code || undefined,
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        // Stale cart — a product was deleted/deactivated. Drop those items so
-        // the customer can retry with what's still available.
-        if (json.error_code === 'items_unavailable' && Array.isArray(json.unavailable_ids)) {
-          const names = items.filter((i) => json.unavailable_ids.includes(i.id)).map((i) => i.name)
-          json.unavailable_ids.forEach((id: string) => removeItem(id))
-          setError(
-            names.length
-              ? `${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} no longer available and ${names.length === 1 ? 'was' : 'were'} removed from your cart. Please review your order and try again.`
-              : (json.error ?? 'Some items are no longer available.'),
-          )
-          setIsPlacing(false)
-          return
-        }
-        // Referral no longer valid — clear it so they can place the order without it.
-        if (json.error_code === 'referral_invalid') {
-          setReferralApplied(null)
-          setReferralError(json.error ?? 'Referral code could not be applied.')
-          setError('Your referral code could not be applied. It has been removed — please place your order again.')
-          setIsPlacing(false)
-          return
-        }
-        throw new Error(json.detail ? `${json.error}: ${json.detail}` : (json.error ?? 'Failed to place order'))
+      if (effectivePayMethod === 'online') {
+        await placeOnlineOrder()
+        return
       }
-      // Set BEFORE clearCart so the empty-cart redirect above can't fire.
-      orderPlacedRef.current = true
-      clearCart()
-      router.push(`/orders/${json.order_id}?new=1`)
+      const json = await submitOrder()
+      if (!json) { setIsPlacing(false); return }
+      finishOrder(json.order_id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
       setIsPlacing(false)
@@ -766,6 +863,47 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 <span className="text-2xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
               </div>
 
+              {/* Payment method — Online only shows when the admin enabled Razorpay */}
+              <div className="mb-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/35 mb-2">Payment Method</p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod('cod')}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left',
+                      effectivePayMethod === 'cod' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
+                    )}
+                  >
+                    <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'cod' ? 'border-white' : 'border-white/40')}>
+                      {effectivePayMethod === 'cod' && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-black text-white">Cash on Delivery</span>
+                      <span className="block text-[11px] font-medium text-white/50">Pay when your order arrives</span>
+                    </span>
+                  </button>
+                  {razorpayEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => setPayMethod('online')}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left',
+                        effectivePayMethod === 'online' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
+                      )}
+                    >
+                      <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'online' ? 'border-white' : 'border-white/40')}>
+                        {effectivePayMethod === 'online' && <span className="w-2 h-2 rounded-full bg-white" />}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-black text-white">Pay Online</span>
+                        <span className="block text-[11px] font-medium text-white/50">UPI · Card · Net Banking (Razorpay)</span>
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Notes — desktop */}
               <div className="hidden lg:block mb-5">
                 <label
@@ -798,7 +936,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 className="hidden md:flex w-full items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-4 px-4 rounded-xl hover:bg-white/90 transition-all duration-200 active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isPlacing && <Loader2 size={16} className="animate-spin" />}
-                {isPlacing ? 'Placing Order…' : 'Place Order'}
+                {isPlacing
+                  ? (effectivePayMethod === 'online' ? 'Processing…' : 'Placing Order…')
+                  : (effectivePayMethod === 'online' ? `Pay ₹${grandTotal.toFixed(0)}` : 'Place Order')}
               </button>
 
               {!canPlace && selectedId && pincodeResult?.serviceable === false && !isBulk && (
@@ -852,7 +992,9 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm uppercase tracking-widest py-3.5 px-4 rounded-xl active:scale-95 transition-all duration-200 disabled:opacity-40"
         >
           {isPlacing && <Loader2 size={16} className="animate-spin" />}
-          {isPlacing ? 'Placing Order…' : 'Place Order'}
+          {isPlacing
+            ? (effectivePayMethod === 'online' ? 'Processing…' : 'Placing Order…')
+            : (effectivePayMethod === 'online' ? `Pay ₹${grandTotal.toFixed(0)}` : 'Place Order')}
         </button>
       </div>
 
