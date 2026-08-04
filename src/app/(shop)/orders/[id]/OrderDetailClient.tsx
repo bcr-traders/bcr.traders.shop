@@ -328,8 +328,9 @@ export default function OrderDetailClient({
   const [cancelError, setCancelError] = useState<string | null>(null)
 
   // A customer may cancel only before the admin confirms (status still 'placed'),
-  // and never for a GST-invoice order. The server enforces this too.
-  const canCancel = order.status === 'placed' && !order.gstin
+  // never for a GST-invoice order, and never for a prepaid online (Razorpay)
+  // order. The server enforces all three too.
+  const canCancel = order.status === 'placed' && !order.gstin && order.payment_method !== 'online'
 
   // Review popup queue
   const [reviewIdx, setReviewIdx] = useState(0)

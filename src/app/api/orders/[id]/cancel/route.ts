@@ -13,6 +13,8 @@ import { restoreStockForOrder } from '@/lib/orders/stock'
  *     (i.e. the admin hasn't confirmed it yet). Once confirmed/packed/etc. it
  *     can no longer be cancelled from the customer side.
  *   • A GST-invoice order (has a gstin) can NEVER be cancelled by the customer.
+ *   • A prepaid ONLINE (Razorpay) order can NEVER be cancelled by the customer —
+ *     only the admin can (and refunds are handled separately). COD is unaffected.
  */
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId, sessionClaims } = await auth()
@@ -29,12 +31,19 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: order } = await (supabase as any)
     .from('orders')
-    .select('id, status, gstin')
+    .select('id, status, gstin, payment_method')
     .eq('id', id)
     .eq('user_id', profileId)
     .maybeSingle()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+
+  if (order.payment_method === 'online') {
+    return NextResponse.json(
+      { error: 'Prepaid online orders cannot be cancelled. Please contact us for any changes.' },
+      { status: 409 },
+    )
+  }
 
   if (order.gstin) {
     return NextResponse.json(

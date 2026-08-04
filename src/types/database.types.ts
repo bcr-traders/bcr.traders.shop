@@ -231,7 +231,7 @@ export interface Order {
   coupon_code?: string | null
   total: number
   status: OrderStatus
-  payment_method: 'cod'
+  payment_method: 'cod' | 'online'
   notes: string | null
   /** Lorry/transport chosen at checkout (migration 034). Text snapshot. */
   transport_details?: string | null
