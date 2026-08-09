@@ -18,6 +18,7 @@ const USEFUL_LINKS = [
   { label: 'Orders', href: '/orders' },
   { label: 'Profile', href: '/profile' },
   { label: 'Cart', href: '/cart' },
+  { label: 'Return & Refund Policy', href: '/return-refund-policy' },
 ]
 
 async function getFooterCategories(): Promise<Pick<Category, 'id' | 'name' | 'slug'>[]> {
