@@ -79,6 +79,7 @@ export async function notifyOrderEvent(
       confirmedByName,
       status,
       notes: order.notes ?? null,
+      paymentMethod: order.payment_method ?? 'cod',
       gstin: order.gstin ?? null,
       gstBusinessName: order.gst_business_name ?? null,
       customSubject: opts.subjectOverride?.trim() || null,

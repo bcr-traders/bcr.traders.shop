@@ -533,7 +533,7 @@ export async function POST(request: Request) {
   // `totalDiscount`, not `discountAmt` — the order was inserted with the coupon
   // AND referral discounts combined, so passing the coupon share alone makes the
   // email/invoice fail to add up against the total the customer actually pays.
-  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, totalDiscount, appliedCouponCode, total, profileId, gstin, gstBusinessName))
+  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, totalDiscount, appliedCouponCode, total, profileId, gstin, gstBusinessName, paymentMethod))
 
   return Response.json({ order_id: orderId }, { status: 201 })
 }
@@ -552,6 +552,7 @@ async function sendOrderEmails(
   profileId: string,
   gstin: string | null,
   gstBusinessName: string | null,
+  paymentMethod: 'cod' | 'online',
 ) {
   try {
     const resend = await import('@/lib/resend')
@@ -578,6 +579,7 @@ async function sendOrderEmails(
       createdAt,
       customerEmail: (profile as { email?: string | null } | null)?.email ?? null,
       customerName: address.name,
+      paymentMethod,
       // Without these the emailed invoice attachment renders as a plain bill,
       // with none of the buyer's GST details on it.
       gstin,

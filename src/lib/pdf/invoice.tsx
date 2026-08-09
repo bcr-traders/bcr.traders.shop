@@ -238,7 +238,9 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
           </View>
           <View style={[styles.col, { alignItems: 'flex-end' }]}>
             <Text style={styles.label}>Payment Method</Text>
-            <Text style={styles.addressText}>Cash on Delivery (COD)</Text>
+            <Text style={styles.addressText}>
+              {data.paymentMethod === 'online' ? 'Online Payment (Razorpay)' : 'Cash on Delivery (COD)'}
+            </Text>
             <Text style={[styles.label, { marginTop: 10 }]}>Order Status</Text>
             <Text style={styles.addressText}>{status}</Text>
           </View>
