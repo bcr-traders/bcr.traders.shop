@@ -3,34 +3,31 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Star, Loader2, Check } from 'lucide-react'
+import { Star, Loader2, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSupabaseUser } from '@/hooks/useSupabaseUser'
 import type { PendingReviewProduct } from '@/app/api/reviews/pending/route'
 
 /**
- * Mandatory review gate.
+ * Consolidated review request.
  *
- * When a customer opens the site with products they've received but not
- * reviewed, this asks for a rating on each in turn. Per the client's spec there
- * is deliberately NO close, cancel or back control — the only way past it is to
- * rate every product.
- *
- * Escape hatches that exist only to prevent a permanent trap (never a way to
- * skip an unrated product):
- *   • a product the API rejects as unpurchased is stepped over, otherwise a bad
- *     row would wedge the customer behind a popup they cannot satisfy;
- *   • checkout lives outside the (shop) group, so this can never block a sale.
+ * When a customer opens the site with delivered-but-unreviewed products, this
+ * shows ONE prompt listing all of them together — each with its own star rating
+ * and an optional note — and a single "Submit reviews". It is NOT mandatory and
+ * NOT one-popup-per-product: the customer can rate any subset and submit, or
+ * skip. A skip (or submit) is persisted server-side, so the prompt follows a
+ * controlled reminder rule (see /api/reviews/pending) instead of re-appearing on
+ * every visit.
  */
 export default function PendingReviewsGate() {
-  const [queue, setQueue] = useState<PendingReviewProduct[]>([])
-  const [idx, setIdx] = useState(0)
-  const [rating, setRating] = useState(0)
-  const [hovered, setHovered] = useState(0)
-  const [body, setBody] = useState('')
+  const [products, setProducts] = useState<PendingReviewProduct[]>([])
+  const [ratings, setRatings] = useState<Record<string, number>>({})
+  const [hovered, setHovered] = useState<Record<string, number>>({})
+  const [bodies, setBodies] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [closed, setClosed] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { isSignedIn, isLoaded } = useSupabaseUser()
 
@@ -40,27 +37,26 @@ export default function PendingReviewsGate() {
     // The endpoint is session-scoped and 401s for a signed-out visitor. Firing
     // it unconditionally logged a console error on every logged-out page load,
     // so wait until the session is resolved and only ask when signed in.
-    // Behaviour for a signed-in customer is unchanged.
     if (!isLoaded || !isSignedIn) return
 
     let cancelled = false
     void (async () => {
-      // Don't crash the celebration on a brand-new order — that page owns the
-      // screen. The gate will come up on their next visit.
+      // Don't interrupt the brand-new-order celebration — that page owns the
+      // screen. The prompt will come up on their next visit.
       if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === '1') return
       try {
         const res = await fetch('/api/reviews/pending')
         if (!res.ok) return
         const { products } = (await res.json()) as { products: PendingReviewProduct[] }
-        if (!cancelled && products?.length) setQueue(products)
+        if (!cancelled && products?.length) setProducts(products)
       } catch { /* storefront must work regardless */ }
     })()
     return () => { cancelled = true }
   }, [isLoaded, isSignedIn])
 
-  const open = queue.length > 0 && idx < queue.length
+  const open = products.length > 0 && !closed && !done
 
-  // Lock background scroll while the gate is up.
+  // Lock background scroll while the prompt is up.
   useEffect(() => {
     if (!open && !done) return
     const prev = document.body.style.overflow
@@ -68,36 +64,57 @@ export default function PendingReviewsGate() {
     return () => { document.body.style.overflow = prev }
   }, [open, done])
 
-  const current = queue[idx]
+  const setRating = useCallback((pid: string, v: number) => {
+    setRatings((r) => ({ ...r, [pid]: v }))
+    setError('')
+  }, [])
 
-  const advance = useCallback(() => {
-    setRating(0); setHovered(0); setBody(''); setError('')
-    if (idx + 1 >= queue.length) {
-      setDone(true)
-      setIdx(queue.length)
-      setTimeout(() => { setDone(false); setQueue([]) }, 2200)
-    } else {
-      setIdx((i) => i + 1)
-    }
-  }, [idx, queue.length])
+  const ratedCount = products.filter((p) => (ratings[p.id] ?? 0) > 0).length
+
+  // Skip / Remind me later — persist the dismissal so the reminder rule applies.
+  const skip = useCallback(async () => {
+    setClosed(true)
+    try {
+      await fetch('/api/reviews/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'skip' }),
+      })
+    } catch { /* best-effort */ }
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!current) return
-    if (!rating) { setError('Please select a rating.'); return }
+    const rated = products.filter((p) => (ratings[p.id] ?? 0) > 0)
+    if (!rated.length) { setError('Please rate at least one product, or tap “Remind me later”.'); return }
     setError('')
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/products/${current.id}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, body: body.trim() }),
-      })
-      if (res.status === 403 || res.status === 409) { advance(); return }  // can't review it — don't wedge them here
-      if (!res.ok) throw new Error()
-      advance()
+      // Submit each rated product through the existing per-product endpoint (which
+      // enforces the verified-purchase check). A product the API rejects (403/409)
+      // is skipped rather than aborting the whole batch.
+      for (const p of rated) {
+        try {
+          await fetch(`/api/products/${p.id}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating: ratings[p.id], body: (bodies[p.id] ?? '').trim() }),
+          })
+        } catch { /* one failure shouldn't sink the rest */ }
+      }
+      // Cool the prompt down so any products left unrated don't re-appear on the
+      // very next visit (they'll return after the reminder window).
+      try {
+        await fetch('/api/reviews/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'complete' }),
+        })
+      } catch { /* best-effort */ }
+      setDone(true)
+      setTimeout(() => { setDone(false); setProducts([]) }, 2200)
     } catch {
-      setError('Could not submit your review. Please try again.')
+      setError('Could not submit your reviews. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -140,109 +157,113 @@ export default function PendingReviewsGate() {
                 Your reviews will appear once approved.
               </p>
             </div>
-          ) : current ? (
+          ) : (
             <>
               <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-table-border">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 id="review-gate-title" className="text-base font-black text-primary uppercase tracking-wider">
-                    Rate your purchase
-                  </h2>
-                  {queue.length > 1 && (
-                    <span className="text-[11px] font-black text-on-surface-variant/60 tabular-nums shrink-0">
-                      {idx + 1} of {queue.length}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] font-medium text-on-surface-variant/70 mt-1">
-                  You received these items — please rate {queue.length > 1 ? 'each of them' : 'it'} to continue.
-                </p>
-                {queue.length > 1 && (
-                  <div className="mt-3 h-1 w-full rounded-full bg-surface-container overflow-hidden">
-                    <motion.div
-                      className="h-full bg-primary rounded-full"
-                      initial={false}
-                      animate={{ width: `${(idx / queue.length) * 100}%` }}
-                      transition={{ type: 'spring', damping: 26, stiffness: 260 }}
-                    />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 id="review-gate-title" className="text-base font-black text-primary uppercase tracking-wider">
+                      Rate your products
+                    </h2>
+                    <p className="text-[11px] font-medium text-on-surface-variant/70 mt-1">
+                      You received {products.length === 1 ? 'this item' : `these ${products.length} items`}. Rate any you like — it&rsquo;s optional.
+                    </p>
                   </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={skip}
+                    aria-label="Remind me later"
+                    className="shrink-0 -mr-1 -mt-1 p-1.5 rounded-lg text-on-surface-variant/50 hover:text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
 
               <form
                 onSubmit={submit}
-                className="px-5 sm:px-6 py-5 flex flex-col gap-5 overflow-y-auto overscroll-contain"
-                style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
+                className="flex flex-col overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={current.image ?? ''}
-                    alt=""
-                    className="w-14 h-14 rounded-xl object-contain bg-surface-container border border-table-border shrink-0"
-                  />
-                  <p className="font-black text-sm text-primary leading-snug line-clamp-2">{current.name}</p>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 block mb-2">
-                    Your rating *
-                  </label>
-                  <div className="flex gap-1.5" onMouseLeave={() => setHovered(0)}>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onMouseEnter={() => setHovered(s)}
-                        onClick={() => { setRating(s); setError('') }}
-                        className="transition-transform hover:scale-110 active:scale-95"
-                        aria-label={`${s} star${s > 1 ? 's' : ''}`}
-                        aria-pressed={rating === s}
-                      >
-                        <Star
-                          size={32}
-                          className={cn(
-                            'transition-colors',
-                            s <= (hovered || rating) ? 'fill-secondary stroke-secondary' : 'fill-none stroke-outline',
-                          )}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="gate-review-body"
-                    className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 block mb-1.5"
-                  >
-                    Your review <span className="text-on-surface-variant/40">(optional)</span>
-                  </label>
-                  <textarea
-                    id="gate-review-body"
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    placeholder="How was the quality, packaging and delivery?"
-                    className="w-full px-3 py-2.5 rounded-xl border-2 border-table-border bg-surface text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 outline-none focus:border-primary transition-colors resize-none"
-                  />
-                </div>
-
-                {error && <p className="text-xs font-bold text-error">{error}</p>}
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full h-12 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-60 shadow-sm"
+                <div
+                  className="px-5 sm:px-6 py-4 flex flex-col gap-4 overflow-y-auto overscroll-contain"
                 >
-                  {submitting && <Loader2 size={15} className="animate-spin" />}
-                  {submitting
-                    ? 'Submitting…'
-                    : idx + 1 >= queue.length ? 'Submit review' : 'Submit & next'}
-                </button>
+                  {products.map((p) => {
+                    const r = ratings[p.id] ?? 0
+                    const h = hovered[p.id] ?? 0
+                    return (
+                      <div key={p.id} className="rounded-xl border border-table-border bg-surface p-3.5">
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.image ?? ''}
+                            alt=""
+                            className="w-12 h-12 rounded-lg object-contain bg-surface-container border border-table-border shrink-0"
+                          />
+                          <p className="font-black text-sm text-primary leading-snug line-clamp-2 flex-1 min-w-0">{p.name}</p>
+                        </div>
+
+                        <div className="flex gap-1.5 mt-3" onMouseLeave={() => setHovered((s) => ({ ...s, [p.id]: 0 }))}>
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onMouseEnter={() => setHovered((st) => ({ ...st, [p.id]: s }))}
+                              onClick={() => setRating(p.id, s)}
+                              className="transition-transform hover:scale-110 active:scale-95"
+                              aria-label={`${p.name}: ${s} star${s > 1 ? 's' : ''}`}
+                              aria-pressed={r === s}
+                            >
+                              <Star
+                                size={26}
+                                className={cn(
+                                  'transition-colors',
+                                  s <= (h || r) ? 'fill-secondary stroke-secondary' : 'fill-none stroke-outline',
+                                )}
+                              />
+                            </button>
+                          ))}
+                        </div>
+
+                        {r > 0 && (
+                          <textarea
+                            value={bodies[p.id] ?? ''}
+                            onChange={(e) => setBodies((b) => ({ ...b, [p.id]: e.target.value }))}
+                            rows={2}
+                            maxLength={500}
+                            placeholder="Add a note (optional)"
+                            className="mt-2.5 w-full px-3 py-2 rounded-lg border-2 border-table-border bg-surface-card text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 outline-none focus:border-primary transition-colors resize-none"
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div
+                  className="px-5 sm:px-6 pt-3 pb-5 border-t border-table-border flex flex-col gap-2.5"
+                  style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
+                >
+                  {error && <p className="text-xs font-bold text-error">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={submitting || ratedCount === 0}
+                    className="w-full h-12 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 shadow-sm"
+                  >
+                    {submitting && <Loader2 size={15} className="animate-spin" />}
+                    {submitting ? 'Submitting…' : ratedCount > 1 ? `Submit ${ratedCount} reviews` : 'Submit review'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={skip}
+                    disabled={submitting}
+                    className="w-full h-10 rounded-xl text-xs font-black uppercase tracking-widest text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
+                  >
+                    Remind me later
+                  </button>
+                </div>
               </form>
             </>
-          ) : null}
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
