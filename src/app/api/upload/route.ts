@@ -36,7 +36,17 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const { error } = await supabase.storage
     .from('product-images')
-    .upload(filename, buffer, { contentType: sniffed.mime, upsert: false })
+    // Cache for 1 year (immutable). Filenames are content-unique nanoids and are
+    // never overwritten (upsert:false) — changing an image uploads a NEW file
+    // under a NEW name, so a long TTL can never serve stale content. Without this
+    // Supabase defaults to 3600s (1h), forcing browsers AND the Storage CDN to
+    // re-fetch every product/banner/category image hourly. A year-long immutable
+    // TTL collapses those repeat downloads, cutting cached Storage egress sharply.
+    .upload(filename, buffer, {
+      contentType: sniffed.mime,
+      upsert: false,
+      cacheControl: '31536000',
+    })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
