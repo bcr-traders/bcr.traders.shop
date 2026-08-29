@@ -4,10 +4,26 @@ export type RateLimitResult = RateLimitOk | RateLimitDenied
 
 const memoryStore = new Map<string, { count: number; resetAt: number }>()
 
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+/**
+ * Sanitize an Upstash env value. A value pasted WITH surrounding quotes or stray
+ * whitespace (e.g. `"https://x.upstash.io"`) would otherwise be baked straight
+ * into the request URL — `"https://x.upstash.io"/pipeline` — making every fetch
+ * throw `Invalid URL`, which silently disabled rate limiting in production.
+ * Stripping quotes/whitespace makes a future paste mistake degrade gracefully.
+ */
+function cleanEnv(v: string | undefined): string | undefined {
+  if (!v) return v
+  const cleaned = v.trim().replace(/^["']+|["']+$/g, '').trim()
+  return cleaned || undefined
+}
+
+// URL also loses any trailing slash so `${UPSTASH_URL}/pipeline` can't become `//pipeline`.
+const UPSTASH_URL = cleanEnv(process.env.UPSTASH_REDIS_REST_URL)?.replace(/\/+$/, '')
+const UPSTASH_TOKEN = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN)
 
 async function upstashIncr(key: string, ttlSeconds: number): Promise<{ count: number; ttl: number } | null> {
+  // Not configured (e.g. local dev) → fall back to memory quietly. This is the
+  // ONLY quiet path; a configured-but-failing Upstash is loud below.
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return null
   try {
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
@@ -20,13 +36,27 @@ async function upstashIncr(key: string, ttlSeconds: number): Promise<{ count: nu
       ]),
       cache: 'no-store',
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      console.error(
+        `[rate-limit] CRITICAL: Upstash responded HTTP ${res.status} — rate limiting has degraded to per-instance memory (weak on serverless). Investigate immediately.`,
+      )
+      return null
+    }
     const data = (await res.json()) as Array<{ result: number | string }>
     const count = Number(data?.[0]?.result ?? 0)
     const ttl = Number(data?.[2]?.result ?? ttlSeconds)
     return { count, ttl: ttl > 0 ? ttl : ttlSeconds }
   } catch (err) {
-    console.error('[rate-limit] upstash error', err)
+    // DELIBERATE fail-open: on an Upstash outage we fall back to the in-memory
+    // store rather than blocking every OTP/login request. Failing CLOSED here
+    // would lock out ALL users during a transient Redis hiccup — a worse
+    // incident than briefly weaker rate limiting. The fallback is per-instance
+    // (weak on serverless), so this is logged as CRITICAL: a recurring line
+    // means rate limiting is effectively off and needs immediate attention.
+    console.error(
+      '[rate-limit] CRITICAL: Upstash call failed — rate limiting has degraded to per-instance memory (weak on serverless). Investigate immediately.',
+      err,
+    )
     return null
   }
 }

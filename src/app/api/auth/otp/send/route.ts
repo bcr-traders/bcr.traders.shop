@@ -37,7 +37,9 @@ export async function POST(request: Request) {
       await rateLimit({ key: `otp:send:phone:short:${phoneDigits}`, limit: 1, windowSec: 30 }).catch(() => {})
 
       try {
-        await recordOtpSend(result.verificationId, phoneDigits, expiryMinutes)
+        // Bind to the expiry the gateway ACTUALLY applied when it reports one,
+        // so our stored expiry can't drift longer than the code really lives.
+        await recordOtpSend(result.verificationId, phoneDigits, expiryMinutes, result.timeoutSeconds)
       } catch (err) {
         console.error('[OTP Send] Failed to record OTP binding — refusing send:', err)
         return NextResponse.json(

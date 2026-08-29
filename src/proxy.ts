@@ -25,6 +25,10 @@ const PUBLIC_PREFIXES = [
   '/api/unserviceable',
   '/api/merchant-feed',
   '/api/webhooks/',
+  // Vercel Cron calls have no user session — they authenticate with their own
+  // CRON_SECRET, verified inside each cron route handler. Session middleware
+  // must NOT gate them or it 401s the scheduler before the handler's own check.
+  '/api/cron/',
   '/api/errors',
   '/api/translations',
   '/api/auth/',

@@ -10,13 +10,25 @@ export async function recordOtpSend(
   verificationId: string,
   phoneDigits: string,
   expiryMinutes = 10,
+  /**
+   * The validity the SMS gateway ACTUALLY applied, in seconds (from its send
+   * response). Message Central caps OTP validity below what we request (e.g.
+   * 120s vs a 5–15 min setting), so when this is known we bind to it instead of
+   * the requested minutes — otherwise our stored expiry drifts far longer than
+   * the code really lives. A small grace buffer keeps the gateway (not us) as
+   * the true ceiling, so we never reject a code the gateway would still accept.
+   */
+  effectiveSeconds?: number,
 ) {
   const admin = createAdminClient()
-  const minutes = Math.min(60, Math.max(1, Math.round(expiryMinutes) || 10))
+  const ttlMs =
+    typeof effectiveSeconds === 'number' && Number.isFinite(effectiveSeconds) && effectiveSeconds > 0
+      ? (effectiveSeconds + 30) * 1000
+      : Math.min(60, Math.max(1, Math.round(expiryMinutes) || 10)) * 60 * 1000
   await admin.from('otp_verifications').insert({
     verification_id: verificationId,
     phone_digits: phoneDigits,
-    expires_at: new Date(Date.now() + minutes * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + ttlMs).toISOString(),
   })
 }
 

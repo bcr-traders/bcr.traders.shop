@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { ProductReview } from '@/types/database.types'
 import type { AuthMetadata } from '@/types'
+import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export async function GET(
   req: NextRequest,
@@ -56,6 +57,16 @@ export async function POST(
   const meta = sessionClaims?.publicMetadata as AuthMetadata | undefined
   const profileId = meta?.supabase_profile_id
   if (!profileId) return NextResponse.json({ error: 'Profile not configured' }, { status: 400 })
+
+  // Defense-in-depth against review spam / bots probing this endpoint (the
+  // verified-purchase check below already blocks non-buyers). Limits are
+  // generous enough for a genuine customer rating all their delivered products
+  // in one consolidated submission, strict enough to stop sustained abuse.
+  const ip = getClientIp(req)
+  const ipLimit = await rateLimit({ key: `reviews:post:ip:${ip}`, limit: 60, windowSec: 600 })
+  if (!ipLimit.ok) return rateLimitResponse(ipLimit)
+  const userLimit = await rateLimit({ key: `reviews:post:user:${profileId}`, limit: 50, windowSec: 600 })
+  if (!userLimit.ok) return rateLimitResponse(userLimit)
 
   let body: unknown
   try {
