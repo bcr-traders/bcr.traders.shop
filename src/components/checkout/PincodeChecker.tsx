@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, LogIn } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
+import { useAuthPromptStore } from '@/store/authPromptStore'
 
 interface PincodeResult {
   serviceable: boolean
@@ -19,13 +21,27 @@ interface Props {
 }
 
 export default function PincodeChecker({ pincode, onResult, isBulkSelected, onBulkToggle }: Props) {
-  const [status, setStatus] = useState<'idle' | 'checking' | 'done'>('idle')
+  const [status, setStatus] = useState<'idle' | 'checking' | 'done' | 'gated'>('idle')
   const [result, setResult] = useState<PincodeResult | null>(null)
   const lastPincode = useRef('')
+  const { isSignedIn, isLoaded } = useSupabaseUser()
+  const showAuthPrompt = useAuthPromptStore((s) => s.show)
 
   useEffect(() => {
     if (!/^\d{6}$/.test(pincode)) {
       setStatus('idle')
+      setResult(null)
+      onResult?.(null)
+      return
+    }
+    // Session still resolving — wait rather than gate a signed-in user by mistake.
+    if (!isLoaded) return
+    // Same gate as the header: no verdict for signed-out visitors. Checkout is
+    // already auth-gated, so this mainly guards reuse of this component
+    // elsewhere and the brief window before the session resolves.
+    if (!isSignedIn) {
+      lastPincode.current = ''
+      setStatus('gated')
       setResult(null)
       onResult?.(null)
       return
@@ -45,7 +61,7 @@ export default function PincodeChecker({ pincode, onResult, isBulkSelected, onBu
           void fetch('/api/unserviceable', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pincode }),
+            body: JSON.stringify({ pincode, source: 'checkout' }),
           })
         }
       })
@@ -53,9 +69,24 @@ export default function PincodeChecker({ pincode, onResult, isBulkSelected, onBu
         setStatus('idle')
         onResult?.(null)
       })
-  }, [pincode, onResult])
+  }, [pincode, onResult, isLoaded, isSignedIn])
 
   if (status === 'idle') return null
+
+  if (status === 'gated') {
+    return (
+      <button
+        type="button"
+        onClick={() => showAuthPrompt('pincode')}
+        className="flex items-center gap-2 mt-2 text-left"
+      >
+        <LogIn size={14} className="text-primary flex-shrink-0" strokeWidth={2.5} />
+        <span className="font-label-sm text-label-sm text-primary underline underline-offset-4">
+          Log in to check delivery availability
+        </span>
+      </button>
+    )
+  }
 
   if (status === 'checking') {
     return (

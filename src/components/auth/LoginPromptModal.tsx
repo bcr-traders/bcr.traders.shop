@@ -1,22 +1,47 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart, X } from 'lucide-react'
+import { ShoppingCart, Heart, MapPin, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuthPromptStore } from '@/store/authPromptStore'
+import { useAuthPromptStore, type AuthPromptReason } from '@/store/authPromptStore'
 
 /**
- * Global popup shown when a signed-out user tries to add a product to the cart.
+ * Copy per gated action. The pincode gate is the one place we ask people to
+ * register BEFORE showing them anything, so it has to say plainly what they
+ * get in return — otherwise it reads as a wall rather than a step.
+ */
+const COPY: Record<AuthPromptReason, { icon: typeof ShoppingCart; title: string; body: string }> = {
+  cart: {
+    icon: ShoppingCart,
+    title: 'Log in to add to cart',
+    body: 'Please sign in with your mobile number to start your order. It only takes a few seconds.',
+  },
+  wishlist: {
+    icon: Heart,
+    title: 'Log in to save items',
+    body: 'Sign in with your mobile number to keep your wishlist across devices.',
+  },
+  pincode: {
+    icon: MapPin,
+    title: 'Log in to check delivery',
+    body: "Sign in with your mobile number and we'll show you instantly whether we deliver to your area — and get in touch if we don't yet.",
+  },
+}
+
+/**
+ * Global popup shown when a signed-out user hits a gated action.
  * Rendered once in the shop layout; triggered via useAuthPromptStore().show().
  */
 export default function LoginPromptModal() {
-  const { open, hide } = useAuthPromptStore()
+  const { open, hide, reason, next } = useAuthPromptStore()
   const pathname = usePathname()
   const router = useRouter()
 
+  const { icon: Icon, title, body } = COPY[reason] ?? COPY.cart
+
   const goLogin = () => {
     hide()
-    router.push(`/login?next=${encodeURIComponent(pathname || '/')}`)
+    router.push(`/login?next=${encodeURIComponent(next || pathname || '/')}`)
   }
 
   return (
@@ -46,12 +71,12 @@ export default function LoginPromptModal() {
             </button>
 
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <ShoppingCart size={24} className="text-primary" strokeWidth={2.5} />
+              <Icon size={24} className="text-primary" strokeWidth={2.5} />
             </div>
 
-            <h3 className="text-xl font-black text-primary tracking-tight">Log in to add to cart</h3>
+            <h3 className="text-xl font-black text-primary tracking-tight">{title}</h3>
             <p className="text-sm font-medium text-on-surface-variant mt-1.5 leading-relaxed">
-              Please sign in with your mobile number to start your order. It only takes a few seconds.
+              {body}
             </p>
 
             <div className="flex flex-col gap-2.5 mt-6">

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, ChevronLeft, ShieldCheck, Phone, User, Mail, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import OtpInput from './OtpInput'
+import { isSafeInternalPath } from '@/lib/validators'
 
 type Portal = 'customer' | 'admin' | 'delivery'
 
@@ -18,6 +19,12 @@ interface Props {
 export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: Props) {
   const searchParams = useSearchParams()
   const modeParam = searchParams.get('mode')
+  // Where to land after login. Set by gated actions (add-to-cart, the pincode
+  // delivery check) so the visitor resumes what they were doing instead of
+  // being dumped on the portal default. Validated here as well as on the
+  // server, so a crafted ?next= can never become an open redirect.
+  const nextParam = searchParams.get('next')
+  const next = isSafeInternalPath(nextParam) ? nextParam : null
 
   const [mode, setMode] = useState<'login' | 'signup'>(allowSignup && modeParam === 'signup' ? 'signup' : 'login')
   const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone')
@@ -175,6 +182,7 @@ export default function PhoneAuthForm({ portal, allowSignup, title, subtitle }: 
           portal,
           name: name.trim() || undefined,
           email: email.trim() || undefined,
+          ...(next ? { next } : {}),
         }),
       })
       const data = await res.json().catch(() => ({}))

@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import {
-  MapPin, ChevronDown, CheckCircle2, XCircle, Loader2, X, LocateFixed,
+  MapPin, ChevronDown, CheckCircle2, XCircle, Loader2, X, LocateFixed, LogIn,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSupabaseUser } from '@/hooks/useSupabaseUser'
+import { useAuthPromptStore } from '@/store/authPromptStore'
 
 interface PincodeResult {
   serviceable: boolean
@@ -14,6 +17,12 @@ interface PincodeResult {
 }
 
 const STORAGE_KEY = 'bcr_pincode'
+/**
+ * Pincode a signed-out visitor tried to check. Stashed before we send them to
+ * login so the check runs itself on return — asking them to type it a second
+ * time is the fastest way to lose the lead we just gated for.
+ */
+const PENDING_KEY = 'bcr_pending_pincode'
 
 function useSavedPincode() {
   const [saved, setSaved] = useState<{ pincode: string; result: PincodeResult } | null>(null)
@@ -37,7 +46,13 @@ function useSavedPincode() {
 
 export default function HeaderLocation({ className = '' }: { className?: string }) {
   const { saved, save, clear } = useSavedPincode()
+  const { isSignedIn, isLoaded } = useSupabaseUser()
+  const showAuthPrompt = useAuthPromptStore((s) => s.show)
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  // Set when a signed-out visitor submits a pincode: we hold the verdict back
+  // and show the register CTA in its place.
+  const [gated, setGated] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [status, setStatus] = useState<'idle' | 'checking' | 'done'>('idle')
   const [result, setResult] = useState<PincodeResult | null>(null)
@@ -48,7 +63,7 @@ export default function HeaderLocation({ className = '' }: { className?: string 
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 80)
-    else { setInput(''); setStatus('idle'); setResult(null); setGeoStatus('idle'); setGeoError(null) }
+    else { setInput(''); setStatus('idle'); setResult(null); setGeoStatus('idle'); setGeoError(null); setGated(null) }
   }, [open])
 
   useEffect(() => {
@@ -60,7 +75,12 @@ export default function HeaderLocation({ className = '' }: { className?: string 
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const checkPincode = useCallback(async (pin: string) => {
+  /**
+   * Run the actual availability check. Callers MUST have confirmed the visitor
+   * is signed in — the gate lives in requestCheck(), not here, so the
+   * resume-after-login path can call this directly.
+   */
+  const runCheck = useCallback(async (pin: string) => {
     if (!/^\d{6}$/.test(pin)) return
     setStatus('checking')
     setResult(null)
@@ -71,16 +91,69 @@ export default function HeaderLocation({ className = '' }: { className?: string 
       setStatus('done')
       save(pin, data)
       if (!data.serviceable) {
+        // Signed-in by construction, so the server resolves this visitor's
+        // name/phone/cart onto the lead and alerts the admins.
         void fetch('/api/unserviceable', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pincode: pin }),
+          body: JSON.stringify({ pincode: pin, source: 'header' }),
         })
       }
     } catch {
       setStatus('idle')
     }
   }, [save])
+
+  /**
+   * Gate: a signed-out visitor gets no verdict at all. We stash the pincode,
+   * show the register prompt, and resume the check once they're back.
+   */
+  const requestCheck = useCallback((pin: string) => {
+    if (!/^\d{6}$/.test(pin)) return
+    // Session still resolving — hold rather than flash a wrong state.
+    if (!isLoaded) return
+    if (!isSignedIn) {
+      setStatus('idle')
+      setResult(null)
+      setGated(pin)
+      // The pincode rides back in sessionStorage, NOT in the redirect URL:
+      // isSafeInternalPath() (which both the client and the OTP-verify route
+      // enforce) rejects any `next` containing a query string, so a
+      // "?pincode=" would be silently dropped and land them on / instead.
+      try { sessionStorage.setItem(PENDING_KEY, pin) } catch {}
+      showAuthPrompt('pincode', pathname || '/')
+      return
+    }
+    setGated(null)
+    void runCheck(pin)
+  }, [isLoaded, isSignedIn, pathname, showAuthPrompt, runCheck])
+
+  /**
+   * Resume a gated check after the visitor registers. Fires once they're
+   * signed in and the pincode they tried is still waiting in sessionStorage
+   * (it survives the login redirect; the URL can't carry it — see above).
+   *
+   * The work is queued rather than run in the effect body: opening the panel
+   * and filling the input is a one-off reaction to arriving back from login,
+   * not state we're synchronising, and a task keeps it off the render path.
+   */
+  const resumed = useRef(false)
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || resumed.current) return
+    let pending: string | null = null
+    try { pending = sessionStorage.getItem(PENDING_KEY) } catch {}
+    if (!pending || !/^\d{6}$/.test(pending)) return
+    resumed.current = true
+    try { sessionStorage.removeItem(PENDING_KEY) } catch {}
+    const pin = pending
+    const id = setTimeout(() => {
+      setGated(null)
+      setOpen(true)
+      setInput(pin)
+      void runCheck(pin)
+    }, 0)
+    return () => clearTimeout(id)
+  }, [isLoaded, isSignedIn, runCheck])
 
   const detectLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -109,7 +182,7 @@ export default function HeaderLocation({ className = '' }: { className?: string 
           setGeoStatus('idle')
           if (/^\d{6}$/.test(pin)) {
             setInput(pin)
-            checkPincode(pin)
+            requestCheck(pin)
           } else {
             setGeoError("Couldn't detect your pincode from your location. Please enter it manually.")
           }
@@ -130,7 +203,7 @@ export default function HeaderLocation({ className = '' }: { className?: string 
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     )
-  }, [checkPincode])
+  }, [requestCheck])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6)
@@ -138,7 +211,8 @@ export default function HeaderLocation({ className = '' }: { className?: string 
     setStatus('idle')
     setResult(null)
     setGeoError(null)
-    if (val.length === 6) checkPincode(val)
+    setGated(null)
+    if (val.length === 6) requestCheck(val)
   }
 
   const handleClearSaved = (e: React.MouseEvent) => {
@@ -233,6 +307,26 @@ export default function HeaderLocation({ className = '' }: { className?: string 
               <p className="text-[11px] font-medium text-error/80 leading-relaxed px-1 -mt-1">{geoError}</p>
             )}
 
+            {gated && (
+              <div className="flex flex-col gap-3 rounded-xl px-4 py-3.5 bg-primary/5 border border-primary/20">
+                <div className="flex items-start gap-3">
+                  <LogIn size={16} className="text-primary flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                  <div>
+                    <p className="font-bold text-primary text-[13px]">Log in to see delivery availability</p>
+                    <p className="text-[11px] font-medium text-on-surface-variant/80 mt-1 leading-relaxed">
+                      We check delivery for pincode <span className="font-bold">{gated}</span> once you sign in with your mobile number. Takes a few seconds.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => requestCheck(gated)}
+                  className="w-full py-2.5 rounded-xl bg-primary text-white font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-opacity active:scale-[0.98]"
+                >
+                  Log In / Sign Up
+                </button>
+              </div>
+            )}
+
             {status === 'done' && result && (
               <div
                 className={`flex items-start gap-3 rounded-xl px-4 py-3 text-xs ${
@@ -265,7 +359,7 @@ export default function HeaderLocation({ className = '' }: { className?: string 
               </div>
             )}
 
-            {status === 'idle' && (
+            {status === 'idle' && !gated && (
               <p className="text-[11px] font-medium text-on-surface-variant/70 leading-relaxed px-1">
                 Enter your 6-digit pincode to check delivery availability in your area.
               </p>
