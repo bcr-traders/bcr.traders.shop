@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth/server'
 import SettingsClient from './SettingsClient'
 import type { Json } from '@/types/database.types'
 
@@ -17,6 +18,15 @@ function bool(v: unknown, fallback = false): boolean {
 }
 
 export default async function SettingsPage() {
+  // Resolve the role HERE, on the server, exactly as the admin layout does.
+  // Deriving it in the client from a browser-side session lookup left a real
+  // super_admin with the COD toggle locked, because that lookup reads
+  // app_metadata off the client session and can come back without the role
+  // even though this request is already authenticated. Same bug the sidebar
+  // hit and fixed the same way.
+  const { sessionClaims } = await auth()
+  const isSuperAdmin = sessionClaims?.publicMetadata?.role === 'super_admin'
+
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('cms_content')
@@ -50,5 +60,5 @@ export default async function SettingsPage() {
     cod_online_percent:       num(raw.cod_online_percent, 100),
   }
 
-  return <SettingsClient initialSettings={initialSettings} />
+  return <SettingsClient initialSettings={initialSettings} isSuperAdmin={isSuperAdmin} />
 }

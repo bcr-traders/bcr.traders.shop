@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react'
 import { Loader2, AlertTriangle, Check, AlertCircle, Info, X, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
-import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import { formatMinute, parseTimeToMinutes } from '@/lib/store-hours'
 
 const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
@@ -95,11 +94,17 @@ function Toggle({ checked, onChange, label, sub, disabled }: {
   )
 }
 
-export default function SettingsClient({ initialSettings }: { initialSettings: Settings }) {
-  const { isSuperAdmin, loading: permsLoading } = useAdminPermissions()
-  // COD controls are super-admin only. Until the role resolves, treat the user
-  // as NOT a super admin so the controls never flash editable.
-  const canEditCod = isSuperAdmin && !permsLoading
+export default function SettingsClient({
+  initialSettings,
+  isSuperAdmin,
+}: {
+  initialSettings: Settings
+  /** Resolved on the SERVER (see page.tsx) — a client-side session lookup can
+   *  come back without the role and wrongly lock out a real super admin. */
+  isSuperAdmin: boolean
+}) {
+  // COD controls are super-admin only; /api/cms enforces the same rule.
+  const canEditCod = isSuperAdmin
   const [settings, setSettings] = useState(initialSettings)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
