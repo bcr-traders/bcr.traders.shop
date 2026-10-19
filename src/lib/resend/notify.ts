@@ -80,6 +80,9 @@ export async function notifyOrderEvent(
       status,
       notes: order.notes ?? null,
       paymentMethod: order.payment_method ?? 'cod',
+      // Partial orders: carried so the attached invoice shows both legs.
+      amountPaidOnline: order.amount_paid_online ?? null,
+      amountDueCod: order.amount_due_cod ?? null,
       gstin: order.gstin ?? null,
       gstBusinessName: order.gst_business_name ?? null,
       customSubject: opts.subjectOverride?.trim() || null,

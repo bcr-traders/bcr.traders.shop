@@ -33,7 +33,11 @@ export interface OrderEmailData {
   notes?: string | null
   transportDetails?: string | null
   /** How the order is paid — drives the invoice's "Payment Method" line. */
-  paymentMethod?: 'cod' | 'online' | null
+  paymentMethod?: 'cod' | 'online' | 'partial' | null
+  /** Partial orders: advance already paid online. */
+  amountPaidOnline?: number | null
+  /** Partial orders: balance still collected in cash on delivery. */
+  amountDueCod?: number | null
   gstin?: string | null
   gstBusinessName?: string | null
   /** Admin-set email subject line; overrides the auto-generated one when set. */

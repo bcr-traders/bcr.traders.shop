@@ -16,6 +16,10 @@ type DeliveryOrderDetail = {
   items: OrderItem[]
   address: Address | null
   payment_method: string
+  amount_paid_online: number | null
+  amount_due_cod: number | null
+  /** Cash to actually take at the door — server-computed. */
+  amount_to_collect: number | null
   assigned_to: string | null
   delivered_at: string | null
   otp_sent: boolean
@@ -165,6 +169,14 @@ export default function DeliveryOrderDetailPage({ params }: { params: Promise<{ 
   const isAssigned = ['confirmed', 'packed', 'assigned', 'processing'].includes(order.status)
   const isOutForDelivery = ['shipping', 'out_for_delivery'].includes(order.status)
   const isDelivered = order.status === 'delivered'
+
+  // Cash to take at the door. Falls back to the total only for plain COD — a
+  // part-paid order must never be collected in full.
+  const toCollect = order.amount_to_collect != null
+    ? Number(order.amount_to_collect)
+    : order.payment_method === 'online' ? 0
+    : order.payment_method === 'partial' ? Math.max(0, Number(order.amount_due_cod) || 0)
+    : order.total
 
   return (
     <div className="max-w-lg mx-auto pb-40">
@@ -363,7 +375,9 @@ export default function DeliveryOrderDetailPage({ params }: { params: Promise<{ 
               className="w-full flex items-center justify-center gap-2 py-4 bg-green-600 text-white rounded-2xl font-body-lg text-body-lg font-semibold active:scale-[0.98] transition-all"
             >
               <span className="material-symbols-outlined text-[20px]">payments</span>
-              Collect Payment & Confirm Delivery
+              {toCollect > 0
+                ? `Collect ₹${toCollect.toLocaleString('en-IN')} & Confirm Delivery`
+                : 'Confirm Delivery'}
             </button>
           )}
 
@@ -394,7 +408,9 @@ export default function DeliveryOrderDetailPage({ params }: { params: Promise<{ 
       {showPaymentModal && (
         <PaymentModal
           orderId={order.id}
-          total={order.total}
+          total={toCollect}
+          orderTotal={order.total}
+          paidOnline={order.amount_paid_online ?? 0}
           onDelivered={onDelivered}
           onClose={() => setShowPaymentModal(false)}
         />

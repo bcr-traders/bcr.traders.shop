@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cleanGstin } from '@/lib/validations/gst'
 import { findBuyOption } from '@/lib/products/packaging'
-import { computeDeliveryFee, parseDeliveryConfig } from '@/lib/cart/delivery'
+import { computeDeliveryFee, parseDeliveryConfig, splitPartialPayment } from '@/lib/cart/delivery'
 import { isOrderingOpen, formatMinute } from '@/lib/store-hours'
 import { createCheckoutOrder, verifyPaymentSignature, fetchPayment, isRazorpayConfigured } from '@/lib/razorpay'
 import { getReferralConfig, computeRefereeDiscount, computeReferrerReward } from '@/lib/referral/config'
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const profileId = meta?.supabase_profile_id
   if (!profileId) return Response.json({ error: 'Profile not configured' }, { status: 400 })
 
-  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string; transport_details?: string; payment_method?: 'cod' | 'online'; razorpay?: { order_id?: string; payment_id?: string; signature?: string } }
+  let body: { address_id: string; items: CartItem[]; notes?: string; is_bulk?: boolean; coupon_code?: string; email?: string; gstin?: string; gst_business_name?: string; referral_code?: string; transport_details?: string; payment_method?: 'cod' | 'online' | 'partial'; razorpay?: { order_id?: string; payment_id?: string; signature?: string } }
   try {
     body = await request.json()
   } catch {
@@ -357,18 +357,48 @@ export async function POST(request: Request) {
   //     and return it — NO db order yet.
   //   Phase 2 (with razorpay proof): verify the signature, confirm the captured
   //     payment with Razorpay, then fall through and create the order as paid.
+  //
+  // When the super admin turns COD OFF (Admin → Settings), cash is no longer a
+  // choice: the customer pays `codOnlinePercent` of the total online now and
+  // the balance, if any, on delivery. That balance case is its own method,
+  // 'partial', so the delivery panel and invoice can tell it apart from a
+  // fully-prepaid order (which collects nothing) and from plain COD.
+  const codAllowed = deliveryConfig.codEnabled
   const requestedOnline = body.payment_method === 'online'
+
+  // The split is decided HERE, from the stored settings — never from the
+  // client, which could otherwise ask to prepay ₹1 of a ₹50,000 order.
+  const roundedTotal = Math.round(exactTotal)
+  const split = splitPartialPayment(roundedTotal, deliveryConfig.codOnlinePercent)
+  const forcedPartial = !codAllowed && split.cod > 0
+
+  // With COD off, every order must go through Razorpay. If it isn't usable the
+  // store cannot take money at all — fail loudly rather than quietly booking an
+  // unpaid order the admin believes is prepaid.
+  if (!codAllowed && (!deliveryConfig.razorpayEnabled || !isRazorpayConfigured())) {
+    return Response.json(
+      { error: 'Online payment is temporarily unavailable, so orders cannot be placed right now. Please try again shortly.' },
+      { status: 503 },
+    )
+  }
   if (requestedOnline && (!deliveryConfig.razorpayEnabled || !isRazorpayConfigured())) {
     return Response.json({ error: 'Online payment is currently unavailable. Please choose Cash on Delivery.' }, { status: 400 })
   }
 
-  const amountPaise = Math.round(exactTotal * 100)
-  let paymentMethod: 'cod' | 'online' = 'cod'
+  // How much Razorpay should charge: the advance for a forced partial order,
+  // otherwise the whole amount.
+  const chargeRupees = forcedPartial ? split.online : roundedTotal
+  const amountPaise = Math.round((forcedPartial ? chargeRupees : exactTotal) * 100)
+
+  let paymentMethod: 'cod' | 'online' | 'partial' = 'cod'
   let paymentStatus: 'pending' | 'collected' = 'pending'
   let paymentReference: string | null = null
 
-  if (requestedOnline) {
-    paymentMethod = 'online'
+  // Pay online when the buyer chose to, or whenever COD is switched off.
+  const payOnline = requestedOnline || !codAllowed
+
+  if (payOnline) {
+    paymentMethod = forcedPartial ? 'partial' : 'online'
     const rzp = body.razorpay
     if (!rzp?.payment_id || !rzp.order_id || !rzp.signature) {
       // Phase 1 — start the payment. No order is created until it succeeds.
@@ -409,13 +439,18 @@ export async function POST(request: Request) {
       console.error('Razorpay payment fetch failed:', e)
       return Response.json({ error: 'Payment could not be confirmed. If you were charged, contact support.' }, { status: 502 })
     }
-    paymentStatus = 'collected'
+    // A partial order is only part-paid, so it stays 'pending' until the
+    // delivery person collects the balance — marking it 'collected' here would
+    // make an order with cash still owing look settled.
+    paymentStatus = paymentMethod === 'partial' ? 'pending' : 'collected'
     paymentReference = rzp.payment_id
   }
 
-  // COD is collected in whole rupees (no coins). Online charges the exact amount
-  // the customer already paid, so no rounding.
-  const total = paymentMethod === 'cod' ? Math.round(exactTotal) : amountPaise / 100
+  // COD and partial orders are collected in whole rupees (no coins). A full
+  // online order charges the exact amount already paid, so no rounding.
+  // NOTE: for 'partial', amountPaise is only the ADVANCE — the order total is
+  // still the full bill, with the split recorded separately below.
+  const total = paymentMethod === 'online' ? amountPaise / 100 : roundedTotal
 
   const transportDetails = typeof body.transport_details === 'string'
     ? body.transport_details.trim().slice(0, 300)
@@ -435,6 +470,15 @@ export async function POST(request: Request) {
     // Online orders are prepaid: record the money as collected + the Razorpay
     // payment id. COD keeps the default 'pending' until collected at delivery.
     ...(paymentMethod === 'online' ? { payment_status: paymentStatus, payment_reference: paymentReference } : {}),
+    // Partial: the advance is captured but cash is still owed, so keep the
+    // Razorpay reference and record both legs for the delivery panel/invoice.
+    ...(paymentMethod === 'partial'
+      ? {
+          payment_reference: paymentReference,
+          amount_paid_online: split.online,
+          amount_due_cod: split.cod,
+        }
+      : {}),
     status: 'placed',
     notes: notes?.trim() || null,
     is_bulk: is_bulk ?? false,
@@ -452,6 +496,33 @@ export async function POST(request: Request) {
   // drop it and retry so placing an order never depends on the migration.
   if (error && transportDetails && /transport_details/i.test(error.message)) {
     delete orderPayload.transport_details
+    ;({ data: order, error } = await adminDb
+      .from('orders').insert(orderPayload).select('id, order_number, created_at').single())
+  }
+
+  // The split columns + the 'partial' method arrive with migration 036. The
+  // customer's advance is ALREADY captured at this point, so failing outright
+  // would take their money without booking an order. Fall back to a plain
+  // prepaid-style row that still records the Razorpay reference, and log loudly
+  // — the balance then has to be reconciled by hand, which is strictly better
+  // than a paid customer with no order.
+  if (
+    error &&
+    paymentMethod === 'partial' &&
+    /amount_paid_online|amount_due_cod|payment_method/i.test(error.message)
+  ) {
+    console.error(
+      '[ORDER] Migration 036 missing — booking partial order without its split.',
+      `payment_id=${paymentReference} paid_online=${split.online} due_cod=${split.cod}`,
+    )
+    delete orderPayload.amount_paid_online
+    delete orderPayload.amount_due_cod
+    orderPayload.payment_method = 'cod'
+    orderPayload.payment_reference = paymentReference
+    orderPayload.notes = [
+      orderPayload.notes,
+      `ADVANCE PAID ONLINE: ₹${split.online} (ref ${paymentReference}). BALANCE DUE: ₹${split.cod}.`,
+    ].filter(Boolean).join(' | ')
     ;({ data: order, error } = await adminDb
       .from('orders').insert(orderPayload).select('id, order_number, created_at').single())
   }
@@ -533,7 +604,7 @@ export async function POST(request: Request) {
   // `totalDiscount`, not `discountAmt` — the order was inserted with the coupon
   // AND referral discounts combined, so passing the coupon share alone makes the
   // email/invoice fail to add up against the total the customer actually pays.
-  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, totalDiscount, appliedCouponCode, total, profileId, gstin, gstBusinessName, paymentMethod))
+  after(() => sendOrderEmails(orderId, orderNumber, createdAt, orderItems, address, subtotal, deliveryFee, totalDiscount, appliedCouponCode, total, profileId, gstin, gstBusinessName, paymentMethod, paymentMethod === 'partial' ? split.online : null, paymentMethod === 'partial' ? split.cod : null))
 
   return Response.json({ order_id: orderId }, { status: 201 })
 }
@@ -552,7 +623,9 @@ async function sendOrderEmails(
   profileId: string,
   gstin: string | null,
   gstBusinessName: string | null,
-  paymentMethod: 'cod' | 'online',
+  paymentMethod: 'cod' | 'online' | 'partial',
+  amountPaidOnline: number | null = null,
+  amountDueCod: number | null = null,
 ) {
   try {
     const resend = await import('@/lib/resend')
@@ -580,6 +653,9 @@ async function sendOrderEmails(
       customerEmail: (profile as { email?: string | null } | null)?.email ?? null,
       customerName: address.name,
       paymentMethod,
+      // Partial orders: the attached invoice shows both legs of the payment.
+      amountPaidOnline,
+      amountDueCod,
       // Without these the emailed invoice attachment renders as a plain bill,
       // with none of the buyer's GST details on it.
       gstin,

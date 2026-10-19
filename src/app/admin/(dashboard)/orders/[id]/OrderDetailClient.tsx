@@ -22,6 +22,8 @@ type OrderDetail = {
   address: Address | null
   items: OrderItem[]
   payment_method: string
+  amount_paid_online?: number | null
+  amount_due_cod?: number | null
   notes: string | null
   is_bulk: boolean
   estimated_delivery?: string | null
@@ -325,8 +327,17 @@ export default function OrderDetailClient({
           {/* Payment */}
           <Card title="Payment">
             <div className="space-y-4">
-              <Row label="Method" value={order.payment_method.toUpperCase()} />
+              <Row
+                label="Method"
+                value={order.payment_method === 'partial' ? 'PART ONLINE + COD' : order.payment_method.toUpperCase()}
+              />
               <Row label="Amount" value={fmt(order.total)} />
+              {order.payment_method === 'partial' && (
+                <>
+                  <Row label="Paid Online" value={fmt(Number(order.amount_paid_online ?? 0))} />
+                  <Row label="Balance (COD)" value={fmt(Number(order.amount_due_cod ?? 0))} />
+                </>
+              )}
               <div className="flex items-center justify-between pt-2 border-t-2 border-table-border">
                 <span className="font-black text-[10px] uppercase tracking-widest text-on-surface-variant">Collection</span>
                 <span className={cn(

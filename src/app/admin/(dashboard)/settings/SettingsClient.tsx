@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Loader2, AlertTriangle, Check, AlertCircle, Info, X } from 'lucide-react'
+import { Loader2, AlertTriangle, Check, AlertCircle, Info, X, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToastStore } from '@/store/toastStore'
+import { useAdminPermissions } from '@/hooks/useAdminPermissions'
 import { formatMinute, parseTimeToMinutes } from '@/lib/store-hours'
 
 const inputCls = 'w-full px-4 py-3 bg-surface border-2 border-table-border rounded-xl font-bold text-sm text-primary placeholder:font-medium placeholder:italic placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors'
@@ -30,6 +31,8 @@ type Settings = {
   otp_expiry_minutes: string
   razorpay_enabled: boolean
   delivery_enabled: boolean
+  cod_enabled: boolean
+  cod_online_percent: string
 }
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
@@ -59,23 +62,28 @@ function Field({ label, hint, required, children }: {
   )
 }
 
-function Toggle({ checked, onChange, label, sub }: {
-  checked: boolean; onChange: (v: boolean) => void; label: string; sub: string
+function Toggle({ checked, onChange, label, sub, disabled }: {
+  checked: boolean; onChange: (v: boolean) => void; label: string; sub: string; disabled?: boolean
 }) {
   return (
     <div className="flex items-center justify-between gap-6 p-5 bg-surface rounded-2xl border-2 border-table-border">
       <div>
-        <p className="font-black text-xs text-primary uppercase tracking-widest">{label}</p>
+        <p className="font-black text-xs text-primary uppercase tracking-widest flex items-center gap-2">
+          {label}
+          {disabled && <Lock size={11} strokeWidth={3} className="text-on-surface-variant/60" />}
+        </p>
         <p className="font-bold text-[10px] text-on-surface-variant mt-1">{sub}</p>
       </div>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
           'relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full border-2 transition-colors active:scale-95',
           checked ? 'bg-primary border-primary' : 'bg-surface border-table-border',
+          disabled && 'opacity-50 cursor-not-allowed active:scale-100',
         )}
       >
         <span className={cn(
@@ -88,6 +96,10 @@ function Toggle({ checked, onChange, label, sub }: {
 }
 
 export default function SettingsClient({ initialSettings }: { initialSettings: Settings }) {
+  const { isSuperAdmin, loading: permsLoading } = useAdminPermissions()
+  // COD controls are super-admin only. Until the role resolves, treat the user
+  // as NOT a super admin so the controls never flash editable.
+  const canEditCod = isSuperAdmin && !permsLoading
   const [settings, setSettings] = useState(initialSettings)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -118,6 +130,15 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         setError('Order open and close times cannot be the same'); return
       }
     }
+    const codPct = parseInt(settings.cod_online_percent, 10)
+    if (!settings.cod_enabled) {
+      if (isNaN(codPct) || codPct < 1 || codPct > 100) {
+        setError('Online payment percentage must be between 1 and 100'); return
+      }
+      if (!settings.razorpay_enabled) {
+        setError('Turn on Razorpay Online Payments before switching Cash on Delivery off — customers would have no way to pay.'); return
+      }
+    }
 
     setSaving(true)
 
@@ -137,6 +158,13 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       otp_expiry_minutes: settings.otp_expiry_minutes ? parseInt(settings.otp_expiry_minutes, 10) : 10,
       razorpay_enabled: settings.razorpay_enabled,
       delivery_enabled: settings.delivery_enabled,
+      // Send the COD keys only when this user may change them; otherwise echo
+      // back what was loaded, so a regular admin saving other settings can't
+      // blank them. The server enforces this too.
+      cod_enabled: canEditCod ? settings.cod_enabled : initialSettings.cod_enabled,
+      cod_online_percent: canEditCod
+        ? (isNaN(codPct) ? 100 : codPct)
+        : (parseInt(initialSettings.cod_online_percent, 10) || 100),
     }
 
     const res = await fetch('/api/cms', {
@@ -440,9 +468,70 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
             </p>
           </div>
         )}
-        <p className="font-bold text-[10px] text-on-surface-variant mt-4">
-          COD (Cash on Delivery) is always available regardless of this toggle.
-        </p>
+
+        {/* ── Cash on Delivery (super admin only) ── */}
+        <div className="pt-2">
+          <Toggle
+            checked={settings.cod_enabled}
+            onChange={v => set('cod_enabled', v)}
+            disabled={!canEditCod}
+            label="Cash on Delivery"
+            sub={canEditCod
+              ? 'When off, customers must pay online. Set below how much of the order they pay up front.'
+              : 'Only a super admin can change Cash on Delivery settings.'}
+          />
+
+          {!settings.cod_enabled && (
+            <div className="mt-4 space-y-4">
+              <Field
+                label="Percentage paid online"
+                hint="the rest is collected on delivery"
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={settings.cod_online_percent}
+                    min={1}
+                    max={100}
+                    disabled={!canEditCod}
+                    onChange={e => set('cod_online_percent', e.target.value)}
+                    placeholder="100"
+                    className={cn(inputCls, 'w-32 font-mono', !canEditCod && 'opacity-50 cursor-not-allowed')}
+                  />
+                  <p className="font-black text-[10px] text-on-surface-variant uppercase tracking-widest">% of order total</p>
+                </div>
+              </Field>
+
+              {(() => {
+                const pct = Math.min(100, Math.max(1, parseInt(settings.cod_online_percent, 10) || 100))
+                // Worked example on a round number — the clearest way to show
+                // an admin what the percentage actually does to a real bill.
+                const sample = 5000
+                const online = pct >= 100 ? sample : Math.min(sample, Math.max(1, Math.round((sample * pct) / 100)))
+                return (
+                  <div className="flex items-start gap-3 px-5 py-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                    <Info size={20} strokeWidth={2.5} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="font-bold text-xs text-blue-900 leading-relaxed">
+                      {pct >= 100 ? (
+                        <>Orders are <strong className="font-black">fully prepaid</strong>. Nothing is collected on delivery.</>
+                      ) : (
+                        <>On a <strong className="font-black tracking-widest">₹{sample.toLocaleString('en-IN')}</strong> order the customer pays{' '}
+                        <strong className="font-black tracking-widest">₹{online.toLocaleString('en-IN')}</strong> online now and{' '}
+                        <strong className="font-black tracking-widest">₹{(sample - online).toLocaleString('en-IN')}</strong> in cash on delivery.</>
+                      )}
+                    </p>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+
+          {settings.cod_enabled && (
+            <p className="font-bold text-[10px] text-on-surface-variant mt-4">
+              Customers can pay cash on delivery{settings.razorpay_enabled ? ' or online' : ''}.
+            </p>
+          )}
+        </div>
       </Section>
 
       {/* ── Delivery panel ── */}

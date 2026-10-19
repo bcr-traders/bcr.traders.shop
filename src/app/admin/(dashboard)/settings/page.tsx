@@ -44,6 +44,10 @@ export default async function SettingsPage() {
     razorpay_enabled:         bool(raw.razorpay_enabled, false),
     // Delivery panel is off by default — it's re-enabled from this page.
     delivery_enabled:         bool(raw.delivery_enabled, false),
+    // COD defaults ON: an absent key must never leave the store unable to
+    // take cash. Mirrors parseDeliveryConfig() in lib/cart/delivery.ts.
+    cod_enabled:              bool(raw.cod_enabled, true),
+    cod_online_percent:       num(raw.cod_online_percent, 100),
   }
 
   return <SettingsClient initialSettings={initialSettings} />

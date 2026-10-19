@@ -12,6 +12,9 @@ export type DeliveryOrder = {
   address: { name?: string; phone?: string; line1?: string; city?: string } | null
   items: unknown[] | null
   payment_method: string
+  /** Cash the delivery person must actually take: full total for COD, only the
+   *  balance for a part-paid order, nothing for prepaid. Server-computed. */
+  amount_to_collect?: number | null
   otp_verified_at?: string | null
 }
 
@@ -38,6 +41,14 @@ const STATUS_LABEL: Record<string, string> = {
 export default function DeliveryOrderCard({ order }: { order: DeliveryOrder }) {
   const addr = order.address
   const itemCount = order.items?.length ?? 0
+
+  // Never show the full total as the amount to take — a part-paid order would
+  // otherwise be over-collected by the advance the customer already paid.
+  const method = order.payment_method
+  const toCollect = order.amount_to_collect != null
+    ? Number(order.amount_to_collect)
+    : method === 'online' ? 0 : order.total
+  const payLabel = method === 'partial' ? 'Balance due' : method === 'online' ? 'Prepaid' : 'COD'
 
   return (
     <Link
@@ -79,10 +90,13 @@ export default function DeliveryOrderCard({ order }: { order: DeliveryOrder }) {
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-outline-variant/20">
         <span className="font-body-md text-body-md text-on-surface-variant">
-          {itemCount} {itemCount === 1 ? 'item' : 'items'} · COD
+          {itemCount} {itemCount === 1 ? 'item' : 'items'} · {payLabel}
         </span>
-        <span className="font-headline-sm text-headline-sm text-primary">
-          ₹{order.total.toLocaleString('en-IN')}
+        <span className={cn(
+          'font-headline-sm text-headline-sm',
+          toCollect > 0 ? 'text-primary' : 'text-on-surface-variant/50',
+        )}>
+          {toCollect > 0 ? `₹${toCollect.toLocaleString('en-IN')}` : 'Nothing to collect'}
         </span>
       </div>
     </Link>
