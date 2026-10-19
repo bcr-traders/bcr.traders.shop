@@ -22,6 +22,8 @@ function orderToEmailData(order: Order): OrderEmailData {
     notes: order.notes,
     transportDetails: order.transport_details ?? null,
     paymentMethod: order.payment_method ?? 'cod',
+    amountPaidOnline: order.amount_paid_online ?? null,
+    amountDueCod: order.amount_due_cod ?? null,
     // The buyer's GST details. The template renders these conditionally, so
     // omitting them here silently produced a GST invoice with no GST details.
     gstin: order.gstin ?? null,

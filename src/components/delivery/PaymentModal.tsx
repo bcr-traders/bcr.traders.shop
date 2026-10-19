@@ -5,14 +5,19 @@ import RazorpayQR from './RazorpayQR'
 
 interface Props {
   orderId: string
+  /** Amount still to collect at the door (NOT the order total for part-paid orders). */
   total: number
+  /** Full order value, shown for context when an advance was already paid. */
+  orderTotal?: number
+  /** Advance the customer already paid online; 0 for ordinary COD orders. */
+  paidOnline?: number
   onDelivered: () => void
   onClose: () => void
 }
 
 type PaymentType = 'cash' | 'online' | null
 
-export default function PaymentModal({ orderId, total, onDelivered, onClose }: Props) {
+export default function PaymentModal({ orderId, total, orderTotal, paidOnline = 0, onDelivered, onClose }: Props) {
   const [paymentType, setPaymentType] = useState<PaymentType>(null)
   const [amountReceived, setAmountReceived] = useState(String(total))
   const [confirming, setConfirming] = useState(false)
@@ -62,6 +67,14 @@ export default function PaymentModal({ orderId, total, onDelivered, onClose }: P
         <div className="bg-surface-container rounded-2xl p-4 text-center">
           <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Amount to Collect</p>
           <p className="font-display-sm text-display-sm text-primary">₹{total.toLocaleString('en-IN')}</p>
+          {paidOnline > 0 && (
+            // Spell out why this is less than the order value, so the delivery
+            // person doesn't think the amount is wrong and ask for the full bill.
+            <p className="font-label-sm text-label-sm text-on-surface-variant mt-2">
+              ₹{paidOnline.toLocaleString('en-IN')} already paid online
+              {orderTotal ? ` of ₹${orderTotal.toLocaleString('en-IN')}` : ''}
+            </p>
+          )}
         </div>
 
         {/* Payment method selection */}

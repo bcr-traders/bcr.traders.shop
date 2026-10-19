@@ -9,7 +9,7 @@ import {
   Truck, Wallet, Plus, Pencil, ShieldCheck, Mail, Receipt, Gift,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import { computeDeliveryFee } from '@/lib/cart/delivery'
+import { computeDeliveryFee, splitPartialPayment } from '@/lib/cart/delivery'
 import { useDeliveryConfig } from '@/hooks/useDeliveryConfig'
 import { useStoreOpen } from '@/hooks/useStoreOpen'
 import { formatMinute } from '@/lib/store-hours'
@@ -135,8 +135,18 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
   const openLabel = formatMinute(deliveryConfig.orderHours.openMinute)
   const closeLabel = formatMinute(deliveryConfig.orderHours.closeMinute)
   const razorpayEnabled = deliveryConfig.razorpayEnabled
-  // Online is only real when the admin enabled it; otherwise force COD.
-  const effectivePayMethod: 'cod' | 'online' = razorpayEnabled ? payMethod : 'cod'
+  const codEnabled = deliveryConfig.codEnabled
+  // With COD switched off by the super admin, paying online is the only route,
+  // whatever the radio says. Otherwise online is offered only when enabled.
+  const effectivePayMethod: 'cod' | 'online' = !codEnabled
+    ? 'online'
+    : razorpayEnabled ? payMethod : 'cod'
+  // COD off → the customer pays this share now and the rest (if any) in cash.
+  // The server recomputes both from the same settings; this is display only.
+  const partialSplit = !codEnabled ? splitPartialPayment(grandTotal, deliveryConfig.codOnlinePercent) : null
+  const isPartial = !!partialSplit && partialSplit.cod > 0
+  // What Razorpay will actually charge now.
+  const payNowAmount = partialSplit ? partialSplit.online : grandTotal
 
   // Re-validate the applied coupon here and compute the discount authoritatively
   // for display (the order API re-checks it server-side too).
@@ -863,45 +873,74 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 <span className="text-2xl font-black text-white">₹{grandTotal.toFixed(0)}</span>
               </div>
 
-              {/* Payment method — Online only shows when the admin enabled Razorpay */}
+              {/* Payment method. COD off → no choice to make: show the split
+                  the customer is about to pay instead of dead radio buttons. */}
               <div className="mb-5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/35 mb-2">Payment Method</p>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setPayMethod('cod')}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left',
-                      effectivePayMethod === 'cod' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
+                {!codEnabled ? (
+                  <div className="rounded-xl border-2 border-white/20 bg-white/5 px-4 py-3.5">
+                    <p className="text-sm font-black text-white">
+                      {isPartial ? 'Part Payment Online' : 'Pay Online'}
+                    </p>
+                    <p className="text-[11px] font-medium text-white/50 mt-0.5">
+                      UPI · Card · Net Banking (Razorpay)
+                    </p>
+                    {isPartial && partialSplit && (
+                      <div className="mt-3 pt-3 border-t border-white/15 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-white/60">Pay now online</span>
+                          <span className="text-[13px] font-black text-white">₹{partialSplit.online.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-white/60">Cash on delivery</span>
+                          <span className="text-[13px] font-black text-white">₹{partialSplit.cod.toFixed(0)}</span>
+                        </div>
+                      </div>
                     )}
-                  >
-                    <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'cod' ? 'border-white' : 'border-white/40')}>
-                      {effectivePayMethod === 'cod' && <span className="w-2 h-2 rounded-full bg-white" />}
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-black text-white">Cash on Delivery</span>
-                      <span className="block text-[11px] font-medium text-white/50">Pay when your order arrives</span>
-                    </span>
-                  </button>
-                  {razorpayEnabled && (
+                    {!isPartial && (
+                      <p className="text-[11px] font-medium text-white/40 mt-2">
+                        Cash on delivery is not available for this order.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => setPayMethod('online')}
+                      onClick={() => setPayMethod('cod')}
                       className={cn(
                         'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left',
-                        effectivePayMethod === 'online' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
+                        effectivePayMethod === 'cod' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
                       )}
                     >
-                      <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'online' ? 'border-white' : 'border-white/40')}>
-                        {effectivePayMethod === 'online' && <span className="w-2 h-2 rounded-full bg-white" />}
+                      <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'cod' ? 'border-white' : 'border-white/40')}>
+                        {effectivePayMethod === 'cod' && <span className="w-2 h-2 rounded-full bg-white" />}
                       </span>
                       <span className="flex-1 min-w-0">
-                        <span className="block text-sm font-black text-white">Pay Online</span>
-                        <span className="block text-[11px] font-medium text-white/50">UPI · Card · Net Banking (Razorpay)</span>
+                        <span className="block text-sm font-black text-white">Cash on Delivery</span>
+                        <span className="block text-[11px] font-medium text-white/50">Pay when your order arrives</span>
                       </span>
                     </button>
-                  )}
-                </div>
+                    {razorpayEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setPayMethod('online')}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left',
+                          effectivePayMethod === 'online' ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/30',
+                        )}
+                      >
+                        <span className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', effectivePayMethod === 'online' ? 'border-white' : 'border-white/40')}>
+                          {effectivePayMethod === 'online' && <span className="w-2 h-2 rounded-full bg-white" />}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-black text-white">Pay Online</span>
+                          <span className="block text-[11px] font-medium text-white/50">UPI · Card · Net Banking (Razorpay)</span>
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Notes — desktop */}
@@ -938,7 +977,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
                 {isPlacing && <Loader2 size={16} className="animate-spin" />}
                 {isPlacing
                   ? (effectivePayMethod === 'online' ? 'Processing…' : 'Placing Order…')
-                  : (effectivePayMethod === 'online' ? `Pay ₹${grandTotal.toFixed(0)}` : 'Place Order')}
+                  : (effectivePayMethod === 'online' ? `Pay ₹${payNowAmount.toFixed(0)}${isPartial ? ' Now' : ''}` : 'Place Order')}
               </button>
 
               {!canPlace && selectedId && pincodeResult?.serviceable === false && !isBulk && (
@@ -994,7 +1033,7 @@ export default function CheckoutClient({ profileId, initialEmail = '' }: Props) 
           {isPlacing && <Loader2 size={16} className="animate-spin" />}
           {isPlacing
             ? (effectivePayMethod === 'online' ? 'Processing…' : 'Placing Order…')
-            : (effectivePayMethod === 'online' ? `Pay ₹${grandTotal.toFixed(0)}` : 'Place Order')}
+            : (effectivePayMethod === 'online' ? `Pay ₹${payNowAmount.toFixed(0)}${isPartial ? ' Now' : ''}` : 'Place Order')}
         </button>
       </div>
 

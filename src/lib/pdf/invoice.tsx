@@ -239,8 +239,22 @@ function InvoiceDocument({ data }: { data: OrderEmailData }) {
           <View style={[styles.col, { alignItems: 'flex-end' }]}>
             <Text style={styles.label}>Payment Method</Text>
             <Text style={styles.addressText}>
-              {data.paymentMethod === 'online' ? 'Online Payment (Razorpay)' : 'Cash on Delivery (COD)'}
+              {data.paymentMethod === 'online'
+                ? 'Online Payment (Razorpay)'
+                : data.paymentMethod === 'partial'
+                ? 'Part Paid Online + COD'
+                : 'Cash on Delivery (COD)'}
             </Text>
+            {data.paymentMethod === 'partial' && (
+              <>
+                <Text style={styles.addressText}>
+                  Paid online: Rs. {Number(data.amountPaidOnline ?? 0).toLocaleString('en-IN')}
+                </Text>
+                <Text style={styles.addressText}>
+                  Balance (COD): Rs. {Number(data.amountDueCod ?? 0).toLocaleString('en-IN')}
+                </Text>
+              </>
+            )}
             <Text style={[styles.label, { marginTop: 10 }]}>Order Status</Text>
             <Text style={styles.addressText}>{status}</Text>
           </View>

@@ -231,7 +231,12 @@ export interface Order {
   coupon_code?: string | null
   total: number
   status: OrderStatus
-  payment_method: 'cod' | 'online'
+  /** 'partial' = advance paid online + balance collected on delivery (migration 036). */
+  payment_method: 'cod' | 'online' | 'partial'
+  /** Partial orders only: advance already captured online. NULL otherwise. */
+  amount_paid_online?: number | null
+  /** Partial orders only: cash balance still due on delivery. NULL otherwise. */
+  amount_due_cod?: number | null
   notes: string | null
   /** Lorry/transport chosen at checkout (migration 034). Text snapshot. */
   transport_details?: string | null

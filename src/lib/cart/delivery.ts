@@ -28,7 +28,24 @@ export interface DeliveryConfig {
   orderHours: OrderHoursConfig
   /** Whether online (Razorpay) payment is offered at checkout alongside COD. */
   razorpayEnabled: boolean
+  /** Whether Cash on Delivery is offered at all. Super-admin controlled. */
+  codEnabled: boolean
+  /**
+   * When COD is OFF, the percentage of the order total the customer must pay
+   * online up front; the remainder is collected on delivery. 100 = fully
+   * prepaid (nothing to collect). Ignored while COD is on.
+   */
+  codOnlinePercent: number
 }
+
+/**
+ * COD defaults ON. A missing or malformed settings row must never silently
+ * stop customers paying cash — that would block checkout outright for anyone
+ * without online payment.
+ */
+export const DEFAULT_COD_ENABLED = true
+/** Fully prepaid is the safe default when COD is off: never under-collect. */
+export const DEFAULT_COD_ONLINE_PERCENT = 100
 
 export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
   freeDeliveryMin: FREE_DELIVERY_MIN,
@@ -36,6 +53,33 @@ export const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
   minOrderValue: MIN_ORDER_VALUE,
   orderHours: DEFAULT_ORDER_HOURS,
   razorpayEnabled: false,
+  codEnabled: DEFAULT_COD_ENABLED,
+  codOnlinePercent: DEFAULT_COD_ONLINE_PERCENT,
+}
+
+/**
+ * Clamp the admin's percentage to a usable 1–100.
+ *
+ * 0 would mean "pay nothing online", which with COD off leaves no way to pay
+ * at all — so the floor is 1, and anything invalid falls back to fully prepaid.
+ */
+export function clampCodOnlinePercent(raw: unknown): number {
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return DEFAULT_COD_ONLINE_PERCENT
+  return Math.min(100, Math.max(1, Math.round(n)))
+}
+
+/**
+ * Split an order total into the advance paid online now and the balance due on
+ * delivery. Rounded to whole rupees (cash has no coins) with the advance taking
+ * the rounding, so the two legs always add back to exactly `total`.
+ */
+export function splitPartialPayment(total: number, percent: number): { online: number; cod: number } {
+  const safeTotal = Math.max(0, Math.round(total))
+  const pct = clampCodOnlinePercent(percent)
+  if (pct >= 100) return { online: safeTotal, cod: 0 }
+  const online = Math.min(safeTotal, Math.max(1, Math.round((safeTotal * pct) / 100)))
+  return { online, cod: safeTotal - online }
 }
 
 /**
@@ -55,6 +99,10 @@ export function parseDeliveryConfig(settingsValue: unknown): DeliveryConfig {
     minOrderValue: Number.isFinite(minOrder) && minOrder >= 0 ? minOrder : MIN_ORDER_VALUE,
     orderHours: parseOrderHours(settingsValue),
     razorpayEnabled: v.razorpay_enabled === true,
+    // Explicit `false` only. An absent key keeps COD ON, so a partially
+    // written settings row can't accidentally disable cash payment.
+    codEnabled: v.cod_enabled !== false,
+    codOnlinePercent: clampCodOnlinePercent(v.cod_online_percent),
   }
 }
 
